@@ -14,6 +14,10 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef PTHREAD_STACK_MIN
+#define PTHREAD_STACK_MIN 16384U
+#endif
+
 #include "Thread.h"
 
 #include <alloca.h>

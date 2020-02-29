@@ -425,12 +425,15 @@ class sitl(Board):
             env.CXXFLAGS += [
                 '-fno-slp-vectorize' # compiler bug when trying to use SLP
             ]
+<<<<<<< Updated upstream
 class arm_sitl (sitl):
     toolchain = 'arm-linux-gnueabihf'
     
     def configure_env(self, cfg, env):
             super(arm_sitl, self).configure_env(cfg, env)
 
+=======
+>>>>>>> Stashed changes
 class chibios(Board):
     abstract = True
     toolchain = 'arm-none-eabi'
@@ -653,6 +656,17 @@ class navio(linux):
         env.DEFINES.update(
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_NAVIO',
         )
+
+class rzero(linux):
+    toolchain = 'arm-linux-gnueabihf'
+
+    def configure_env(self, cfg, env):
+        super(rzero, self).configure_env(cfg, env)
+
+        env.DEFINES.update(
+            CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_RZERO',
+        )
+
 
 class navio2(linux):
     toolchain = 'arm-linux-gnueabihf'
