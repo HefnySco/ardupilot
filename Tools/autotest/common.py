@@ -893,6 +893,20 @@ class AutoTest(ABC):
                                        0)
         self.detect_and_handle_reboot(old_bootcount, required_bootcount=required_bootcount)
 
+    def send_cmd_enter_cpu_lockup(self):
+        """Poke ArduPilot to stop the main loop from running"""
+        self.mav.mav.command_long_send(self.sysid_thismav(),
+                                       1,
+                                       mavutil.mavlink.MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN,
+                                       1,  # confirmation
+                                       42, # lockup autopilot
+                                       24, # no, really, we mean it
+                                       71, # seriously, we're not kidding
+                                       93, # we know exactly what we're
+                                       0,
+                                       0,
+                                       0)
+
     def reboot_sitl(self, required_bootcount=None):
         """Reboot SITL instance and wait for it to reconnect."""
         self.progress("Rebooting SITL")
@@ -1018,6 +1032,39 @@ class AutoTest(ABC):
 #                fail = True
 #        if fail:
 #            raise NotAchievedException("Extra parameters in XML")
+
+    def test_onboard_logging_generation(self):
+        '''just generates, as we can't do a lot of testing'''
+        xml_filepath = os.path.join(self.rootdir(), "LogMessages.xml")
+        parse_filepath = os.path.join(self.rootdir(), 'Tools', 'autotest', 'logger_metadata', 'parse.py')
+        try:
+            os.unlink(xml_filepath)
+        except OSError:
+            pass
+        vehicle = self.log_name()
+        vehicle_map = {
+            "ArduCopter": "Copter",
+            "HeliCopter": "Copter",
+            "ArduPlane": "Plane",
+            "QuadPlane": "Plane",
+            "APMrover2": "Rover",
+            "AntennaTracker": "Tracker",
+            "ArduSub": "Sub",
+        }
+        vehicle = vehicle_map[vehicle]
+
+        cmd = [parse_filepath, '--vehicle', vehicle]
+#        cmd.append("--verbose")
+        if util.run_cmd(cmd,
+                        directory=util.reltopdir('.')) != 0:
+            print("Failed parse.py (%s)" % vehicle)
+            return False
+        length = os.path.getsize(xml_filepath)
+        min_length = 1024
+        if length < min_length:
+            raise NotAchievedException("short xml file (%u < %u)" %
+                                       (length, min_length))
+        self.progress("xml file length is %u" % length)
 
     def initialise_after_reboot_sitl(self):
 
@@ -1163,9 +1210,11 @@ class AutoTest(ABC):
     #################################################
     # SIM UTILITIES
     #################################################
-    def get_sim_time(self):
+    def get_sim_time(self, timeout=60):
         """Get SITL time in seconds."""
-        m = self.mav.recv_match(type='SYSTEM_TIME', blocking=True)
+        m = self.mav.recv_match(type='SYSTEM_TIME', blocking=True, timeout=timeout)
+        if m is None:
+            raise AutoTestTimeoutException("Did not get SYSTEM_TIME message")
         return m.time_boot_ms * 1.0e-3
 
     def get_sim_time_cached(self):
@@ -1723,7 +1772,6 @@ class AutoTest(ABC):
         p2 = 0
         if force:
             p2 = 21196 # magic force disarm value
-        tstart = self.get_sim_time()
         self.run_cmd(mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
                      0,  # DISARM
                      p2,
@@ -1733,12 +1781,88 @@ class AutoTest(ABC):
                      0,
                      0,
                      timeout=timeout)
-        while self.get_sim_time_cached() - tstart < timeout:
+        return self.wait_disarmed()
+
+    def wait_disarmed_default_wait_time(self):
+        return 30
+
+    def wait_disarmed(self, timeout=None, tstart=None):
+        if timeout is None:
+            timeout = self.wait_disarmed_default_wait_time()
+        self.progress("Waiting for DISARM")
+        if tstart is None:
+            tstart = self.get_sim_time()
+        while True:
+            delta = self.get_sim_time_cached() - tstart
+            if delta > timeout:
+                raise AutoTestTimeoutException("Failed to DISARM")
             self.wait_heartbeat()
+            self.progress("Got heartbeat")
             if not self.mav.motors_armed():
-                self.progress("Motors DISARMED")
+                self.progress("DISARMED after %.2f seconds (allowed=%.2f)" %
+                              (delta, timeout))
                 return True
-        raise AutoTestTimeoutException("Failed to DISARM with mavlink")
+
+    def CPUFailsafe(self):
+        '''Most vehicles just disarm on failsafe'''
+        # customising the SITL commandline ensures the process will
+        # get stopped/started at the end of the test
+        self.customise_SITL_commandline([])
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+        self.progress("Sending enter-cpu-lockup")
+        # when we're in CPU lockup we don't get SYSTEM_TIME messages,
+        # so get_sim_time breaks:
+        tstart = self.get_sim_time()
+        self.send_cmd_enter_cpu_lockup()
+        self.wait_disarmed(timeout=5, tstart=tstart)
+
+
+    def cpufailsafe_wait_servo_channel_value(self, channel, value, timeout=30):
+        '''we get restricted messages while doing cpufailsafe, this working then'''
+        start = time.time()
+        while True:
+            if time.time() - start > timeout:
+                raise NotAchievedException("Did not achieve value")
+            m = self.mav.recv_match(type='SERVO_OUTPUT_RAW', blocking=True, timeout=1)
+
+            if m is None:
+                raise NotAchievedException("Did not get SERVO_OUTPUT_RAW")
+            channel_field = "servo%u_raw" % channel
+            m_value = getattr(m, channel_field, None)
+            self.progress("Servo%u=%u want=%u" % (channel, m_value, value))
+            if m_value == value:
+                break
+
+    def plane_CPUFailsafe(self):
+        '''In lockup Plane should copy RC inputs to RC outputs'''
+        # customising the SITL commandline ensures the process will
+        # get stopped/started at the end of the test
+        self.customise_SITL_commandline([])
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+        self.progress("Sending enter-cpu-lockup")
+        # when we're in CPU lockup we don't get SYSTEM_TIME messages,
+        # so get_sim_time breaks:
+        self.send_cmd_enter_cpu_lockup()
+        start_time = time.time() # not sim time!
+        while True:
+            want = "Initialising ArduPilot"
+            if time.time() - start_time > 30:
+                raise NotAchievedException("Did not get %s" % want)
+            # we still need to parse the incoming messages:
+            m = self.mav.recv_match(type='STATUSTEXT', blocking=True, timeout=0.1)
+            x = self.mav.messages.get("STATUSTEXT", None)
+            if x is not None and want in x.text:
+                break
+        # Different scaling for RC input and servo output means the
+        # servo output value isn't the rc input value:
+        self.progress("Setting RC to 1200")
+        self.send_set_rc(2, 1200)
+        self.progress("Waiting for servo of 1260")
+        self.cpufailsafe_wait_servo_channel_value(2, 1260)
+        self.send_set_rc(2, 1700)
+        self.cpufailsafe_wait_servo_channel_value(2, 1660)
 
     def mavproxy_arm_vehicle(self):
         """Arm vehicle with mavlink arm message send from MAVProxy."""
@@ -1752,8 +1876,7 @@ class AutoTest(ABC):
         """Disarm vehicle with mavlink disarm message send from MAVProxy."""
         self.progress("Disarm motors with MavProxy")
         self.mavproxy.send('disarm\n')
-        self.mav.motors_disarmed_wait()
-        self.progress("DISARMED")
+        self.wait_disarmed()
         return True
 
     def arm_motors_with_rc_input(self, timeout=20):
@@ -2031,6 +2154,21 @@ class AutoTest(ABC):
                                                              m.result))
                 break
 
+    def verify_parameter_values(self, parameter_stuff):
+        bad = ""
+        for param in parameter_stuff:
+            fetched_value = self.get_parameter(param)
+            wanted_value = parameter_stuff[param]
+            max_delta = 0.0
+            if type(wanted_value) == tuple:
+                max_delta = wanted_value[1]
+                wanted_value = wanted_value[0]
+            if abs(fetched_value - wanted_value) > max_delta:
+                bad += "%s=%f (want=%f +/-%f)    " % (param, fetched_value, wanted_value, max_delta)
+        if len(bad):
+            raise NotAchievedException("Bad parameter values: %s" %
+                                       (bad,))
+
     #################################################
     # UTILITIES
     #################################################
@@ -2147,7 +2285,7 @@ class AutoTest(ABC):
 
     def get_autopilot_capabilities(self):
         # Cannot use run_cmd otherwise the respond is lost during the wait for ACK
-        self.mav.mav.command_long_send(1,
+        self.mav.mav.command_long_send(self.sysid_thismav(),
                                        1,
                                        mavutil.mavlink.MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES,
                                        0,  # confirmation
@@ -3281,6 +3419,107 @@ class AutoTest(ABC):
             # tracker starts armed...
             self.disarm_vehicle(force=True)
         self.reboot_sitl()
+
+    def test_fixed_yaw_calibration(self):
+        self.context_push()
+        ex = None
+        try:
+            wanted = {
+                "COMPASS_OFS_X": (100, 3.0),
+                "COMPASS_OFS_Y": (200, 3.0),
+                "COMPASS_OFS_Z": (300, 3.0),
+                "COMPASS_DIA_X": 1,
+                "COMPASS_DIA_Y": 1,
+                "COMPASS_DIA_Z": 1,
+                "COMPASS_ODI_X": 0,
+                "COMPASS_ODI_Y": 0,
+                "COMPASS_ODI_Z": 0,
+
+                "COMPASS_OFS2_X": (100, 3.0),
+                "COMPASS_OFS2_Y": (200, 3.0),
+                "COMPASS_OFS2_Z": (300, 3.0),
+                "COMPASS_DIA2_X": 1,
+                "COMPASS_DIA2_Y": 1,
+                "COMPASS_DIA2_Z": 1,
+                "COMPASS_ODI2_X": 0,
+                "COMPASS_ODI2_Y": 0,
+                "COMPASS_ODI2_Z": 0,
+
+                "COMPASS_OFS3_X": (100, 3.0),
+                "COMPASS_OFS3_Y": (200, 3.0),
+                "COMPASS_OFS3_Z": (300, 3.0),
+                "COMPASS_DIA3_X": 1,
+                "COMPASS_DIA3_Y": 1,
+                "COMPASS_DIA3_Z": 1,
+                "COMPASS_ODI2_X": 0,
+                "COMPASS_ODI2_Y": 0,
+                "COMPASS_ODI2_Z": 0,
+            }
+            self.set_parameter("SIM_MAG_OFS_X", 100)
+            self.set_parameter("SIM_MAG_OFS_Y", 200)
+            self.set_parameter("SIM_MAG_OFS_Z", 300)
+
+            # set to some sensible-ish initial values.  If your initial
+            # offsets are way, way off you can get some very odd effects.
+            for param in wanted:
+                value = 0.0
+                if "DIA" in param:
+                    value = 1.001
+                elif "ODI" in param:
+                    value = 0.001
+                self.set_parameter(param, value)
+            # zero the parameters:
+            self.progress("zeroing parameters")
+            self.drain_mav()  # these two lines are odd....
+            self.get_sim_time()
+            self.run_cmd(mavutil.mavlink.MAV_CMD_PREFLIGHT_SET_SENSOR_OFFSETS,
+                         2, # param1 (compass0)
+                         0, # param2
+                         0, # param3
+                         0, # param4
+                         0, # param5
+                         0, # param6
+                         0 # param7
+            )
+            self.progress("zeroed parameters")
+            # ensure these are all zero; note that we don't set the DIA or
+            # ODI in SET_SENSOR_OFFSETS...
+            for axis in "X", "Y", "Z":
+                name = "COMPASS_OFS_%s" % axis
+                value = self.get_parameter(name)
+                if value != 0.0:
+                    raise NotAchievedException("Failed to zero %s; got %f" %
+                                               (name, value))
+            self.change_mode('LOITER')
+            self.wait_ready_to_arm() # so we definitely have position
+            ss = self.mav.recv_match(type='SIMSTATE', blocking=True, timeout=1)
+            if ss is None:
+                raise NotAchievedException("Did not get SIMSTATE")
+            self.progress("Got SIMSTATE (%s)" % str(ss))
+
+            self.run_cmd(mavutil.mavlink.MAV_CMD_FIXED_MAG_CAL_YAW,
+                         math.degrees(ss.yaw), # param1
+                         0, # param2
+                         0, # param3
+                         0, # param4
+
+                         0, # param5
+                         0, # param6
+                         0 # param7
+                         )
+            self.verify_parameter_values(wanted)
+
+            self.progress("Rebooting and making sure we could arm with these values")
+            self.reboot_sitl()
+            self.wait_ready_to_arm(timeout=60)
+
+        except Exception as e:
+            ex = e
+
+        self.context_pop()
+
+        if ex is not None:
+            raise ex
 
     def test_dataflash_over_mavlink(self):
         self.context_push()
@@ -4827,9 +5066,21 @@ switch value'''
              "Test Config Error Loop",
              self.test_config_error_loop),
 
+            ("CPUFailsafe",
+             "Ensure we do something appropriate when the main loop stops",
+             self.CPUFailsafe),
+
             ("Parameters",
              "Test Parameter Set/Get",
              self.test_parameters),
+
+            ("LoggerDocumentation",
+             "Test Onboard Logging Generation",
+             self.test_onboard_logging_generation),
+
+            ("GetCapabilities",
+             "Get Capabilities",
+             self.test_get_autopilot_capabilities),
         ]
 
     def post_tests_announcements(self):

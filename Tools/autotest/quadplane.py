@@ -23,6 +23,7 @@ FENCE = 'ArduPlane-Missions/Dalby-OBC2016-fence.txt'
 WIND = "0,180,0.2"  # speed,direction,variance
 SITL_START_LOCATION = mavutil.location(-27.274439, 151.290064, 343, 8.7)
 
+
 class AutoTestQuadPlane(AutoTest):
 
     @staticmethod
@@ -125,14 +126,14 @@ class AutoTestQuadPlane(AutoTest):
         self.wait_mode('AUTO')
         self.wait_waypoint(1, 19, max_dist=60, timeout=1200)
 
-        self.mav.motors_disarmed_wait()
+        self.wait_disarmed(timeout=120) # give quadplane a long time to land
         # wait for blood sample here
         self.mavproxy.send('wp set 20\n')
         self.wait_ready_to_arm()
         self.arm_vehicle()
         self.wait_waypoint(20, 34, max_dist=60, timeout=1200)
 
-        self.mav.motors_disarmed_wait()
+        self.wait_disarmed(timeout=120) # give quadplane a long time to land
         self.progress("Mission OK")
 
     def fly_qautotune(self):
@@ -169,7 +170,7 @@ class AutoTestQuadPlane(AutoTest):
             except AutoTestTimeoutException as e:
                 continue
             break
-        self.mav.motors_disarmed_wait()
+        self.wait_disarmed()
 
     def takeoff(self, height, mode):
         self.change_mode(mode)
@@ -185,7 +186,7 @@ class AutoTestQuadPlane(AutoTest):
     def do_RTL(self):
         self.change_mode("QRTL")
         self.wait_altitude(-5, 1, relative=True, timeout=60)
-        self.mav.motors_disarmed_wait()
+        self.wait_disarmed()
 
     def fly_home_land_and_disarm(self):
         self.set_parameter("LAND_TYPE", 0)
@@ -194,7 +195,7 @@ class AutoTestQuadPlane(AutoTest):
         self.load_mission(filename)
         self.change_mode("AUTO")
         self.mavproxy.send('wp set 7\n')
-        self.mav.motors_disarmed_wait()
+        self.wait_disarmed()
 
     def wait_level_flight(self, accuracy=5, timeout=30):
         """Wait for level flight."""
@@ -238,7 +239,7 @@ class AutoTestQuadPlane(AutoTest):
                            timeout=60)
         self.set_rc(3, 1500)
 
-    def hover_and_check_matched_frequency(self, dblevel=-15, minhz=200, maxhz=300, peakhz=None):
+    def hover_and_check_matched_frequency(self, dblevel=-15, minhz=200, maxhz=300, fftLength=32, peakhz=None):
 
         # find a motor peak
         self.takeoff(10, mode="QHOVER")
@@ -247,7 +248,7 @@ class AutoTestQuadPlane(AutoTest):
         tstart = self.get_sim_time()
         self.progress("Hovering for %u seconds" % hover_time)
         while self.get_sim_time_cached() < tstart + hover_time:
-            attitude = self.mav.recv_match(type='ATTITUDE', blocking=True)
+            self.mav.recv_match(type='ATTITUDE', blocking=True)
         vfr_hud = self.mav.recv_match(type='VFR_HUD', blocking=True)
         tend = self.get_sim_time()
 
@@ -265,13 +266,20 @@ class AutoTestQuadPlane(AutoTest):
         # we have a peak make sure that the FFT detected something close
         # logging is at 10Hz
         mlog = self.dfreader_for_current_onboard_log()
+        # accuracy is determined by sample rate and fft length, given our use of quinn we could probably use half of this
+        freqDelta = 1000. / fftLength
         pkAvg = freq
 
-        for m in mlog.recv_match(type='FTN1', blocking=True,
-                                condition="FTN1.TimeUS>%u and FTN1.TimeUS<%u" % (tstart * 1.0e6, tend * 1.0e6)):
+        while True:
+            m = mlog.recv_match(
+                type='FTN1',
+                blocking=True,
+                condition="FTN1.TimeUS>%u and FTN1.TimeUS<%u" % (tstart * 1.0e6, tend * 1.0e6))
+            if m is None:
+                break
             pkAvg = pkAvg + (0.1 * (m.PkAvg - pkAvg))
-        # peak within 5%
-        if abs(pkAvg - freq) / freq > 0.05:
+        # peak within resolution of FFT length
+        if abs(pkAvg - freq) > freqDelta:
             raise NotAchievedException("FFT did not detect a motor peak at %f, found %f, wanted %f" % (dblevel, pkAvg, freq))
 
         return freq
@@ -315,7 +323,7 @@ class AutoTestQuadPlane(AutoTest):
             self.reboot_sitl()
 
             # find a motor peak
-            self.hover_and_check_matched_frequency(-15, 100, 350, 250)
+            self.hover_and_check_matched_frequency(-15, 100, 350, 128, 250)
 
             # Step 2: inject actual motor noise and use the standard length FFT to track it
             self.set_parameter("SIM_VIB_MOT_MAX", 350)
@@ -324,7 +332,7 @@ class AutoTestQuadPlane(AutoTest):
 
             self.reboot_sitl()
             # find a motor peak
-            freq = self.hover_and_check_matched_frequency(-15, 200, 300)
+            freq = self.hover_and_check_matched_frequency(-15, 200, 300, 32)
 
             # Step 3: add a FFT dynamic notch and check that the peak is squashed
             self.set_parameter("INS_LOG_BAT_OPT", 2)
@@ -343,7 +351,7 @@ class AutoTestQuadPlane(AutoTest):
             self.progress("Hovering for %u seconds" % hover_time)
             tstart = self.get_sim_time()
             while self.get_sim_time_cached() < tstart + hover_time:
-                attitude = self.mav.recv_match(type='ATTITUDE', blocking=True)
+                self.mav.recv_match(type='ATTITUDE', blocking=True)
             tend = self.get_sim_time()
 
             self.do_RTL()
@@ -364,16 +372,20 @@ class AutoTestQuadPlane(AutoTest):
             self.mavproxy.send('mode AUTO\n')
             self.wait_mode('AUTO')
             self.wait_waypoint(1, 7, max_dist=60, timeout=1200)
-            self.mav.motors_disarmed_wait()
+            self.wait_disarmed(timeout=120) # give quadplane a long time to land
 
             # prevent update parameters from messing with the settings when we pop the context
             self.set_parameter("FFT_ENABLE", 0)
             self.reboot_sitl()
 
         except Exception as e:
+            self.progress("Exception caught: %s" % (
+                self.get_exception_stacktrace(e)))
             ex = e
 
         self.context_pop()
+
+        self.reboot_sitl()
 
         if ex is not None:
             raise ex
@@ -392,7 +404,12 @@ class AutoTestQuadPlane(AutoTest):
         return {
             "QAutoTune": "See https://github.com/ArduPilot/ardupilot/issues/10411",
             "FRSkyPassThrough": "Currently failing",
+            "CPUFailsafe": "servo channel values not scaled like ArduPlane",
         }
+
+    def CPUFailsafe(self):
+        '''In lockup Plane should copy RC inputs to RC outputs'''
+        self.plane_CPUFailsafe()
 
     def tests(self):
         '''return list of all tests'''

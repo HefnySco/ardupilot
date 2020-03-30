@@ -99,8 +99,8 @@ struct PACKED log_Nav_Tuning {
     LOG_PACKET_HEADER;
     uint64_t time_us;
     float wp_distance;
-    uint16_t wp_bearing_cd;
-    uint16_t nav_bearing_cd;
+    float wp_bearing;
+    float nav_bearing;
     uint16_t yaw;
     float xtrack_error;
 };
@@ -112,8 +112,8 @@ void Rover::Log_Write_Nav_Tuning()
         LOG_PACKET_HEADER_INIT(LOG_NTUN_MSG),
         time_us             : AP_HAL::micros64(),
         wp_distance         : control_mode->get_distance_to_destination(),
-        wp_bearing_cd       : (uint16_t)wrap_360_cd(control_mode->wp_bearing() * 100),
-        nav_bearing_cd      : (uint16_t)wrap_360_cd(control_mode->nav_bearing() * 100),
+        wp_bearing          : control_mode->wp_bearing(),
+        nav_bearing         : control_mode->nav_bearing(),
         yaw                 : (uint16_t)ahrs.yaw_sensor,
         xtrack_error        : control_mode->crosstrack_error()
     };
@@ -246,14 +246,26 @@ void Rover::Log_Write_Vehicle_Startup_Messages()
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
+
 const LogStructure Rover::log_structure[] = {
     LOG_COMMON_STRUCTURES,
     { LOG_STARTUP_MSG, sizeof(log_Startup),
       "STRT", "QBH",        "TimeUS,SType,CTot", "s--", "F--" },
     { LOG_THR_MSG, sizeof(log_Throttle),
       "THR", "Qhffff", "TimeUS,ThrIn,ThrOut,DesSpeed,Speed,AccY", "s--nno", "F--000" },
+
+// @LoggerMessage: NTUN
+// @Description: Navigation Tuning information - e.g. vehicle destination
+// @URL: http://ardupilot.org/rover/docs/navigation.html
+// @Field: TimeUS: Microseconds since system startup
+// @Field: WpDist: distance to the current navigation waypoint
+// @Field: Wpbrg: bearing to the current navigation waypoint
+// @Field: DesYaw: the vehicle's desired heading
+// @Field: Yaw: the vehicle's current heading
+// @Field: XTrack: the vehicle's current distance from the current travel segment
+
     { LOG_NTUN_MSG, sizeof(log_Nav_Tuning),
-      "NTUN", "QfHHHf", "TimeUS,WpDist,WpBrg,DesYaw,Yaw,XTrack", "smdddm", "F0BBB0" },
+      "NTUN", "QfffHf", "TimeUS,WpDist,WpBrg,DesYaw,Yaw,XTrack", "smhhdm", "F000B0" },
     { LOG_STEERING_MSG, sizeof(log_Steering),
       "STER", "Qhfffff",   "TimeUS,SteerIn,SteerOut,DesLatAcc,LatAcc,DesTurnRate,TurnRate", "s--ookk", "F--0000" },
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),

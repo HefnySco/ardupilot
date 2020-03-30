@@ -1,6 +1,8 @@
 // auto generated bindings, don't manually edit.  See README.md for details.
 #include "lua_generated_bindings.h"
 #include "lua_boxed_numerics.h"
+#include <AP_Button/AP_Button.h>
+#include <AP_RPM/AP_RPM.h>
 #include <AP_Mission/AP_Mission.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
@@ -245,6 +247,24 @@ static int Location_relative_alt(lua_State *L) {
         case 2: {
             const bool data_2 = static_cast<bool>(lua_toboolean(L, 2));
             ud->relative_alt = data_2;
+            return 0;
+         }
+        default:
+            return luaL_argerror(L, lua_gettop(L), "too many arguments");
+    }
+}
+
+static int Location_alt(lua_State *L) {
+    Location *ud = check_Location(L, 1);
+    switch(lua_gettop(L)) {
+        case 1:
+            lua_pushinteger(L, ud->alt);
+            return 1;
+        case 2: {
+            const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+            luaL_argcheck(L, ((raw_data_2 >= MAX((-LOCATION_ALT_MAX_M*100+1), INT32_MIN)) && (raw_data_2 <= MIN((LOCATION_ALT_MAX_M*100-1), INT32_MAX))), 2, "alt out of range");
+            const int32_t data_2 = raw_data_2;
+            ud->alt = data_2;
             return 0;
          }
         default:
@@ -522,6 +542,7 @@ const luaL_Reg Location_meta[] = {
     {"origin_alt", Location_origin_alt},
     {"terrain_alt", Location_terrain_alt},
     {"relative_alt", Location_relative_alt},
+    {"alt", Location_alt},
     {"lng", Location_lng},
     {"lat", Location_lat},
     {"get_distance_NE", Location_get_distance_NE},
@@ -532,6 +553,46 @@ const luaL_Reg Location_meta[] = {
     {"get_distance", Location_get_distance},
     {NULL, NULL}
 };
+
+static int AP_Button_get_button_state(lua_State *L) {
+    AP_Button * ud = AP_Button::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "button not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(1, 0)) && (raw_data_2 <= MIN(AP_BUTTON_NUM_PINS, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    const bool data = ud->get_button_state(
+            data_2);
+
+    lua_pushboolean(L, data);
+    return 1;
+}
+
+static int AP_RPM_get_rpm(lua_State *L) {
+    AP_RPM * ud = AP_RPM::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "RPM not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(0, 0)) && (raw_data_2 <= MIN(RPM_MAX_INSTANCES, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    float data_5003 = {};
+    const bool data = ud->get_rpm(
+            data_2,
+            data_5003);
+
+    if (data) {
+        lua_pushnumber(L, data_5003);
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
 
 static int AP_Mission_num_commands(lua_State *L) {
     AP_Mission * ud = AP_Mission::get_singleton();
@@ -839,8 +900,12 @@ static int AP_SerialLED_send(lua_State *L) {
         return luaL_argerror(L, 1, "serialLED not supported on this firmware");
     }
 
-    binding_argcheck(L, 1);
-    ud->send();
+    binding_argcheck(L, 2);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(1, 0)) && (raw_data_2 <= MIN(16, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    ud->send(
+            data_2);
 
     return 0;
 }
@@ -877,7 +942,7 @@ static int AP_SerialLED_set_RGB(lua_State *L) {
     return 0;
 }
 
-static int AP_SerialLED_set_num_LEDs(lua_State *L) {
+static int AP_SerialLED_set_num_profiled(lua_State *L) {
     AP_SerialLED * ud = AP_SerialLED::get_singleton();
     if (ud == nullptr) {
         return luaL_argerror(L, 1, "serialLED not supported on this firmware");
@@ -890,10 +955,106 @@ static int AP_SerialLED_set_num_LEDs(lua_State *L) {
     const lua_Integer raw_data_3 = luaL_checkinteger(L, 3);
     luaL_argcheck(L, ((raw_data_3 >= MAX(0, 0)) && (raw_data_3 <= MIN(AP_SERIALLED_MAX_LEDS, UINT8_MAX))), 3, "argument out of range");
     const uint8_t data_3 = static_cast<uint8_t>(raw_data_3);
-    const bool data = ud->set_num_LEDs(
+    const bool data = ud->set_num_profiled(
             data_2,
             data_3);
 
+    lua_pushboolean(L, data);
+    return 1;
+}
+
+static int AP_SerialLED_set_num_neopixel(lua_State *L) {
+    AP_SerialLED * ud = AP_SerialLED::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "serialLED not supported on this firmware");
+    }
+
+    binding_argcheck(L, 3);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(1, 0)) && (raw_data_2 <= MIN(16, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    const lua_Integer raw_data_3 = luaL_checkinteger(L, 3);
+    luaL_argcheck(L, ((raw_data_3 >= MAX(0, 0)) && (raw_data_3 <= MIN(AP_SERIALLED_MAX_LEDS, UINT8_MAX))), 3, "argument out of range");
+    const uint8_t data_3 = static_cast<uint8_t>(raw_data_3);
+    const bool data = ud->set_num_neopixel(
+            data_2,
+            data_3);
+
+    lua_pushboolean(L, data);
+    return 1;
+}
+
+static int AP_Vehicle_set_target_velocity_NED(lua_State *L) {
+    AP_Vehicle * ud = AP_Vehicle::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "vehicle not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    Vector3f & data_2 = *check_Vector3f(L, 2);
+    AP::scheduler().get_semaphore().take_blocking();
+    const bool data = ud->set_target_velocity_NED(
+            data_2);
+
+    AP::scheduler().get_semaphore().give();
+    lua_pushboolean(L, data);
+    return 1;
+}
+
+static int AP_Vehicle_get_target_location(lua_State *L) {
+    AP_Vehicle * ud = AP_Vehicle::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "vehicle not supported on this firmware");
+    }
+
+    binding_argcheck(L, 1);
+    Location data_5002 = {};
+    AP::scheduler().get_semaphore().take_blocking();
+    const bool data = ud->get_target_location(
+            data_5002);
+
+    AP::scheduler().get_semaphore().give();
+    if (data) {
+        new_Location(L);
+        *check_Location(L, -1) = data_5002;
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+
+static int AP_Vehicle_set_target_location(lua_State *L) {
+    AP_Vehicle * ud = AP_Vehicle::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "vehicle not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    Location & data_2 = *check_Location(L, 2);
+    AP::scheduler().get_semaphore().take_blocking();
+    const bool data = ud->set_target_location(
+            data_2);
+
+    AP::scheduler().get_semaphore().give();
+    lua_pushboolean(L, data);
+    return 1;
+}
+
+static int AP_Vehicle_start_takeoff(lua_State *L) {
+    AP_Vehicle * ud = AP_Vehicle::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "vehicle not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    const float raw_data_2 = luaL_checknumber(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX((-LOCATION_ALT_MAX_M*100+1), -INFINITY)) && (raw_data_2 <= MIN((LOCATION_ALT_MAX_M*100-1), INFINITY))), 2, "argument out of range");
+    const float data_2 = raw_data_2;
+    AP::scheduler().get_semaphore().take_blocking();
+    const bool data = ud->start_takeoff(
+            data_2);
+
+    AP::scheduler().get_semaphore().give();
     lua_pushboolean(L, data);
     return 1;
 }
@@ -1912,6 +2073,22 @@ static int AP_Arming_disarm(lua_State *L) {
     return 1;
 }
 
+static int AP_AHRS_get_vibration(lua_State *L) {
+    AP_AHRS * ud = AP_AHRS::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "ahrs not supported on this firmware");
+    }
+
+    binding_argcheck(L, 1);
+    ud->get_semaphore().take_blocking();
+    const Vector3f &data = ud->get_vibration();
+
+    ud->get_semaphore().give();
+    new_Vector3f(L);
+    *check_Vector3f(L, -1) = data;
+    return 1;
+}
+
 static int AP_AHRS_airspeed_estimate(lua_State *L) {
     AP_AHRS * ud = AP_AHRS::get_singleton();
     if (ud == nullptr) {
@@ -2159,6 +2336,16 @@ static int AP_AHRS_get_roll(lua_State *L) {
     return 1;
 }
 
+const luaL_Reg AP_Button_meta[] = {
+    {"get_button_state", AP_Button_get_button_state},
+    {NULL, NULL}
+};
+
+const luaL_Reg AP_RPM_meta[] = {
+    {"get_rpm", AP_RPM_get_rpm},
+    {NULL, NULL}
+};
+
 const luaL_Reg AP_Mission_meta[] = {
     {"num_commands", AP_Mission_num_commands},
     {"get_current_do_cmd_id", AP_Mission_get_current_do_cmd_id},
@@ -2207,11 +2394,16 @@ const luaL_Reg SRV_Channels_meta[] = {
 const luaL_Reg AP_SerialLED_meta[] = {
     {"send", AP_SerialLED_send},
     {"set_RGB", AP_SerialLED_set_RGB},
-    {"set_num_LEDs", AP_SerialLED_set_num_LEDs},
+    {"set_num_profiled", AP_SerialLED_set_num_profiled},
+    {"set_num_neopixel", AP_SerialLED_set_num_neopixel},
     {NULL, NULL}
 };
 
 const luaL_Reg AP_Vehicle_meta[] = {
+    {"set_target_velocity_NED", AP_Vehicle_set_target_velocity_NED},
+    {"get_target_location", AP_Vehicle_get_target_location},
+    {"set_target_location", AP_Vehicle_set_target_location},
+    {"start_takeoff", AP_Vehicle_start_takeoff},
     {"get_time_flying_ms", AP_Vehicle_get_time_flying_ms},
     {"get_likely_flying", AP_Vehicle_get_likely_flying},
     {"get_mode", AP_Vehicle_get_mode},
@@ -2305,6 +2497,7 @@ const luaL_Reg AP_Arming_meta[] = {
 };
 
 const luaL_Reg AP_AHRS_meta[] = {
+    {"get_vibration", AP_AHRS_get_vibration},
     {"airspeed_estimate", AP_AHRS_airspeed_estimate},
     {"prearm_healthy", AP_AHRS_prearm_healthy},
     {"home_is_set", AP_AHRS_home_is_set},
@@ -2443,6 +2636,8 @@ const struct userdata_meta userdata_fun[] = {
 };
 
 const struct userdata_meta singleton_fun[] = {
+    {"button", AP_Button_meta, NULL},
+    {"RPM", AP_RPM_meta, NULL},
     {"mission", AP_Mission_meta, AP_Mission_enums},
     {"param", AP_Param_meta, NULL},
     {"esc_telem", AP_ESC_Telem_meta, NULL},
@@ -2516,6 +2711,8 @@ void load_generated_bindings(lua_State *L) {
 }
 
 const char *singletons[] = {
+    "button",
+    "RPM",
     "mission",
     "param",
     "esc_telem",

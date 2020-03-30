@@ -6,8 +6,7 @@ MCU STM32F4xx STM32F407xx
 
 # board ID for firmware load
 APJ_BOARD_ID 20
-define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_CHIBIOS_F4BY
-                                
+
 # USB setup
 USB_VENDOR 0x27AC # Swift-Flyer 
 USB_PRODUCT 0x0201 # fmu usb driver 
@@ -75,7 +74,6 @@ PC12 UART5_TX UART5 NODMA
 PD2  UART5_RX UART5 NODMA
 
 define HAL_STORAGE_SIZE 16384
-define STORAGE_FLASH_PAGE 22
 
 #SPI1 for MPU
 PA5 SPI1_SCK SPI1

@@ -127,6 +127,8 @@ public:
     };
 
     void get_common_scheduler_tasks(const AP_Scheduler::Task*& tasks, uint8_t& num_tasks);
+    // implementations *MUST* fill in all passed-in fields or we get
+    // Valgrind errors
     virtual void get_scheduler_tasks(const AP_Scheduler::Task *&tasks, uint8_t &task_count, uint32_t &log_bit) = 0;
 
     /*
@@ -161,6 +163,16 @@ public:
         return AP_HAL::millis() - _last_flying_ms;
     }
 
+    /*
+      methods to control vehicle for use by scripting
+    */
+    virtual bool start_takeoff(float alt) { return false; }
+    virtual bool set_target_location(const Location& target_loc) { return false; }
+    virtual bool set_target_velocity_NED(const Vector3f& vel_ned) { return false; }
+
+    // get target location (for use by scripting)
+    virtual bool get_target_location(Location& target_loc) { return false; }
+    
 protected:
 
     virtual void init_ardupilot() = 0;
@@ -226,14 +238,13 @@ protected:
 
 private:
 
-    static AP_Vehicle *_singleton;
-
+    // delay() callback that processing MAVLink packets
     static void scheduler_delay_callback();
 
-    // true if vehicle is probably flying
-    bool likely_flying;
-    // time when likely_flying last went true
-    uint32_t _last_flying_ms;
+    bool likely_flying;         // true if vehicle is probably flying
+    uint32_t _last_flying_ms;   // time when likely_flying last went true
+
+    static AP_Vehicle *_singleton;
 };
 
 namespace AP {

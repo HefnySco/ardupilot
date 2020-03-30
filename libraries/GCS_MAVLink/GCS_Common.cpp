@@ -2589,14 +2589,27 @@ MAV_RESULT GCS_MAVLINK::handle_preflight_reboot(const mavlink_command_long_t &pa
 {
     if (is_equal(packet.param1, 42.0f) &&
         is_equal(packet.param2, 24.0f) &&
-        is_equal(packet.param3, 71.0f) &&
-        is_equal(packet.param4, 93.0f)) {
-        // this is a magic sequence to force the main loop to
-        // lockup. This is for testing the stm32 watchdog
-        // functionality
-        while (true) {
-            send_text(MAV_SEVERITY_WARNING,"entering lockup");
-            hal.scheduler->delay(250);
+        is_equal(packet.param3, 71.0f)) {
+        if (is_equal(packet.param4, 93.0f)) {
+            // this is a magic sequence to force the main loop to
+            // lockup. This is for testing the stm32 watchdog
+            // functionality
+            while (true) {
+                send_text(MAV_SEVERITY_WARNING,"entering lockup");
+                hal.scheduler->delay(250);
+            }
+        }
+        if (is_equal(packet.param4, 94.0f)) {
+            // the following text is unlikely to make it out...
+            send_text(MAV_SEVERITY_WARNING,"deferencing a bad thing");
+
+            void *foo = (void*)0xE000ED38;
+
+            typedef void (*fptr)();
+            fptr gptr = (fptr) (void *) foo;
+            gptr();
+
+            return MAV_RESULT_FAILED;
         }
     }
 
@@ -3436,11 +3449,16 @@ MAV_RESULT GCS_MAVLINK::handle_command_flash_bootloader(const mavlink_command_lo
         return MAV_RESULT_FAILED;
     }
 
-    if (hal.util->flash_bootloader() != AP_HAL::Util::FlashBootloader::OK) {
-        return MAV_RESULT_FAILED;
+    switch (hal.util->flash_bootloader()) {
+    case AP_HAL::Util::FlashBootloader::OK:
+    case AP_HAL::Util::FlashBootloader::NO_CHANGE:
+        // consider NO_CHANGE as success (so as not to display error to user)
+        return MAV_RESULT_ACCEPTED;
+    default:
+        break;
     }
 
-    return MAV_RESULT_ACCEPTED;
+    return MAV_RESULT_FAILED;
 }
 
 MAV_RESULT GCS_MAVLINK::handle_command_preflight_set_sensor_offsets(const mavlink_command_long_t &packet)
@@ -3537,6 +3555,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_preflight_calibration(const mavlink_comma
 {
     if (hal.util->get_soft_armed()) {
         // *preflight*, remember?
+        gcs().send_text(MAV_SEVERITY_NOTICE, "Disarm to allow calibration");
         return MAV_RESULT_FAILED;
     }
     // now call subclass methods:
@@ -4194,10 +4213,15 @@ void GCS_MAVLINK::send_rpm() const
         return;
     }
 
+    float rpm1 = -1, rpm2 = -1;
+
+    rpm->get_rpm(0, rpm1);
+    rpm->get_rpm(1, rpm2);
+
     mavlink_msg_rpm_send(
         chan,
-        rpm->get_rpm(0),
-        rpm->get_rpm(1));
+        rpm1,
+        rpm2);
 }
 
 void GCS_MAVLINK::send_sys_status()
