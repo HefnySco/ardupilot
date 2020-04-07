@@ -46,7 +46,7 @@
 // the first one in RcChnGpioTbl is channel 1 in receiver
 static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
     RPI_GPIO_<5>(),  RPI_GPIO_<6>(),  RPI_GPIO_<12>(),
-    RPI_GPIO_<13>(), RPI_GPIO_<19>(), RPI_GPIO_<20>(),
+    RPI_GPIO_<22>(), RPI_GPIO_<27>(), RPI_GPIO_<20>(), //RPI_GPIO_<13>(), RPI_GPIO_<19>(), RPI_GPIO_<20>(), //MHefny
     RPI_GPIO_<21>(), RPI_GPIO_<26>()
 };
 #else

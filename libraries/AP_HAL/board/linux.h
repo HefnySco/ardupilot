@@ -288,41 +288,16 @@
     #define HAL_HAVE_GETTIME_SETTIME 1
 
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHefny
-    //https://ram-e-shop.com/product/imu-10dof-mpu6050hmc5883lbmp180-3-axis-gyro-3-axis-acceleration-3-axis-magnetic-field-air-pressure-sensor/
-    //#define HAL_HAVE_SERVO_VOLTAGE 1
-    //#define HAL_INS_PROBE_LIST PROBE_IMU_SPI(Invensense, "mpu9250", ROTATION_NONE)
-    //#define HAL_BARO_PROBE_LIST PROBE_BARO_I2C(BMP280, 2, 0x76)
-    //#define HAL_MAG_PROBE1 PROBE_MAG_SPI(LSM9DS1, "lsm9ds1_m",  ROTATION_ROLL_180)
-    //#define HAL_MAG_PROBE2 PROBE_MAG_IMU(AK8963, mpu9250, 0, ROTATION_NONE)
-    //#define HAL_INS_PROBE_LIST PROBE_IMU_I2C(Invensense, 2, 0x68, ROTATION_PITCH_180_YAW_90)
-    //#define HAL_MAG_PROBE_LIST HAL_MAG_PROBE1; HAL_MAG_PROBE2
-    
-    //#define HAL_BARO_ALLOW_INIT_NO_BARO
     #define HAL_BARO_PROBE_LIST PROBE_BARO_I2C(BMP085, 1, 0x77) 
-    //#define HAL_INS_PROBE_LIST PROBE_IMU_I2C(Invensense, "mpu60x0", ROTATION_YAW_90)
-    //#define HAL_INS_PROBE_LIST PROBE_IMU_I2C(Invensense, 1, 0x69, ROTATION_NONE)
-    //#define HAL_INS_PROBE_LIST PROBE_IMU_I2C(Invensense, 1, 0x69, ROTATION_NONE)
-    
     #define HAL_INS_PROBE_LIST PROBE_IMU_I2C2(L3G4200D,1, 0x69, 0x53,  ROTATION_NONE)
-    //#define HAL_INS_PROBE_LIST PROBE_IMU_I2C2(LSM9DS0,1, 0x69, 0x53,  ROTATION_NONE,ROTATION_NONE,ROTATION_NONE)
     #define HAL_MAG_PROBE_LIST PROBE_MAG_I2C(HMC5843, 1, 0x1e, true, ROTATION_NONE)
-    #define BMP085_EOC                  0
+    #define BMP085_EOC                  0 
     #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
     #define HAL_GPIO_A_LED_PIN        24
     #define HAL_GPIO_B_LED_PIN        25
     #define HAL_GPIO_C_LED_PIN        16
     #define HAL_GPIO_LED_ON           1
     #define HAL_GPIO_LED_OFF          0
-// #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI
-//     #define HAL_INS_PROBE_LIST PROBE_IMU_SPI(Invensense, "mpu9250", ROTATION_YAW_270)
-//     #define HAL_BARO_PROBE_LIST PROBE_BARO_SPI(MS56XX, "ms5611")
-//     #define HAL_MAG_PROBE_LIST PROBE_MAG_IMU(AK8963, mpu9250, 0, ROTATION_NONE)
-//     #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
-//     #define HAL_GPIO_A_LED_PIN        24
-//     #define HAL_GPIO_B_LED_PIN        25
-//     #define HAL_GPIO_C_LED_PIN        16
-//     #define HAL_GPIO_LED_ON           LOW
-//     #define HAL_GPIO_LED_OFF          HIGH
 #else
     #error "no Linux board subtype set"
 #endif

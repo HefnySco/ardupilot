@@ -335,8 +335,8 @@ void AP_InertialSensor_L3G4200D::_accumulate_gyro (void)
         // FIFO is partly full
         num_samples_available = fifo_status & L3G4200D_REG_FIFO_SRC_ENTRIES_MASK;
     }
-    //printf("gyro num_samples_available %d \r\n",num_samples_available);
-    //printf("gyro\r\n");            
+
+    // read the samples and apply the filter
     if (num_samples_available > 0) {
         // read all the entries in one go, using AUTO_INCREMENT. This saves a lot of time on I2C setup
         int16_t buffer[num_samples_available][3];
@@ -345,7 +345,7 @@ void AP_InertialSensor_L3G4200D::_accumulate_gyro (void)
             for (uint8_t i=0; i < num_samples_available; i++) {
                 Vector3f gyro = Vector3f(buffer[i][0], -buffer[i][1], -buffer[i][2]);
                 // Adjust for chip scaling to get radians/sec
-                //printf("gyro %f \r\n",gyro.x); 
+                //hal.console->printf("gyro %f \r\n",gyro.x); 
                 gyro *= L3G4200D_GYRO_SCALE_R_S;
                 _rotate_and_correct_gyro(_gyro_instance, gyro);
                 _notify_new_gyro_raw_sample(_gyro_instance, gyro);
@@ -375,7 +375,7 @@ void AP_InertialSensor_L3G4200D::_accumulate_accel (void)
                 Vector3f accel = Vector3f(buffer[i][0], -buffer[i][1], -buffer[i][2]);
                 // Adjust for chip scaling to get m/s/s
                 accel *= ADXL345_ACCELEROMETER_SCALE_M_S;
-                //    printf("accel %2.2f    %2.2f  %2.2f \r\n",accel.x,accel.y,accel.z);
+                //hal.console->printf("accel %2.2f    %2.2f  %2.2f \r\n",accel.x,accel.y,accel.z);
                 _rotate_and_correct_accel(_accel_instance, accel);
                 _notify_new_accel_raw_sample(_accel_instance, accel);
             }
