@@ -27,6 +27,11 @@ extern const AP_HAL::HAL &hal;
 #define BMP085_OVERSAMPLING_HIGHRES       2
 #define BMP085_OVERSAMPLING_ULTRAHIGHRES  3
 
+#define BMP085_CONTROL                  0xF4 //MHefny
+#define BMP085_TEMPDATA                 0xF6 //MHefny
+#define BMP085_READPRESSURECMD          0x34 //MHefny
+#define BMP085_READTEMPCMD              0x2E //MHefny
+
 #ifndef BMP085_EOC
 #define BMP085_EOC -1
 #define OVERSAMPLING BMP085_OVERSAMPLING_ULTRAHIGHRES
@@ -212,7 +217,7 @@ void AP_Baro_BMP085::update(void)
 // Send command to Read Pressure
 void AP_Baro_BMP085::_cmd_read_pressure()
 {
-    _dev->write_register(0xF4, 0x34 + (OVERSAMPLING << 6));
+    _dev->write_register(BMP085_CONTROL, BMP085_READPRESSURECMD + (OVERSAMPLING << 6));
     _last_press_read_command_time = AP_HAL::millis();
 }
 
@@ -220,7 +225,7 @@ void AP_Baro_BMP085::_cmd_read_pressure()
 bool AP_Baro_BMP085::_read_pressure()
 {
     uint8_t buf[3];
-    if (_dev->read_registers(0xF6, buf, sizeof(buf))) {
+    if (_dev->read_registers(BMP085_TEMPDATA, buf, sizeof(buf))) {
         _raw_pressure = (((uint32_t)buf[0] << 16)
                          | ((uint32_t)buf[1] << 8)
                          | ((uint32_t)buf[2])) >> (8 - OVERSAMPLING);
@@ -228,7 +233,7 @@ bool AP_Baro_BMP085::_read_pressure()
     }
 
     uint8_t xlsb;
-    if (_dev->read_registers(0xF6, buf, 2) && _dev->read_registers(0xF8, &xlsb, 1)) {
+    if (_dev->read_registers(BMP085_TEMPDATA, buf, 2) && _dev->read_registers(0xF8, &xlsb, 1)) {
         _raw_pressure = (((uint32_t)buf[0] << 16)
                          | ((uint32_t)buf[1] << 8)
                          | ((uint32_t)xlsb)) >> (8 - OVERSAMPLING);
@@ -243,7 +248,7 @@ bool AP_Baro_BMP085::_read_pressure()
 // Send Command to Read Temperature
 void AP_Baro_BMP085::_cmd_read_temp()
 {
-    _dev->write_register(0xF4, 0x2E);
+    _dev->write_register(BMP085_CONTROL, BMP085_READTEMPCMD);
     _last_temp_read_command_time = AP_HAL::millis();
 }
 
@@ -253,7 +258,7 @@ void AP_Baro_BMP085::_read_temp()
     uint8_t buf[2];
     int32_t _temp_sensor;
 
-    if (!_dev->read_registers(0xF6, buf, sizeof(buf))) {
+    if (!_dev->read_registers(BMP085_TEMPDATA, buf, sizeof(buf))) {
         _dev->set_speed(AP_HAL::Device::SPEED_LOW);
         return;
     }

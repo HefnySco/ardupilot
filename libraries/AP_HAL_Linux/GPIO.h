@@ -43,5 +43,5 @@ private:
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_AERO
 #include "GPIO_Aero.h"
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO
-#include "GPIO_Navio2.h"
+#include "GPIO_RPI.h"//MHefny
 #endif

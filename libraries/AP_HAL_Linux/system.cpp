@@ -39,6 +39,16 @@ void panic(const char *errormsg, ...)
     exit(1);
 }
 
+void panic2(const char *errormsg, ...)
+{
+    va_list ap;
+
+    va_start(ap, errormsg);
+    vdprintf(1, errormsg, ap);
+    va_end(ap);
+    UNUSED_RESULT(write(1, "\n", 1));
+}
+
 uint32_t micros()
 {
     return micros64() & 0xFFFFFFFF;

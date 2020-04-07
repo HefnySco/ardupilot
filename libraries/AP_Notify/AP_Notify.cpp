@@ -79,7 +79,7 @@ AP_Notify *AP_Notify::_singleton;
     #define BUILD_DEFAULT_LED_TYPE (Notify_LED_ToshibaLED_I2C_External)
 
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO
-    #define BUILD_DEFAULT_LED_TYPE (Notify_LED_None)
+    #define BUILD_DEFAULT_LED_TYPE (Notify_LED_Board) //MHEFNY
   #else // other linux
     #define BUILD_DEFAULT_LED_TYPE (Notify_LED_Board | I2C_LEDS)
   #endif
@@ -233,6 +233,8 @@ void AP_Notify::add_backends(void)
                 ADD_BACKEND(new DiscoLED());
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR
                 ADD_BACKEND(new DiscreteRGBLed(HAL_RGBLED_RED, HAL_RGBLED_GREEN, HAL_RGBLED_BLUE, HAL_RGBLED_NORMAL_POLARITY));
+  #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHEFNY
+                ADD_BACKEND(new AP_BoardLED());
   #endif
 #endif // CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 
