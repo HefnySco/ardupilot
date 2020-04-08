@@ -164,7 +164,8 @@ static RCInput_Navio2 rcinDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ
 static RCInput_RCProtocol rcinDriver{"/dev/ttyPS0", NULL};
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO
-static RCInput_RPI rcinDriver;
+//static RCInput_RPI rcinDriver;
+static RCInput_UDP rcinDriver;
 #else
 static RCInput rcinDriver;
 #endif

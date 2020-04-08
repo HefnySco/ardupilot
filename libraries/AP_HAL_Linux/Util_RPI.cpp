@@ -59,7 +59,6 @@ int UtilRPI::_check_rpi_version()
 
     // Attempting old method if the version couldn't be read with the new one.
     hw = Util::from(hal.util)->get_hw_arm32();
-
     if (hw == UTIL_HARDWARE_RPI4) {
         printf("Raspberry Pi 4 with BCM2711!\n");
         _rpi_version = 4;
