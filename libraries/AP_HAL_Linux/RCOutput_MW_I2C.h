@@ -4,22 +4,18 @@
 
 #include "AP_HAL_Linux.h"
 
-#define PCA9685_PRIMARY_ADDRESS             0x40 // All address pins low, PCA9685 default
-#define PCA9685_SECONDARY_ADDRESS           0x41
-#define PCA9685_TERTIARY_ADDRESS            0x42
-#define PCA9685_QUATENARY_ADDRESS           0x55
-#define PCA9685_QUINARY_ADDRESS             0x61
+#define MW_I2C_PRIMARY_ADDRESS              0x40 // All address pins low, PCA9685 default
 
 namespace Linux {
 
-class RCOutput_PCA9685 : public AP_HAL::RCOutput {
+class RCOutput_MW_I2C : public AP_HAL::RCOutput {
 public:
-    RCOutput_PCA9685(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
+    RCOutput_MW_I2C(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
                      bool external_clock,
                      uint8_t channel_offset,
                      int16_t oe_pin_number);
 
-    ~RCOutput_PCA9685();
+    ~RCOutput_MW_I2C();
     void     init() override;
     void     reset_all_channels();
     void     set_freq(uint32_t chmask, uint16_t freq_hz) override;
@@ -47,6 +43,7 @@ private:
     uint8_t _channel_offset;
     int16_t _oe_pin_number;
     uint16_t _pending_write_mask;
+    uint16_t _last_ch;
 };
 
 }

@@ -50,8 +50,8 @@ static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
     RPI_GPIO_<21>(), RPI_GPIO_<26>()
 };
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHEFNY
-#define RCIN_RPI_SIG_HIGH        1
-#define RCIN_RPI_SIG_LOW         0
+#define RCIN_RPI_SIG_HIGH        0
+#define RCIN_RPI_SIG_LOW         1
 static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
 RPI_GPIO_<5>(),  RPI_GPIO_<6>(),  RPI_GPIO_<12>(),
     RPI_GPIO_<22>(), RPI_GPIO_<27>(), RPI_GPIO_<20>(), //RPI_GPIO_<13>(), RPI_GPIO_<19>(), RPI_GPIO_<20>(), //MHefny

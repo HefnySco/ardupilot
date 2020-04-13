@@ -34,6 +34,7 @@
 #include "RCOutput_Bebop.h"
 #include "RCOutput_Disco.h"
 #include "RCOutput_PCA9685.h"
+#include "RCOutput_MW_I2C.h"
 #include "RCOutput_PRU.h"
 #include "RCOutput_Sysfs.h"
 #include "RCOutput_ZYNQ.h"
@@ -209,7 +210,8 @@ static RCOutput_Sysfs rcoutDriver(0, 0, 15);
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ
 static RCOutput_Sysfs rcoutDriver(0, 0, 8);
 #elif  CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHEFNY
-static Empty::RCOutput rcoutDriver;
+static RCOutput_MW_I2C rcoutDriver(i2c_mgr_instance.get_device(1, MW_I2C_PRIMARY_ADDRESS), true, 0, -1);
+//static Empty::RCOutput rcoutDriver;
 #else
 static Empty::RCOutput rcoutDriver;
 #endif
