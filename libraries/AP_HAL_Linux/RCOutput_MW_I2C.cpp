@@ -117,45 +117,7 @@ void RCOutput_MW_I2C::reset_all_channels()
 void RCOutput_MW_I2C::set_freq(uint32_t chmask, uint16_t freq_hz)
 {
 
-    /* Correctly finish last pulses */
-    for (int i = 0; i < (PWM_CHAN_COUNT - _channel_offset); i++) {
-        write(i, _pulses_buffer[i]);
-    }
-
-    // if (!_dev || !_dev->get_semaphore()->take(10)) {
-    //     return;
-    // }
-    _dev->get_semaphore()->take_blocking();
-
-    /* Shutdown before sleeping.
-     * see p.14 of PCA9685 product datasheet
-     */
-    _dev->write_register(PCA9685_RA_ALL_LED_OFF_H, PCA9685_ALL_LED_OFF_H_SHUT);
-
-    /* Put PCA9685 to sleep (required to write prescaler) */
-    _dev->write_register(PCA9685_RA_MODE1, PCA9685_MODE1_SLEEP_BIT);
-
-    /* Calculate prescale and save frequency using this value: it may be
-     * different from @freq_hz due to rounding/ceiling. We use ceil() rather
-     * than round() so the resulting frequency is never greater than @freq_hz
-     */
-    uint8_t prescale = ceilf(_osc_clock / (4096 * freq_hz)) - 1;
-    _frequency = _osc_clock / (4096 * (prescale + 1));
-
-    /* Write prescale value to match frequency */
-    _dev->write_register(PCA9685_RA_PRE_SCALE, prescale);
-
-    if (_external_clock) {
-        /* Enable external clocking */
-        _dev->write_register(PCA9685_RA_MODE1,
-                             PCA9685_MODE1_SLEEP_BIT | PCA9685_MODE1_EXTCLK_BIT);
-    }
-
-    /* Restart the device to apply new settings and enable auto-incremented write */
-    _dev->write_register(PCA9685_RA_MODE1,
-                         PCA9685_MODE1_RESTART_BIT | PCA9685_MODE1_AI_BIT);
-
-    _dev->get_semaphore()->give();
+    
 }
 
 uint16_t RCOutput_MW_I2C::get_freq(uint8_t ch)
@@ -179,13 +141,17 @@ void RCOutput_MW_I2C::write(uint8_t ch, uint16_t period_us)
         return;
     }
 
+    if (ch & 0b01)
+    {
+        return ; // skip odd ports as we sends in pairs
+    }
     _pulses_buffer[ch] = period_us;
-    _pending_write_mask |= (1U << ch);
 
     if (!_corking) {
         _corking = true;
-        push();
+        
     }
+    push();
 }
 
 void RCOutput_MW_I2C::cork()
@@ -200,9 +166,7 @@ void RCOutput_MW_I2C::push()
     }
     _corking = false;
 
-    if (_pending_write_mask == 0)
-        return;
-
+    
     // Calculate the number of channels for this transfer.
     if (_last_ch >= PWM_CHAN_COUNT -1) _last_ch = _channel_offset;
     
@@ -222,8 +186,7 @@ void RCOutput_MW_I2C::push()
     } pwm_values;
     size_t payload_size = 1;
     for (unsigned ch = min_ch; ch <= max_ch; ch++) {
-        uint16_t period_us = _pulses_buffer[ch];
-        //uint16_t length = 0;
+        const uint16_t period_us = _pulses_buffer[ch];
 
         // if (period_us) {
         //     length = round((period_us * 4096) / (1000000.f / _frequency)) - 1;
@@ -247,7 +210,6 @@ void RCOutput_MW_I2C::push()
 
     _dev->transfer((uint8_t *)&pwm_values, payload_size, nullptr, 0);
     //hal.console->printf("payload_size %d  \n",payload_size);
-    // _dev->get_semaphore()->give();
 
 
     // if (!_dev || !_dev->get_semaphore()->take_blocking()) {
@@ -261,9 +223,9 @@ void RCOutput_MW_I2C::push()
     /* Wait for the last pulse to end */
     //hal.scheduler->delay(2);
 
-    _dev->get_semaphore()->give();
+    //_dev->get_semaphore()->give();
 
-    _pending_write_mask = 0;
+    //_pending_write_mask = 0;
 }
 
 uint16_t RCOutput_MW_I2C::read(uint8_t ch)
