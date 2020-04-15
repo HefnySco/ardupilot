@@ -369,6 +369,7 @@ struct PACKED log_MAV {
     uint16_t packet_rx_success_count;
     uint16_t packet_rx_drop_count;
     uint8_t flags;
+    uint16_t stream_slowdown_ms;
 };
 
 struct PACKED log_RSSI {
@@ -487,7 +488,7 @@ struct PACKED log_NKF2 {
     uint8_t index;
 };
 
-struct PACKED log_NKF2a {
+struct PACKED log_XKF2 {
     LOG_PACKET_HEADER;
     uint64_t time_us;
     uint8_t core;
@@ -647,6 +648,21 @@ struct PACKED log_VisualOdom {
     float position_delta_y;
     float position_delta_z;
     float confidence;
+};
+
+// visual position data
+struct PACKED log_VisualPosition {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint64_t remote_time_us;
+    uint32_t time_ms;
+    float pos_x;
+    float pos_y;
+    float pos_z;
+    float roll;     // degrees
+    float pitch;    // degrees
+    float yaw;      // degrees
+    uint8_t reset_counter;
 };
 
 struct PACKED log_ekfBodyOdomDebug {
@@ -1006,7 +1022,7 @@ struct PACKED log_GYRO {
 
 struct PACKED log_MAV_Stats {
     LOG_PACKET_HEADER;
-    uint32_t timestamp;
+    uint64_t timestamp;
     uint32_t seqno;
     uint32_t dropped;
     uint32_t retries;
@@ -1317,19 +1333,261 @@ struct PACKED log_Arm_Disarm {
 #define ARSP_UNITS "snPOPP----"
 #define ARSP_MULTS "F00B00----"
 
+// @LoggerMessage: ACC1,ACC2,ACC3
+// @Description: IMU accelerometer data
+// @Field: TimeUS: Time since system startup
+// @Field: SampleUS: time since system startup this sample was taken
+// @Field: AccX: acceleration along X axis
+// @Field: AccY: acceleration along Y axis
+// @Field: AccZ: acceleration along Z axis
+
+// @LoggerMessage: ADSB
+// @Description: Automatic Dependant Serveillance - Broadcast detected vehicle information
+// @Field: TimeUS: Time since system startup
+// @Field: ICAO_address: Transponder address
+// @Field: Lat: Vehicle latitude
+// @Field: Lng: Vehicle longitude
+// @Field: Alt: Vehicle altitude
+// @Field: Heading: Vehicle heading
+// @Field: Hor_vel: Vehicle horizontal velocity
+// @Field: Ver_vel: Vehicle vertical velocity
+// @Field: Squark: Transponder squawk code
+
+// @LoggerMessage: AHR2
+// @Description: Backup AHRS data
+// @Field: TimeUS: Time since system startup
+// @Field: Roll: Estimated roll
+// @Field: Pitch: Estimated pitch
+// @Field: Yaw: Estimated yaw
+// @Field: Alt: Estimated altitude
+// @Field: Lat: Estimated latitude
+// @Field: Lng: Estimated longitude
+// @Field: Q1: Estimated attitude quaternion component 1
+// @Field: Q2: Estimated attitude quaternion component 2
+// @Field: Q3: Estimated attitude quaternion component 3
+// @Field: Q4: Estimated attitude quaternion component 4
+
+// @LoggerMessage: ARM
+// @Description: Arming status changes
+// @Field: TimeUS: Time since system startup
+// @Field: ArmState: true if vehicle is now armed
+// @Field: ArmChecks: arming bitmask at time of arming
+// @Field: Forced: true if arm/disarm was forced
+// @Field: Method: method used for arming
+
+// @LoggerMessage: ARSP,ASP2
+// @Description: Airspeed sensor data
+// @Field: TimeUS: Time since system startup
+// @Field: Airspeed: Current airspeed
+// @Field: DiffPress: Pressure difference between static and dynamic port
+// @Field: Temp: Temperature used for calculation
+// @Field: RawPress: Raw pressure less offset
+// @Field: Offset: Offset from parameter
+// @Field: U: True if sensor is being used
+// @Field: Health: True if sensor is healthy
+// @Field: Hfp: Probability sensor has failed
+// @Field: Pri: True if sensor is the primary sensor
+
+// @LoggerMessage: ATT
+// @Description: Canonical vehicle attitude
+// @Field: TimeUS: Time since system startup
+// @Field: DesRoll: vehicle desired roll
+// @Field: Roll: achieved vehicle roll
+// @Field: DesPitch: vehicle desired pitch
+// @Field: Pitch: achieved vehicle pitch
+// @Field: DesYaw: vehicle desired yaw
+// @Field: Yaw: achieved vehicle yaw
+// @Field: ErrRP: lowest estimated gyro drift error
+// @Field: ErrYaw: difference between measured yaw and DCM yaw estimate
+
+// @LoggerMessage: BARO,BAR2,BAR3
+// @Description: Gathered Barometer data
+// @Field: TimeUS: Time since system startup
+// @Field: Alt: calculated altitude
+// @Field: Press: measured atmospheric pressure
+// @Field: Temp: measured atmospheric temperature
+// @Field: CRt: derived climb rate from primary barometer
+// @Field: SMS: time last sample was taken
+// @Field: Offset: raw adjustment of barometer altitude, zeroed on calibration, possibly set by GCS
+// @Field: GndTemp: temperature on ground, specified by parameter or measured while on ground
+// @Field: Health: true if barometer is considered healthy
+
+// @LoggerMessage: BAT
+// @Description: Gathered battery data
+// @Field: TimeUS: Time since system startup
+// @Field: Instance: battery instance number
+// @Field: Volt: measured voltage
+// @Field: VoltR: estimated resting voltage
+// @Field: Curr: measured current
+// @Field: CurrTot: current * time
+// @Field: EnrgTot: energy this battery has produced
+// @Field: Temp: measured temperature
+// @Field: Res: estimated temperature resistance
+
+// @LoggerMessage: BCL
+// @Description: Battery cell voltage information
+// @Field: TimeUS: Time since system startup
+// @Field: Instance: battery instance number
+// @Field: Volt: battery voltage
+// @Field: V1: first cell voltage
+// @Field: V2: second cell voltage
+// @Field: V3: third cell voltage
+// @Field: V4: fourth cell voltage
+// @Field: V5: fifth cell voltage
+// @Field: V6: sixth cell voltage
+// @Field: V7: seventh cell voltage
+// @Field: V8: eighth cell voltage
+// @Field: V9: ninth cell voltage
+// @Field: V10: tenth cell voltage
+
+// @LoggerMessage: BCN
+// @Description: Beacon informtaion
+// @Field: TimeUS: Time since system startup
+// @Field: Health: True if beacon sensor is healthy
+// @Field: Cnt: Number of beacons being used
+// @Field: D0: Distance to first beacon
+// @Field: D1: Distance to second beacon
+// @Field: D2: Distance to third beacon
+// @Field: D3: Distance to fouth beacon
+// @Field: PosX: Calculated beacon position, x-axis
+// @Field: PosY: Calculated beacon position, y-axis
+// @Field: PosZ: Calculated beacon position, z-axis
+
+// @LoggerMessage: CAM,TRIG
+// @Description: Camera shutter information
+// @Field: TimeUS: Time since system startup
+// @Field: GPSTime: milliseconds since start of GPS week
+// @Field: GPSWeek: weeks since 5 Jan 1980
+// @Field: Lat: current latitude
+// @Field: Lng: current longitude
+// @Field: Alt: current altitude
+// @Field: RelAlt: current altitude relative to home
+// @Field: GPSAlt: altitude as reported by GPS
+// @Field: Roll: current vehicle roll
+// @Field: Pitch: current vehicle pitch
+// @Field: Yaw: current vehicle yaw
+
+// @LoggerMessage: CESC
+// @Description: CAN ESC data
+// @Field: TimeUS: Time since system startup
+// @Field: Id: ESC identifier
+// @Field: ECnt: Error count
+// @Field: Voltage: Battery voltage measurement
+// @Field: Curr: Battery current measurement
+// @Field: Temp: Temperature
+// @Field: RPM: Measured RPM
+// @Field: Pow: Rated power output
+
+// @LoggerMessage: CMD
+// @Description: Executed mission command information
+// @Field: TimeUS: Time since system startup
+// @Field: CTot: Total number of mission commands
+// @Field: CNum: This command's offset in mission
+// @Field: CId: Command type
+// @Field: Prm1: Parameter 1
+// @Field: Prm2: Parameter 2
+// @Field: Prm3: Parameter 3
+// @Field: Prm4: Parameter 4
+// @Field: Lat: Command latitude
+// @Field: Lng: Command longitude
+// @Field: Alt: Command altitude
+// @Field: Frame: Frame used for position
+
+// @LoggerMessage: CSRV
+// @Description: Servo feedback data
+// @Field: TimeUS: Time since system startup
+// @Field: Id: Servo number this data relates to
+// @Field: Pos: Current servo position
+// @Field: Force: Force being applied
+// @Field: Speed: Current servo movement speed
+// @Field: Pow: Amount of rated power being applied
+
+// @LoggerMessage: DMS
+// @Description: DataFlash-Over-MAVLink statistics
+// @Field: TimeUS: Time since system startup
+// @Field: N: Current block number
+// @Field: Dp: Number of times we rejected a write to the backend
+// @Field: RT: Number of blocks sent from the retry queue
+// @Field: RS: Number of resends of unacknowledged data made
+// @Field: Fa: Average number of blocks on the free list
+// @Field: Fmn: Minimum number of blocks on the free list
+// @Field: Fmx: Maximum number of blocks on the free list
+// @Field: Pa: Average number of blocks on the pending list
+// @Field: Pmn: Minimum number of blocks on the pending list
+// @Field: Pmx: Maximum number of blocks on the pending list
+// @Field: Sa: Average number of blocks on the sent list
+// @Field: Smn: Minimum number of blocks on the sent list
+// @Field: Smx: Maximum number of blocks on the sent list
+
+// @LoggerMessage: DSF
+// @Description: Onboard logging statistics
+// @Field: TimeUS: Time since system startup
+// @Field: Dp: Number of times we rejected a write to the backend
+// @Field: Blk: Current block number
+// @Field: Bytes: Current write offset
+// @Field: FMn: Minimum free space in write buffer in last time period
+// @Field: FMx: Maximum free space in write buffer in last time period
+// @Field: FAv: Average free space in write buffer in last time period
+
+// @LoggerMessage: DSTL
+// @Description: Deepstall Landing data
+// @Field: TimeUS: Time since system startup
+// @Field: Stg: Deepstall landing stage
+// @Field: THdg: Target heading
+// @Field: Lat: Landing point latitude
+// @Field: Lng: Landing point longitude
+// @Field: Alt: Landing point altitude
+// @Field: XT: Crosstrack error
+// @Field: Travel: Expected travel distance vehicle will travel from this point
+// @Field: L1I: L1 controller crosstrack integrator value
+// @Field: Loiter: wind estimate loiter angle flown
+// @Field: Des: Deepstall steering PID desired value
+// @Field: P: Deepstall steering PID Proportional response component
+// @Field: I: Deepstall steering PID Integral response component
+// @Field: D: Deepstall steering PID Derivative response component
+
+// @LoggerMessage: ERR
+// @Description: Specifically coded error messages
+// @Field: TimeUS: Time since system startup
+// @Field: Subsys: Subsystem in which the error occurred
+// @Field: ECode: Subsystem-specific error code
+
+// @LoggerMessage: EV
+// @Description: Specifically coded event messages
+// @Field: TimeUS: Time since system startup
+// @Field: Id: Event identifier
 
 // @LoggerMessage: FMT
 // @Description: Message defining the format of messages in this file
 // @URL: https://ardupilot.org/dev/docs/code-overview-adding-a-new-log-message.html
-// @Field: type: unique-to-this-log identifier for message being defined
-// @Field: length: the number of bytes taken up by this message (including all headers)
-// @Field: name: name of the message being defined
-// @Field: format: character string defining the C-storage-type of the fields in this message
-// @Field: labels: the labels of the message being defined
+// @Field: Type: unique-to-this-log identifier for message being defined
+// @Field: Length: the number of bytes taken up by this message (including all headers)
+// @Field: Name: name of the message being defined
+// @Field: Format: character string defining the C-storage-type of the fields in this message
+// @Field: Columns: the labels of the message being defined
 
-// @LoggerMessage: GPS
+// @LoggerMessage: FMTU
+// @Description: Message defining units and multipliers used for fields of other messages
+// @Field: TimeUS: Time since system startup
+// @Field: FmtType: numeric reference to associated FMT message
+// @Field: UnitIds: each character refers to a UNIT message.  The unit at an offset corresponds to the field at the same offset in FMT.Format
+// @Field: MultIds: each character refers to a MULT message.  The multiplier at an offset corresponds to the field at the same offset in FMT.Format
+
+// @LoggerMessage: GPA,GPA2
+// @Description: GPS accuracy information
+// @Field: TimeUS: Time since system startup
+// @Field: VDop: vertical degree of procession
+// @Field: HAcc: horizontal position accuracy
+// @Field: VAcc: vertical position accuracy
+// @Field: SAcc: speed accuracy
+// @Field: YAcc: yaw accuracy
+// @Field: VV: true if vertical velocity is available
+// @Field: SMS: time since system startup this sample was taken
+// @Field: Delta: system time delta between the last two reported positions
+
+// @LoggerMessage: GPS,GPS2
 // @Description: Information received from GNSS systems attached to the autopilot
-// @Field: TimeUS: microseconds since system startup
+// @Field: TimeUS: Time since system startup
 // @Field: Status: GPS Fix type; 2D fix, 3D fix etc.
 // @Field: GMS: milliseconds since start of GPS Week
 // @Field: GWk: weeks since 5 Jan 1980
@@ -1344,7 +1602,434 @@ struct PACKED log_Arm_Disarm {
 // @Field: Yaw: vehicle yaw
 // @Field: U: boolean value indicating whether this GPS is in use
 
+// @LoggerMessage: GYR1,GYR2,GYR3
+// @Description: IMU gyroscope data
+// @Field: TimeUS: Time since system startup
+// @Field: SampleUS: time since system startup this sample was taken
+// @Field: GyrX: measured rotation rate about X axis
+// @Field: GyrY: measured rotation rate about Y axis
+// @Field: GyrZ: measured rotation rate about Z axis
 
+// @LoggerMessage: IMT,IMT2,IMT3
+// @Description: Inertial Measurement Unit timing data
+// @Field: TimeUS: Time since system startup
+// @Field: DelT: Delta time
+// @Field: DelvT: Delta velocity accumulation time
+// @Field: DelaT: Delta angle accumulation time
+// @Field: DelAX: Accumulated delta angle X
+// @Field: DelAY: Accumulated delta angle Y
+// @Field: DelAZ: Accumulated delta angle Z
+// @Field: DelVX: Accumulated delta velocity X
+// @Field: DelVY: Accumulated delta velocity Y
+// @Field: DelVZ: Accumulated delta velocity Z
+
+// @LoggerMessage: IMU,IMU2,IMU3
+// @Description: Inertial Measurement Unit data
+// @Field: TimeUS: Time since system startup
+// @Field: GyrX: measured rotation rate about X axis
+// @Field: GyrY: measured rotation rate about Y axis
+// @Field: GyrZ: measured rotation rate about Z axis
+// @Field: AccX: acceleration along X axis
+// @Field: AccY: acceleration along Y axis
+// @Field: AccZ: acceleration along Z axis
+// @Field: EG: gyroscope error count
+// @Field: EA: accelerometer error count
+// @Field: T: IMU temperature
+// @Field: GH: gyroscope health
+// @Field: AH: accelerometer health
+// @Field: GHz: gyroscope measurement rate
+// @Field: AHz: accelerometer measurement rate
+
+// @LoggerMessage: LGR
+// @Description: Landing gear information
+// @Field: TimeUS: Time since system startup
+// @Field: LandingGear: Current landing gear state
+// @Field: WeightOnWheels: True if there is weight on wheels
+
+// @LoggerMessage: MAG,MAG2,MAG3
+// @Description: Information received from compasses
+// @Field: TimeUS: Time since system startup
+// @Field: MagX: magnetic field strength in body frame
+// @Field: MagY: magnetic field strength in body frame
+// @Field: MagZ: magnetic field strength in body frame
+// @Field: OfsX: magnetic field offset in body frame
+// @Field: OfsY: magnetic field offset in body frame
+// @Field: OfsZ: magnetic field offset in body frame
+// @Field: MOfsX: motor interference magnetic field offset in body frame
+// @Field: MOfsY: motor interference magnetic field offset in body frame
+// @Field: MOfsZ: motor interference magnetic field offset in body frame
+// @Field: Health: true if the compass is considered healthy
+// @Field: S: time measurement was taken
+
+// @LoggerMessage: MAV
+// @Description: GCS MAVLink link statistics
+// @Field: TimeUS: Time since system startup
+// @Field: chan: mavlink channel number
+// @Field: txp: transmitted packet count
+// @Field: rxp: received packet count
+// @Field: rxdp: perceived number of packets we never received
+// @Field: flags: compact representation of some stage of the channel
+// @Field: ss: stream slowdown is the number of ms being added to each message to fit within bandwidth
+
+// @LoggerMessage: MAVC
+// @Description: MAVLink command we have just executed
+// @Field: TimeUS: Time since system startup
+// @Field: TS: target system for command
+// @Field: TC: target component for command
+// @Field: Fr: command frame
+// @Field: Cmd: mavlink command enum value
+// @Field: Cur: current flag from mavlink packet
+// @Field: AC: autocontinue flag from mavlink packet
+// @Field: P1: first parameter from mavlink packet
+// @Field: P2: second parameter from mavlink packet
+// @Field: P3: third parameter from mavlink packet
+// @Field: P4: fourth parameter from mavlink packet
+// @Field: X: X coordinate from mavlink packet
+// @Field: Y: Y coordinate from mavlink packet
+// @Field: Z: Z coordinate from mavlink packet
+// @Field: Res: command result being returned from autopilot
+// @Field: WL: true if this command arrived via a COMMAND_LONG rather than COMMAND_INT
+
+// @LoggerMessage: MODE
+// @Description: vehicle control mode information
+// @Field: TimeUS: Time since system startup
+// @Field: Mode: vehicle-specific mode number
+// @Field: ModeNum: alias for Mode
+// @Field: Rsn: reason for entering this mode; enumeration value
+
+// @LoggerMessage: MON
+// @Description: Main loop stuck data
+// @Field: TimeUS: Time since system startup
+// @Field: LDelay: Time main loop has been stuck for
+// @Field: Task: Current scheduler task number
+// @Field: IErr: Internal error mask; which internal errors have been detected
+// @Field: IErrCnt: Internal error count; how many internal errors have been detected
+// @Field: MavMsg: Id of the last mavlink message processed
+// @Field: MavCmd: Id of the last mavlink command processed
+// @Field: SemLine: Line number of semaphore most recently taken
+// @Field: SPICnt: Number of SPI transactions processed
+// @Field: I2CCnt: Number of i2c transactions processed
+
+// @LoggerMessage: MSG
+// @Description: Textual messages
+// @Field: TimeUS: Time since system startup
+// @Field: Message: message text
+
+// @LoggerMessage: MULT
+// @Description: Message mapping from single character to numeric multiplier
+// @Field: TimeUS: Time since system startup
+// @Field: Id: character referenced by FMTU
+// @Field: Mult: numeric multiplier
+
+// @LoggerMessage: OABR
+// @Description: Object avoidance (Bendy Ruler) diagnostics
+// @Field: TimeUS: Time since system startup
+// @Field: Active: True if Bendy Ruler avoidance is being used
+// @Field: DesYaw: Best yaw chosen to avoid obstacle
+// @Field: Yaw: Current vehicle yaw
+// @Field: Mar: Margin from path to obstacle on best yaw chosen
+// @Field: DLat: Destination latitude
+// @Field: DLng: Destination longitude
+// @Field: OALat: Intermediate location chosen for avoidance
+// @Field: OALng: Intermediate location chosen for avoidance
+
+// @LoggerMessage: OADJ
+// @Description: Object avoidance (Dijkstra) diagnostics
+// @Field: TimeUS: Time since system startup
+// @Field: State: Dijkstra avoidance library state
+// @Field: Err: Dijkstra library error condition
+// @Field: CurrPoint: Destination point in calculated path to destination
+// @Field: TotPoints: Number of points in path to destination
+// @Field: DLat: Destination latitude
+// @Field: DLng: Destination longitude
+// @Field: OALat: Object Avoidance chosen destination point latitude
+// @Field: OALng: Object Avoidance chosen destination point longitude
+
+// @LoggerMessage: OF
+// @Description: Optical flow sensor data
+// @Field: TimeUS: Time since system startup
+// @Field: Qual: Estimated sensor data quality
+// @Field: flowX: Sensor flow rate, X-axis
+// @Field: flowY: Sensor flow rate,Y-axis
+// @Field: bodyX: derived velocity, X-axis
+// @Field: bodyY: derived velocity, Y-axis
+
+// @LoggerMessage: ORGN
+// @Description: Vehicle navigation origin or other notable position
+// @Field: TimeUS: Time since system startup
+// @Field: Type: Position type
+// @Field: Lat: Position latitude
+// @Field: Lng: Position longitude
+// @Field: Alt: Position altitude
+
+// @LoggerMessage: PARM
+// @Description: parameter value
+// @Field: TimeUS: Time since system startup
+// @Field: Name: parameter name
+// @Field: Value: parameter vlaue
+
+// @LoggerMessage: PIDR,PIDP,PIDY,PIDA,PIDS
+// @Description: Proportional/Integral/Derivative gain values for Roll/Pitch/Yaw/Z/Steering
+// @Field: TimeUS: Time since system startup
+// @Field: Tar: desired value
+// @Field: Act: achieved value
+// @Field: Err: error between target and achieved
+// @Field: P: proportional part of PID
+// @Field: I: integral part of PID
+// @Field: D: derivative part of PID
+// @Field: FF: controller feed-forward portion of response
+
+// @LoggerMessage: PM
+// @Description: autopilot system performance and general data dumping ground
+// @Field: TimeUS: Time since system startup
+// @Field: NLon: Number of long loops detected
+// @Field: NLoop: Number of measurement loops for this message
+// @Field: MaxT: Maximum loop time
+// @Field: Mem: Free memory available
+// @Field: Load: System processor load
+// @Field: IntE: Internal error mask; which internal errors have been detected
+// @Field: IntEC: Internal error count; how many internal errors have been detected
+// @Field: SPIC: Number of SPI transactions processed
+// @Field: I2CC: Number of i2c transactions processed
+// @Field: I2CI: Number of i2c interrupts serviced
+// @Field: ExUS: number of microseconds being added to each loop to address scheduler overruns
+
+// @LoggerMessage: POS
+// @Description: Canonical vehicle position
+// @Field: TimeUS: Time since system startup
+// @Field: Lat: Canonical vehicle latitude
+// @Field: Lng: Canonical vehicle longitude
+// @Field: Alt: Canonical vehicle altitude
+// @Field: RelHomeAlt: Canonical vehicle altitude relative to home
+// @Field: RelOriginAlt: Canonical vehicle altitude relative to navigation origin
+
+// @LoggerMessage: POWR
+// @Description: System power information
+// @Field: TimeUS: Time since system startup
+// @Field: Vcc: Flight board voltage
+// @Field: VServo: Servo rail voltage
+// @Field: Flags: System power flags
+// @Field: Safety: Hardware Safety Switch status
+
+// @LoggerMessage: PRX
+// @Description: Proximity sensor data
+// @Field: TimeUS: Time since system startup
+// @Field: Health: True if proximity sensor is healthy
+// @Field: D0: Nearest object in sector surrounding 0-degrees
+// @Field: D45: Nearest object in sector surrounding 45-degrees
+// @Field: D90: Nearest object in sector surrounding 90-degrees
+// @Field: D135: Nearest object in sector surrounding 135-degrees
+// @Field: D180: Nearest object in sector surrounding 180-degrees
+// @Field: D225: Nearest object in sector surrounding 225-degrees
+// @Field: D270: Nearest object in sector surrounding 270-degrees
+// @Field: D315: Nearest object in sector surrounding 315-degrees
+// @Field: DUp: Nearest object in upwards direction
+// @Field: CAn: Angle to closest object
+// @Field: CDis: Distance to closest object
+
+// @LoggerMessage: RAD
+// @Description: Telemetry radio statistics
+// @Field: TimeUS: Time since system startup
+// @Field: RSSI: RSSI
+// @Field: RemRSSI: RSSI reported from remote radio
+// @Field: TxBuf: number of bytes in radio ready to be sent
+// @Field: Noise: local noise floor
+// @Field: RemNoise: local noise floor reported from remote radio
+// @Field: RxErrors: damaged packet count
+// @Field: Fixed: fixed damaged packet count
+
+// @LoggerMessage: RALY
+// @Description: Rally point information
+// @Field: TimeUS: Time since system startup
+// @Field: Tot: total number of rally points onboard
+// @Field: Seq: this rally point's sequence number
+// @Field: Lat: latitude of rally point
+// @Field: Lng: longitude of rally point
+// @Field: Alt: altitude of rally point
+
+// @LoggerMessage: RATE
+// @Description: Desired and achieved vehicle attitude rates
+// @Field: TimeUS: Time since system startup
+// @Field: RDes: vehicle desired roll rate
+// @Field: R: achieved vehicle roll rate
+// @Field: ROut: normalized output for Roll
+// @Field: PDes: vehicle desired pitch rate
+// @Field: P: vehicle pitch rate
+// @Field: POut: normalized output for Pitch
+// @Field: YDes: vehicle desired yaw rate
+// @Field: Y: achieved vehicle yaw rate
+// @Field: YOut: normalized output for Yaw
+// @Field: YDes: vehicle desired yaw rate
+// @Field: Y: achieved vehicle yaw rate
+// @Field: ADes: desired vehicle vertical acceleration
+// @Field: A: achieved vehicle vertical acceleration
+// @Field: AOut: percentage of vertical thrust output current being used
+
+// @LoggerMessage: RCIN
+// @Description: RC input channels to vehicle
+// @Field: TimeUS: Time since system startup
+// @Field: C1: channel 1 input
+// @Field: C2: channel 2 input
+// @Field: C3: channel 3 input
+// @Field: C4: channel 4 input
+// @Field: C5: channel 5 input
+// @Field: C6: channel 6 input
+// @Field: C7: channel 7 input
+// @Field: C8: channel 8 input
+// @Field: C9: channel 9 input
+// @Field: C10: channel 10 input
+// @Field: C11: channel 11 input
+// @Field: C12: channel 12 input
+// @Field: C13: channel 13 input
+// @Field: C14: channel 14 input
+
+// @LoggerMessage: RCOU
+// @Description: Servo channel output values
+// @Field: TimeUS: Time since system startup
+// @Field: C1: channel 1 output
+// @Field: C2: channel 2 output
+// @Field: C3: channel 3 output
+// @Field: C4: channel 4 output
+// @Field: C5: channel 5 output
+// @Field: C6: channel 6 output
+// @Field: C7: channel 7 output
+// @Field: C8: channel 8 output
+// @Field: C9: channel 9 output
+// @Field: C10: channel 10 output
+// @Field: C11: channel 11 output
+// @Field: C12: channel 12 output
+// @Field: C13: channel 13 output
+// @Field: C14: channel 14 output
+
+// @LoggerMessage: RFND
+// @Description: Rangefinder sensor information
+// @Field: TimeUS: Time since system startup
+// @Field: Instance: rangefinder instance number this data is from
+// @Field: Dist: Reported distance from sensor
+// @Field: Stat: Sensor state
+// @Field: Orient: Sensor orientation
+
+// @LoggerMessage: RPM
+// @Description: Data from RPM sensors
+// @Field: TimeUS: Time since system startup
+// @Field: rpm1: First sensor's data
+// @Field: rpm2: Second sensor's data
+
+// @LoggerMessage: RSSI
+// @Description: Received Signal Strength Indicator for RC receiver
+// @Field: TimeUS: Time since system startup
+// @Field: RXRSSI: RSSI
+
+// @LoggerMessage: SIM
+// @Description: SITL simulator state
+// @Field: TimeUS: Time since system startup
+// @Field: Roll: Simulated roll
+// @Field: Pitch: Simulated pitch
+// @Field: Yaw: Simulated yaw
+// @Field: Alt: Simulated altitude
+// @Field: Lat: Simulated latitude
+// @Field: Lng: Simulated longitude
+// @Field: Q1: Attitude quaternion component 1
+// @Field: Q2: Attitude quaternion component 2
+// @Field: Q3: Attitude quaternion component 3
+// @Field: Q4: Attitude quaternion component 4
+
+// @LoggerMessage: SRTL
+// @Description: SmartRTL statistics
+// @Field: TimeUS: Time since system startup
+// @Field: Active: true if SmartRTL could be used right now
+// @Field: NumPts: number of points currently in use
+// @Field: MaxPts: maximum number of points that could be used
+// @Field: Action: most recent internal action taken by SRTL library
+// @Field: N: point associated with most recent action (North component)
+// @Field: E: point associated with most recent action (East component)
+// @Field: D: point associated with most recent action (Down component)
+
+// @LoggerMessage: TERR
+// @Description: Terrain database infomration
+// @Field: TimeUS: Time since system startup
+// @Field: Status: Terrain database status
+// @Field: Lat: Current vehicle latitude
+// @Field: Lng: Current vehicle longitude
+// @Field: Spacing: terrain Tile spacing
+// @Field: TerrH: current Terrain height
+// @Field: CHeight: Vehicle height above terrain
+// @Field: Pending: Number of tile requests outstanding
+// @Field: Loaded: Number of tiles in memory
+
+// @LoggerMessage: TSYN
+// @Description: Time synchronisation response information
+// @Field: TimeUS: Time since system startup
+// @Field: SysID: system ID this data is for
+// @Field: RTT: round trip time for this system
+
+// @LoggerMessage: UBX1
+// @Description: uBlox-specific GPS information (part 1)
+// @Field: TimeUS: Time since system startup
+// @Field: Instance: GPS instance number
+// @Field: noisePerMS: noise level as measured by GPS
+// @Field: jamInd: jamming indicator; higher is more likely jammed
+// @Field: aPower: antenna power indicator; 2 is don't know
+// @Field: agcCnt: automatic gain control monitor
+// @Field: config: bitmask for messages which haven't been seen
+
+// @LoggerMessage: UBX2
+// @Description: uBlox-specific GPS information (part 2)
+// @Field: TimeUS: Time since system startup
+// @Field: Instance: GPS instance number
+// @Field: ofsI: imbalance of I part of complex signal
+// @Field: magI: magnitude of I part of complex signal
+// @Field: ofsQ: imbalance of Q part of complex signal
+// @Field: magQ: magnitude of Q part of complex signal
+
+// @LoggerMessage: UNIT
+// @Description: Message mapping from single character to SI unit
+// @Field: TimeUS: Time since system startup
+// @Field: Id: character referenced by FMTU
+// @Field: Label: Unit - SI where available
+
+// @LoggerMessage: VIBE
+// @Description: Processed (acceleration) vibration information
+// @Field: TimeUS: Time since system startup
+// @Field: VibeX: Primary accelerometer filtered vibration, x-axis
+// @Field: VibeY: Primary accelerometer filtered vibration, y-axis
+// @Field: VibeZ: Primary accelerometer filtered vibration, z-axis
+// @Field: Clip0: Number of clipping events on 1st accelerometer
+// @Field: Clip1: Number of clipping events on 2nd accelerometer
+// @Field: Clip2: Number of clipping events on 3rd accelerometer
+
+// @LoggerMessage: VISO
+// @Description: Visual Odometry
+// @Field: TimeUS: System time
+// @Field: dt: Time period this data covers
+// @Field: AngDX: Angular change for body-frame roll axis
+// @Field: AngDY: Angular change for body-frame pitch axis
+// @Field: AngDZ: Angular change for body-frame z axis
+// @Field: PosDX: Position change for body-frame X axis (Forward-Back)
+// @Field: PosDY: Position change for body-frame Y axis (Right-Left)
+// @Field: PosDZ: Position change for body-frame Z axis (Down-Up)
+// @Field: conf: Confidence
+
+// @LoggerMessage: VISP
+// @Description: Vision Position
+// @Field: TimeUS: System time
+// @Field: RemTimeUS: Remote system time
+// @Field: CTimeMS: Corrected system time
+// @Field: PX: Position X-axis (North-South)
+// @Field: PY: Position Y-axis (East-West)
+// @Field: PZ: Position Z-axis (Down-Up)
+// @Field: Roll: Roll lean angle
+// @Field: Pitch: Pitch lean angle
+// @Field: Yaw: Yaw angle
+// @Field: ResetCnt: Position reset counter
+
+// @LoggerMessage: WENC
+// @Description: Wheel encoder measurements
+// @Field: TimeUS: Time since system startup
+// @Field: Dist0: First wheel distance travelled
+// @Field: Qual0: Quality measurement of Dist0
+// @Field: Dist1: Second wheel distance travelled
+// @Field: Qual1: Quality measurement of Dist1
 
 // messages for all boards
 #define LOG_BASE_STRUCTURES \
@@ -1409,7 +2094,7 @@ struct PACKED log_Arm_Disarm {
     { LOG_RFND_MSG, sizeof(log_RFND), \
       "RFND", "QBCBB", "TimeUS,Instance,Dist,Stat,Orient", "s#m--", "F-B--" }, \
     { LOG_MAV_STATS, sizeof(log_MAV_Stats), \
-      "DMS", "IIIIIBBBBBBBBB",         "TimeMS,N,Dp,RT,RS,Fa,Fmn,Fmx,Pa,Pmn,Pmx,Sa,Smn,Smx", "s-------------", "C-------------" }, \
+      "DMS", "QIIIIBBBBBBBBB",         "TimeUS,N,Dp,RT,RS,Fa,Fmn,Fmx,Pa,Pmn,Pmx,Sa,Smn,Smx", "s-------------", "F-------------" }, \
     { LOG_BEACON_MSG, sizeof(log_Beacon), \
       "BCN", "QBBfffffff",  "TimeUS,Health,Cnt,D0,D1,D2,D3,PosX,PosY,PosZ", "s--mmmmmmm", "F--BBBBBBB" }, \
     { LOG_PROXIMITY_MSG, sizeof(log_Proximity), \
@@ -1447,7 +2132,7 @@ struct PACKED log_Arm_Disarm {
     { LOG_NKQ_MSG, sizeof(log_Quaternion), "NKQ", QUAT_FMT, QUAT_LABELS, QUAT_UNITS, QUAT_MULTS }, \
     { LOG_XKF1_MSG, sizeof(log_EKF1), \
       "XKF1","QBccCfffffffccce","TimeUS,C,Roll,Pitch,Yaw,VN,VE,VD,dPD,PN,PE,PD,GX,GY,GZ,OH", "s#ddhnnnnmmmkkkm", "F-BBB0000000BBBB" }, \
-    { LOG_XKF2_MSG, sizeof(log_NKF2a), \
+    { LOG_XKF2_MSG, sizeof(log_XKF2), \
       "XKF2","QBccccchhhhhhB","TimeUS,C,AX,AY,AZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI", "s#---nnGGGGGG-", "F----BBCCCCCC-" }, \
     { LOG_XKF3_MSG, sizeof(log_NKF3), \
       "XKF3","QBcccccchhhcc","TimeUS,C,IVN,IVE,IVD,IPN,IPE,IPD,IMX,IMY,IMZ,IYAW,IVT", "s#nnnmmmGGG??", "F-BBBBBBCCCBB" }, \
@@ -1563,11 +2248,13 @@ struct PACKED log_Arm_Disarm {
     { LOG_RALLY_MSG, sizeof(log_Rally), \
       "RALY", "QBBLLh", "TimeUS,Tot,Seq,Lat,Lng,Alt", "s--DUm", "F--GGB" },  \
     { LOG_MAV_MSG, sizeof(log_MAV),   \
-      "MAV", "QBHHHB",   "TimeUS,chan,txp,rxp,rxdp,flags", "s#----", "F-000-" },   \
+      "MAV", "QBHHHBH",   "TimeUS,chan,txp,rxp,rxdp,flags,ss", "s#----s", "F-000-C" },   \
     { LOG_VISUALODOM_MSG, sizeof(log_VisualOdom), \
       "VISO", "Qffffffff", "TimeUS,dt,AngDX,AngDY,AngDZ,PosDX,PosDY,PosDZ,conf", "ssrrrmmm-", "FF000000-" }, \
+    { LOG_VISUALPOS_MSG, sizeof(log_VisualPosition), \
+      "VISP", "QQIffffffb", "TimeUS,RemTimeUS,CTimeMS,PX,PY,PZ,Roll,Pitch,Yaw,ResetCnt", "sssmmmddh-", "FFC000000-" }, \
     { LOG_OPTFLOW_MSG, sizeof(log_Optflow), \
-      "OF",   "QBffff",   "TimeUS,Qual,flowX,flowY,bodyX,bodyY", "s-EEEE", "F-0000" }, \
+      "OF",   "QBffff",   "TimeUS,Qual,flowX,flowY,bodyX,bodyY", "s-EEnn", "F-0000" }, \
     { LOG_WHEELENCODER_MSG, sizeof(log_WheelEncoder), \
       "WENC",  "Qfbfb", "TimeUS,Dist0,Qual0,Dist1,Qual1", "sm-m-", "F0-0-" }, \
     { LOG_ADSB_MSG, sizeof(log_ADSB), \
@@ -1711,6 +2398,7 @@ enum LogMessages : uint8_t {
     LOG_RATE_MSG,
     LOG_RALLY_MSG,
     LOG_VISUALODOM_MSG,
+    LOG_VISUALPOS_MSG,
     LOG_AOA_SSA_MSG,
     LOG_BEACON_MSG,
     LOG_PROXIMITY_MSG,

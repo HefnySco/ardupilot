@@ -264,21 +264,89 @@ void NavEKF3_core::SelectMagFusion()
     magFusePerformed = false;
 
     // Handle case where we are using an external yaw sensor instead of a magnetomer
-    if ((frontend->_magCal == 5)) {
+    MagCal magcal = effective_magCal();
+    if (magcal == MagCal::EXTERNAL_YAW || magcal == MagCal::EXTERNAL_YAW_FALLBACK) {
+        bool have_fused_gps_yaw = false;
+        uint32_t now = AP_HAL::millis();
         if (storedYawAng.recall(yawAngDataDelayed,imuDataDelayed.time_ms)) {
             if (tiltAlignComplete && !yawAlignComplete) {
                 alignYawAngle();
             } else if (tiltAlignComplete && yawAlignComplete) {
                 fuseEulerYaw(false, true);
+            }
+            have_fused_gps_yaw = true;
+            last_gps_yaw_fusion_ms = now;
+        } else if (tiltAlignComplete && !yawAlignComplete && (imuSampleTime_ms - lastSynthYawTime_ms > 140)) {
+            yawAngDataDelayed.yawAngErr = MAX(frontend->_yawNoise, 0.05f);
+            // update the yaw angle using the last estimate which will be used as a static yaw reference when movement stops
+            if (fabsf(prevTnb[0][2]) < fabsf(prevTnb[1][2])) {
+                // A 321 rotation order is best conditioned because the X axis is closer to horizontal than the Y axis
+                if (!onGroundNotMoving) {
+                    yawAngDataDelayed.yawAng = atan2f(prevTnb[0][1], prevTnb[0][0]);
+                }
+                yawAngDataDelayed.type = 2;
             } else {
+                // A 312 rotation order is best conditioned because the Y axis is closer to horizontal than the X axis
+                if (!onGroundNotMoving) {
+                    yawAngDataDelayed.yawAng = atan2f(-prevTnb[0][1], prevTnb[1][1]);
+                }
+                yawAngDataDelayed.type = 1;
+            }
+            if (onGroundNotMoving) {
+                // fuse last known good yaw angle before we stopped moving to allow yaw bias learning when on ground before flight
+                fuseEulerYaw(false, true);
+            } else {
+                // prevent uncontrolled yaw variance growth by fusing a zero innovation
                 fuseEulerYaw(true, true);
             }
+            lastSynthYawTime_ms = imuSampleTime_ms;
         }
-        return;
+        if (magcal == MagCal::EXTERNAL_YAW) {
+            // no fallback
+            return;
+        }
+
+        // get new mag data into delay buffer
+        readMagData();
+
+        if (have_fused_gps_yaw) {
+            if (gps_yaw_mag_fallback_active) {
+                gps_yaw_mag_fallback_active = false;
+                gcs().send_text(MAV_SEVERITY_INFO, "EKF3 IMU%u yaw external",(unsigned)imu_index);
+            }
+            // update mag bias from GPS yaw
+            gps_yaw_mag_fallback_ok = learnMagBiasFromGPS();
+            return;
+        }
+
+        // we don't have GPS yaw data and are configured for
+        // fallback. If we've only just lost GPS yaw
+        if (now - last_gps_yaw_fusion_ms < 10000) {
+            // don't fallback to magnetometer fusion for 10s
+            return;
+        }
+        if (!gps_yaw_mag_fallback_ok) {
+            // mag was not consistent enough with GPS to use it as
+            // fallback
+            return;
+        }
+        if (!inFlight) {
+            // don't fall back if not flying
+            return;
+        }
+        if (!gps_yaw_mag_fallback_active) {
+            gps_yaw_mag_fallback_active = true;
+            gcs().send_text(MAV_SEVERITY_INFO, "EKF3 IMU%u yaw fallback active",(unsigned)imu_index);
+        }
+        // fall through to magnetometer fusion
     }
 
-    // check for and read new magnetometer measurements
-    readMagData();
+    if (magcal != MagCal::EXTERNAL_YAW_FALLBACK) {
+        // check for and read new magnetometer measurements. We don't
+        // real for EXTERNAL_YAW_FALLBACK as it has already been read
+        // above
+        readMagData();
+    }
 
     // If we are using the compass and the magnetometer has been unhealthy for too long we declare a timeout
     if (magHealth) {
@@ -1294,3 +1362,70 @@ void NavEKF3_core::recordMagReset()
     yawInnovAtLastMagReset = innovYaw;
 }
 
+
+
+/*
+  learn magnetometer biases from GPS yaw. Return true if the
+  resulting mag vector is close enough to the one predicted by GPS
+  yaw to use it for fallback
+*/
+bool NavEKF3_core::learnMagBiasFromGPS(void)
+{
+    if (!have_table_earth_field) {
+        // we need the earth field from WMM
+        return false;
+    }
+    if (!inFlight) {
+        // don't start learning till we've started flying
+        return false;
+    }
+
+    mag_elements mag_data;
+    if (!storedMag.recall(mag_data, imuDataDelayed.time_ms)) {
+        // no mag data to correct
+        return false;
+    }
+
+    // combine yaw with current quaternion to get yaw corrected quaternion
+    Quaternion quat = stateStruct.quat;
+    if (yawAngDataDelayed.type == 2) {
+        Vector3f euler321;
+        quat.to_euler(euler321.x, euler321.y, euler321.z);
+        quat.from_euler(euler321.x, euler321.y, yawAngDataDelayed.yawAng);
+    } else if (yawAngDataDelayed.type == 1) {
+        Vector3f euler312 = quat.to_vector312();
+        quat.from_vector312(euler312.x, euler312.y, yawAngDataDelayed.yawAng);
+    }
+
+    // build the expected body field from orientation and table earth field
+    Matrix3f dcm;
+    quat.rotation_matrix(dcm);
+    Vector3f expected_body_field = dcm.transposed() * table_earth_field_ga;
+
+    // calculate error in field
+    Vector3f err = (expected_body_field - mag_data.mag) + stateStruct.body_magfield;
+
+    // learn body frame mag biases
+    stateStruct.body_magfield -= err * EK3_GPS_MAG_LEARN_RATE;
+
+    // check if error is below threshold. If it is then we can
+    // fallback to magnetometer on failure of external yaw
+    float err_length = err.length();
+
+    // we allow for yaw backback to compass if we have had 50 samples
+    // in a row below the threshold. This corresponds to 10 seconds
+    // for a 5Hz GPS
+    const uint8_t fallback_count_threshold = 50;
+
+    if (err_length > EK3_GPS_MAG_LEARN_LIMIT) {
+        gps_yaw_fallback_good_counter = 0;
+    } else if (gps_yaw_fallback_good_counter < fallback_count_threshold) {
+        gps_yaw_fallback_good_counter++;
+    }
+    bool ok = gps_yaw_fallback_good_counter >= fallback_count_threshold;
+    if (ok) {
+        // mark mag healthy to prevent a magTimeout when we start using it
+        lastHealthyMagTime_ms = imuSampleTime_ms;
+    }
+    return ok;
+}

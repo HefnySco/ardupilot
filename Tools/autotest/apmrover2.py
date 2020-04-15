@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Drive APMrover2 in SITL
+# Drive Rover in SITL
 from __future__ import print_function
 
 import copy
@@ -11,6 +11,7 @@ import time
 
 from common import AutoTest
 from pysim import util
+from pysim import vehicleinfo
 
 from common import AutoTestTimeoutException
 from common import MsgRcvTimeoutException
@@ -50,10 +51,13 @@ class AutoTestRover(AutoTest):
         return ["ACRO", "HOLD", "MANUAL"]
 
     def log_name(self):
-        return "APMrover2"
+        return "Rover"
 
     def test_filepath(self):
          return os.path.realpath(__file__)
+
+    def set_current_test_name(self, name):
+        self.current_test_name_directory = "ArduRover_Tests/" + name + "/"
 
     def sitl_start_location(self):
         return SITL_START_LOCATION
@@ -66,9 +70,6 @@ class AutoTestRover(AutoTest):
 
     def get_stick_arming_channel(self):
         return int(self.get_parameter("RCMAP_ROLL"))
-
-    def arming_test_mission(self):
-        return os.path.join(testdir, "ArduRover-Missions", "test_arming.txt")
 
     ##########################################################
     #   TESTS DRIVE
@@ -135,7 +136,7 @@ class AutoTestRover(AutoTest):
 
             self.progress("Checking number of saved waypoints")
             num_wp = self.save_mission_to_file(
-                os.path.join(testdir, "rover-ch7_mission.txt"))
+                os.path.join(testdir, "ch7_mission.txt"))
             expected = 7 # home + 6 toggled in
             if num_wp != expected:
                 raise NotAchievedException("Did not get %u waypoints; got %u" %
@@ -422,8 +423,7 @@ Brakes have negligible effect (with=%0.2fm without=%0.2fm delta=%0.2fm)
         self.wait_ready_to_arm()
         self.arm_vehicle()
 
-        mission_filepath = os.path.join("ArduRover-Missions", "rtl.txt")
-        self.load_mission(mission_filepath)
+        self.load_mission("rtl.txt")
         self.change_mode("AUTO")
         self.mavproxy.expect('Mission: 3 RTL')
 
@@ -4527,7 +4527,7 @@ Brakes have negligible effect (with=%0.2fm without=%0.2fm delta=%0.2fm)
             expected_stopping_point,
             target_system=target_system,
             target_component=target_component,
-            expected_distance_epsilon=2.5)
+            expected_distance_epsilon=3)
         self.set_parameter("AVOID_ENABLE", 0)
         self.do_RTL()
 
@@ -4928,6 +4928,33 @@ Brakes have negligible effect (with=%0.2fm without=%0.2fm delta=%0.2fm)
                 raise NotAchievedException("Did not get correct command_id")
             break
 
+    def test_skid_steer(self):
+        model = "rover-skid"
+        vinfo = vehicleinfo.VehicleInfo()
+        defaults_filepath = vinfo.options["APMrover2"]["frames"][model]["default_params_filename"]
+        self.customise_SITL_commandline([],
+                                        model=model,
+                                        defaults_file=defaults_filepath)
+        self.change_mode("MANUAL")
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+        self.progress("get a known heading to avoid worrying about wrap")
+        # this is steering-type-two-paddles
+        self.set_rc(1, 1400)
+        self.set_rc(3, 1500)
+        self.wait_heading(90)
+        self.progress("straighten up")
+        self.set_rc(1, 1500)
+        self.set_rc(3, 1500)
+        self.progress("steer one way")
+        self.set_rc(1, 1600)
+        self.set_rc(3, 1400)
+        self.wait_heading(120)
+        self.progress("steer the other")
+        self.set_rc(1, 1400)
+        self.set_rc(3, 1600)
+        self.wait_heading(60)
+
     def tests(self):
         '''return list of all tests'''
         ret = super(AutoTestRover, self).tests()
@@ -5058,6 +5085,10 @@ Brakes have negligible effect (with=%0.2fm without=%0.2fm delta=%0.2fm)
              "Test DataFlash SITL backend",
              self.test_dataflash_sitl),
 
+            ("SkidSteer",
+             "Check skid-steering",
+             self.test_skid_steer),
+
             ("PolyFence",
              "PolyFence tests",
              self.test_poly_fence),
@@ -5096,7 +5127,7 @@ Brakes have negligible effect (with=%0.2fm without=%0.2fm delta=%0.2fm)
 
             ("DownLoadLogs", "Download logs", lambda:
              self.log_download(
-                 self.buildlogs_path("APMrover2-log.bin"),
+                 self.buildlogs_path("Rover-log.bin"),
                  upload_logs=len(self.fail_list) > 0)),
             ])
         return ret

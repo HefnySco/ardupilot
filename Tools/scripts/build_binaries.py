@@ -579,6 +579,7 @@ is bob we will attempt to checkout bob-AVR'''
                 "CUAVv5",
                 "CUAVv5Nano",
                 "CUAV-Nora",
+                "CUAV-X7",
                 "mRoX21",
                 "Pixracer",
                 "F4BY",
@@ -653,11 +654,11 @@ is bob we will attempt to checkout bob-AVR'''
         '''build Rover binaries'''
         boards = self.common_boards()
         self.build_vehicle(tag,
-                           "APMrover2",
+                           "Rover",
                            boards,
                            "Rover",
                            "ardurover",
-                           "APMrover2")
+                           "Rover")
 
     def build_ardusub(self, tag):
         '''build Sub binaries'''

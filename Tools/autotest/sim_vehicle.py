@@ -227,7 +227,7 @@ def kill_tasks():
             'ArduPlane.elf',
             'ArduCopter.elf',
             'ArduSub.elf',
-            'APMrover2.elf',
+            'Rover.elf',
             'AntennaTracker.elf',
             'JSBSIm.exe',
             'MAVProxy.exe',
@@ -298,6 +298,12 @@ def do_build_waf(opts, frame_options):
     if opts.flash_storage:
         cmd_configure.append("--sitl-flash-storage")
 
+    if opts.disable_ekf2:
+        cmd_configure.append("--disable-ekf2")
+
+    if opts.disable_ekf3:
+        cmd_configure.append("--disable-ekf3")
+        
     pieces = [shlex.split(x) for x in opts.waf_configure_args]
     for piece in pieces:
         cmd_configure.extend(piece)
@@ -756,11 +762,15 @@ parser = CompatOptionParser(
     "you are simulating, for example, start in the ArduPlane directory to "
     "simulate ArduPlane")
 
+vehicle_choices = list(vinfo.options.keys())
+# add an alias for people with too much m
+vehicle_choices.append("APMrover2")
+
 parser.add_option("-v", "--vehicle",
                   type='choice',
                   default=None,
                   help="vehicle type (%s)" % vehicle_options_string,
-                  choices=list(vinfo.options.keys()))
+                  choices=vehicle_choices)
 parser.add_option("-f", "--frame", type='string', default=None, help="""set vehicle frame type
 
 %s""" % (generate_frame_help()))
@@ -949,6 +959,12 @@ group_sim.add_option("-Z", "--swarm",
 group_sim.add_option("--flash-storage",
                      action='store_true',
                      help="enable use of flash storage emulation")
+group_sim.add_option("--disable-ekf2",
+                     action='store_true',
+                     help="disable EKF2 in build")
+group_sim.add_option("--disable-ekf3",
+                     action='store_true',
+                     help="disable EKF3 in build")
 parser.add_option_group(group_sim)
 
 
@@ -1045,6 +1061,16 @@ if cmd_opts.vehicle not in vinfo.options:
             cmd_opts.vehicle = bname
             break
         cwd = os.path.dirname(cwd)
+
+# map from some vehicle aliases back to canonical names.  APMrover2
+# was the old name / directory name for Rover.
+vehicle_map = {
+    "APMrover2": "Rover",
+}
+if cmd_opts.vehicle in vehicle_map:
+    progress("%s is now known as %s" %
+             (cmd_opts.vehicle, vehicle_map[cmd_opts.vehicle]))
+    cmd_opts.vehicle = vehicle_map[cmd_opts.vehicle]
 
 # try to validate vehicle
 if cmd_opts.vehicle not in vinfo.options:

@@ -49,7 +49,8 @@ enum failsafe_action_long {
 enum StickMixing {
     STICK_MIXING_DISABLED = 0,
     STICK_MIXING_FBW      = 1,
-    STICK_MIXING_DIRECT   = 2
+    STICK_MIXING_DIRECT   = 2,
+    STICK_MIXING_VTOL_YAW = 3,
 };
 
 enum ChannelMixing {
@@ -83,7 +84,6 @@ enum log_messages {
     LOG_NTUN_MSG,
     LOG_STARTUP_MSG,
     TYPE_GROUNDSTART_MSG,
-    LOG_SONAR_MSG,
     LOG_STATUS_MSG,
     LOG_QTUN_MSG,
     LOG_PIQR_MSG,

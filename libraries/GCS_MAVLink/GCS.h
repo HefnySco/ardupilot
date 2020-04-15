@@ -18,6 +18,7 @@
 #include <RC_Channel/RC_Channel.h>
 #include <AP_Filesystem/AP_Filesystem_Available.h>
 #include <AP_GPS/AP_GPS.h>
+#include <AP_VisualOdom/AP_VisualOdom.h>
 
 #include "MissionItemProtocol_Waypoints.h"
 #include "MissionItemProtocol_Rally.h"
@@ -292,7 +293,7 @@ public:
     static const struct stream_entries all_stream_entries[];
 
     virtual uint64_t capabilities() const;
-    uint8_t get_stream_slowdown_ms() const { return stream_slowdown_ms; }
+    uint16_t get_stream_slowdown_ms() const { return stream_slowdown_ms; }
 
     MAV_RESULT set_message_interval(uint32_t msg_id, int32_t interval_us);
 
@@ -707,6 +708,7 @@ private:
         int fd = -1;
         FTP_FILE_MODE mode; // work around AP_Filesystem not supporting file modes
         int16_t current_session;
+        uint32_t last_send_ms;
     };
     static struct ftp_state ftp;
 
@@ -738,15 +740,8 @@ private:
                                                      const float roll,
                                                      const float pitch,
                                                      const float yaw,
+                                                     const uint8_t reset_counter,
                                                      const uint16_t payload_size);
-    void log_vision_position_estimate_data(const uint64_t usec,
-                                           const uint32_t corrected_msec,
-                                           const float x,
-                                           const float y,
-                                           const float z,
-                                           const float roll,
-                                           const float pitch,
-                                           const float yaw);
 
     void lock_channel(const mavlink_channel_t chan, bool lock);
 
@@ -755,11 +750,11 @@ private:
       since boot in milliseconds
      */
     uint32_t correct_offboard_timestamp_usec_to_ms(uint64_t offboard_usec, uint16_t payload_size);
-    
+
     mavlink_signing_t signing;
     static mavlink_signing_streams_t signing_streams;
     static uint32_t last_signing_save_ms;
-    
+
     static StorageAccess _signing_storage;
     static bool signing_key_save(const struct SigningKey &key);
     static bool signing_key_load(struct SigningKey &key);

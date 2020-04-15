@@ -55,6 +55,9 @@ public:
     // Constructor
     AP_AHRS_NavEKF(uint8_t flags = FLAG_NONE);
 
+    // initialise
+    void init(void) override;
+
     /* Do not allow copies */
     AP_AHRS_NavEKF(const AP_AHRS_NavEKF &other) = delete;
     AP_AHRS_NavEKF &operator=(const AP_AHRS_NavEKF&) = delete;
@@ -115,6 +118,9 @@ public:
     }
 #endif
 
+    // return the quaternion defining the rotation from NED to XYZ (body) axes
+    bool get_quaternion(Quaternion &quat) const override WARN_IF_UNUSED;
+
     // return secondary attitude solution if available, as eulers in radians
     bool get_secondary_attitude(Vector3f &eulers) const override;
 
@@ -174,7 +180,7 @@ public:
     void writeBodyFrameOdom(float quality, const Vector3f &delPos, const Vector3f &delAng, float delTime, uint32_t timeStamp_ms, const Vector3f &posOffset);
 
     // Write position and quaternion data from an external navigation system
-    void writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms) override;
+    void writeExtNavData(const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms) override;
 
     // inhibit GPS usage
     uint8_t setInhibitGPS(void);
@@ -280,8 +286,8 @@ public:
 
     void Log_Write();
 
-    // check whether compass can be bypassed for arming check in case when external navigation data is available 
-    bool is_ext_nav_used_for_yaw(void) const;
+    // check whether external navigation is providing yaw.  Allows compass pre-arm checks to be bypassed
+    bool is_ext_nav_used_for_yaw(void) const override;
 
     // these are only out here so vehicles can reference them for parameters
 #if HAL_NAVEKF2_AVAILABLE
@@ -293,12 +299,12 @@ public:
 
 private:
     enum class EKFType {
-        NONE = 0,
+        NONE = 0
 #if HAL_NAVEKF3_AVAILABLE
-        THREE = 3,
+        ,THREE = 3
 #endif
 #if HAL_NAVEKF2_AVAILABLE
-        TWO = 2
+        ,TWO = 2
 #endif
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         ,SITL = 10

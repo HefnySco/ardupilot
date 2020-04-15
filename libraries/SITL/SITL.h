@@ -187,7 +187,7 @@ public:
     AP_Int8  telem_baudlimit_enable; // enable baudrate limiting on links
     AP_Float flow_noise; // optical flow measurement noise (rad/sec)
     AP_Int8  baro_count; // number of simulated baros to create
-    AP_Int8 gps_hdg_enabled; // enable the output of a NMEA heading HDT sentence
+    AP_Int8 gps_hdg_enabled[2]; // enable the output of a NMEA heading HDT sentence or UBLOX RELPOSNED
     AP_Int32 loop_delay; // extra delay to add to every loop
     AP_Float mag_scaling; // scaling factor on first compasses
     AP_Int32 mag_devid[MAX_CONNECTED_MAGS]; // Mag devid
@@ -238,6 +238,7 @@ public:
     AP_Vector3f gps_pos_offset[2];  // XYZ position of the GPS antenna phase centre relative to the body frame origin (m)
     AP_Vector3f rngfnd_pos_offset;  // XYZ position of the range finder zero range datum relative to the body frame origin (m)
     AP_Vector3f optflow_pos_offset; // XYZ position of the optical flow sensor focal point relative to the body frame origin (m)
+    AP_Vector3f vicon_pos_offset;   // XYZ position of the vicon sensor relative to the body frame origin (m)
 
     // temperature control
     AP_Float temp_start;
@@ -245,6 +246,8 @@ public:
     AP_Float temp_tconst;
     AP_Float temp_baro_factor;
     
+    AP_Int8 thermal_scenario;
+
     // differential pressure sensor tube order
     AP_Int8 arspd_signflip;
 

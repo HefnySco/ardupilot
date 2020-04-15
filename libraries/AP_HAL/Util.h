@@ -75,6 +75,8 @@ public:
         uint32_t fault_lr;
     };
     struct PersistentData persistent_data;
+    // last_persistent_data is only filled in if we've suffered a watchdog reset
+    struct PersistentData last_persistent_data;
 
     /*
       return state of safety switch, if applicable
@@ -159,7 +161,13 @@ public:
     // heap functions, note that a heap once alloc'd cannot be dealloc'd
     virtual void *allocate_heap_memory(size_t size) = 0;
     virtual void *heap_realloc(void *heap, void *ptr, size_t new_size) = 0;
+#if USE_LIBC_REALLOC
+    virtual void *std_realloc(void *ptr, size_t new_size) { return realloc(ptr, new_size); }
+#else
+    virtual void *std_realloc(void *ptr, size_t new_size) = 0;
+#endif // USE_LIBC_REALLOC
 #endif // ENABLE_HEAP
+
 
     /**
        how much free memory do we have in bytes. If unknown return 4096

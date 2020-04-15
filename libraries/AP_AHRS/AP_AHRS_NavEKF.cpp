@@ -46,6 +46,24 @@ AP_AHRS_NavEKF::AP_AHRS_NavEKF(uint8_t flags) :
     _dcm_matrix.identity();
 }
 
+// init sets up INS board orientation
+void AP_AHRS_NavEKF::init()
+{
+#if !HAL_NAVEKF2_AVAILABLE && HAL_NAVEKF3_AVAILABLE
+    if (_ekf_type.get() == 2) {
+        _ekf_type.set(3);
+        EKF3.set_enable(true);
+    }
+#elif !HAL_NAVEKF3_AVAILABLE && HAL_NAVEKF2_AVAILABLE
+    if (_ekf_type.get() == 3) {
+        _ekf_type.set(2);
+        EKF2.set_enable(true);
+    }
+#endif
+    // init parent class
+    AP_AHRS_DCM::init();
+}
+
 // return the smoothed gyro vector corrected for drift
 const Vector3f &AP_AHRS_NavEKF::get_gyro(void) const
 {
@@ -351,6 +369,7 @@ void AP_AHRS_NavEKF::update_SITL(void)
 
     }
 
+#if HAL_NAVEKF3_AVAILABLE
     if (_sitl->odom_enable) {
         // use SITL states to write body frame odometry data at 20Hz
         uint32_t timeStamp_ms = AP_HAL::millis();
@@ -372,6 +391,7 @@ void AP_AHRS_NavEKF::update_SITL(void)
             EKF3.writeBodyFrameOdom(quality, delPos, delAng, delTime, timeStamp_ms, posOffset);
         }
     }
+#endif // HAL_NAVEKF3_AVAILABLE
 }
 #endif // CONFIG_HAL_BOARD
 
@@ -545,6 +565,36 @@ bool AP_AHRS_NavEKF::use_compass(void)
     return AP_AHRS_DCM::use_compass();
 }
 
+// return the quaternion defining the rotation from NED to XYZ (body) axes
+bool AP_AHRS_NavEKF::get_quaternion(Quaternion &quat) const
+{
+    switch (active_EKF_type()) {
+    case EKFType::NONE:
+        return AP_AHRS_DCM::get_quaternion(quat);
+#if HAL_NAVEKF2_AVAILABLE
+    case EKFType::TWO:
+        EKF2.getQuaternion(-1, quat);
+        return _ekf2_started;
+#endif
+#if HAL_NAVEKF3_AVAILABLE
+    case EKFType::THREE:
+        EKF3.getQuaternion(-1, quat);
+        return _ekf3_started;
+#endif
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    case EKFType::SITL:
+        if (_sitl) {
+            const struct SITL::sitl_fdm &fdm = _sitl->state;
+            quat = fdm.quaternion;
+            return true;
+        } else {
+            return false;
+        }
+#endif
+    }
+    // since there is no default case above, this is unreachable
+    return false;
+}
 
 // return secondary attitude solution if available, as eulers in radians
 bool AP_AHRS_NavEKF::get_secondary_attitude(Vector3f &eulers) const
@@ -1398,10 +1448,10 @@ void  AP_AHRS_NavEKF::writeBodyFrameOdom(float quality, const Vector3f &delPos, 
 }
 
 // Write position and quaternion data from an external navigation system
-void AP_AHRS_NavEKF::writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
+void AP_AHRS_NavEKF::writeExtNavData(const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
 {
 #if HAL_NAVEKF2_AVAILABLE
-    EKF2.writeExtNavData(sensOffset, pos, quat, posErr, angErr, timeStamp_ms, resetTime_ms);
+    EKF2.writeExtNavData(pos, quat, posErr, angErr, timeStamp_ms, resetTime_ms);
 #endif
 }
 
@@ -1612,10 +1662,21 @@ bool AP_AHRS_NavEKF::attitudes_consistent(char *failure_msg, const uint8_t failu
         hal.util->snprintf(failure_msg, failure_msg_len, "DCM Roll/Pitch inconsistent by %d deg", (int)degrees(diff));
         return false;
     }
-    diff = fabsf(angle_diff.z);
-    if (check_yaw && (diff > ATTITUDE_CHECK_THRESH_YAW_RAD)) {
-        hal.util->snprintf(failure_msg, failure_msg_len, "DCM Yaw inconsistent by %d deg", (int)degrees(diff));
-        return false;
+
+    // we only check yaw against DCM if we are not using external yaw
+    // for EKF3. DCM can't use external yaw, so we don't expect it's
+    // yaw to align with EKF3 when EKF3 is using an external yaw
+    // source
+    bool using_external_yaw = false;
+#if HAL_NAVEKF3_AVAILABLE
+    using_external_yaw = ekf_type() == EKFType::THREE && EKF3.using_external_yaw();
+#endif
+    if (!using_external_yaw) {
+        diff = fabsf(angle_diff.z);
+        if (check_yaw && (diff > ATTITUDE_CHECK_THRESH_YAW_RAD)) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "DCM Yaw inconsistent by %d deg", (int)degrees(diff));
+            return false;
+        }
     }
 
     return true;

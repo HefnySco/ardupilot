@@ -173,7 +173,7 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
         // acro balance parameter check
 #if MODE_ACRO_ENABLED == ENABLED || MODE_SPORT_ENABLED == ENABLED
         if ((copter.g.acro_balance_roll > copter.attitude_control->get_angle_roll_p().kP()) || (copter.g.acro_balance_pitch > copter.attitude_control->get_angle_pitch_p().kP())) {
-            check_failed(ARMING_CHECK_PARAMETERS, display_failure, "ACRO_BAL_ROLL/PITCH");
+            check_failed(ARMING_CHECK_PARAMETERS, display_failure, "Check ACRO_BAL_ROLL/PITCH");
             return false;
         }
 #endif
@@ -300,7 +300,7 @@ bool AP_Arming_Copter::motor_checks(bool display_failure)
 {
     // check motors initialised  correctly
     if (!copter.motors->initialised_ok()) {
-        check_failed(display_failure, "check firmware or FRAME_CLASS");
+        check_failed(display_failure, "Check firmware or FRAME_CLASS");
         return false;
     }
 
@@ -487,8 +487,9 @@ bool AP_Arming_Copter::proximity_checks(bool display_failure) const
     float angle_deg, distance;
     if (copter.avoid.proximity_avoidance_enabled() && copter.g2.proximity.get_closest_object(angle_deg, distance)) {
         // display error if something is within 60cm
-        if (distance <= 0.6f) {
-            check_failed(ARMING_CHECK_PARAMETERS, display_failure, "Proximity %d deg, %4.2fm", (int)angle_deg, (double)distance);
+        const float tolerance = 0.6f;
+        if (distance <= tolerance) {
+            check_failed(ARMING_CHECK_PARAMETERS, display_failure, "Proximity %d deg, %4.2fm (want <= %0.2fm)", (int)angle_deg, (double)distance, (double)tolerance);
             return false;
         }
     }

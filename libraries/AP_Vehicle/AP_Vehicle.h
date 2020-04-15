@@ -39,6 +39,7 @@
 #include <AP_Hott_Telem/AP_Hott_Telem.h>
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
 #include <AP_GyroFFT/AP_GyroFFT.h>
+#include <AP_VisualOdom/AP_VisualOdom.h>
 
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
 
@@ -231,6 +232,10 @@ protected:
     AP_Hott_Telem hott_telem;
 #endif
 
+#if HAL_VISUALODOM_ENABLED
+    AP_VisualOdom visual_odom;
+#endif
+
     AP_ESC_Telem esc_telem;
 
     static const struct AP_Param::GroupInfo var_info[];
@@ -240,6 +245,10 @@ private:
 
     // delay() callback that processing MAVLink packets
     static void scheduler_delay_callback();
+
+    // if there's been a watchdog reset, notify the world via a
+    // statustext:
+    void send_watchdog_reset_statustext();
 
     bool likely_flying;         // true if vehicle is probably flying
     uint32_t _last_flying_ms;   // time when likely_flying last went true

@@ -470,16 +470,6 @@ void Plane::set_servos_controlled(void)
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 
             constrain_int16(quadplane.forward_throttle_pct(), min_throttle, max_throttle));
     }
-
-#if SOARING_ENABLED == ENABLED
-    // suppress throttle when soaring is active
-    if ((control_mode == &mode_fbwb || control_mode == &mode_cruise ||
-        control_mode == &mode_auto || control_mode == &mode_loiter) &&
-        g2.soaring_controller.is_active() &&
-        g2.soaring_controller.get_throttle_suppressed()) {
-        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0);
-    }
-#endif
 }
 
 /*
@@ -907,7 +897,7 @@ void Plane::servos_auto_trim(void)
     g2.servo_channels.adjust_trim(SRV_Channel::k_vtail_right, pitch_I);
 
     g2.servo_channels.adjust_trim(SRV_Channel::k_flaperon_left,  roll_I);
-    g2.servo_channels.adjust_trim(SRV_Channel::k_flaperon_right, -roll_I);
+    g2.servo_channels.adjust_trim(SRV_Channel::k_flaperon_right, roll_I);
 
     // cope with various dspoiler options
     const int8_t bitmask = g2.crow_flap_options.get();

@@ -62,6 +62,12 @@
 // mag fusion final reset altitude (using NED frame so altitude is negative)
 #define EKF3_MAG_FINAL_RESET_ALT 2.5f
 
+// learning rate for mag biases when using GPS yaw
+#define EK3_GPS_MAG_LEARN_RATE 0.005f
+
+// learning limit for mag biases when using GPS yaw (Gauss)
+#define EK3_GPS_MAG_LEARN_LIMIT 0.02f
+
 class AP_AHRS;
 
 class NavEKF3_core : public NavEKF_core_common
@@ -367,6 +373,20 @@ public:
     // get timing statistics structure
     void getTimingStatistics(struct ekf_timing &timing);
 
+    // values for EK3_MAG_CAL
+    enum class MagCal {
+        WHEN_FLYING = 0,
+        WHEN_MANOEUVRING = 1,
+        NEVER = 2,
+        AFTER_FIRST_CLIMB = 3,
+        ALWAYS = 4,
+        EXTERNAL_YAW = 5,
+        EXTERNAL_YAW_FALLBACK = 6,
+    };
+
+    // are we using an external yaw source? This is needed by AHRS attitudes_consistent check
+    bool using_external_yaw(void) const;
+    
 private:
     // Reference to the global EKF frontend for parameters
     NavEKF3 *frontend;
@@ -830,7 +850,7 @@ private:
     void recordMagReset();
 
     // effective value of MAG_CAL
-    uint8_t effective_magCal(void) const;
+    MagCal effective_magCal(void) const;
 
     // calculate the variances for the rotation vector equivalent
     Vector3f calcRotVecVariances(void);
@@ -1219,6 +1239,14 @@ private:
     float yawInnovAtLastMagReset;   // magnetic yaw innovation last time the yaw and mag field states were reset (rad)
     Quaternion quatAtLastMagReset;  // quaternion states last time the mag states were reset
 
+    // Used by on ground movement check required when operating on ground without a yaw reference
+    float gyro_diff;                    // filtered gyro difference (rad/s)
+    float accel_diff;                   // filtered acceerometer difference (m/s/s)
+    Vector3f gyro_prev;                 // gyro vector from previous time step (rad/s)
+    Vector3f accel_prev;                // accelerometer vector from previous time step (m/s/s)
+    bool onGroundNotMoving;             // true when on the ground and not moving
+    uint32_t lastMoveCheckLogTime_ms;   // last time the movement check data was logged (msec)
+
     // flags indicating severe numerical errors in innovation variance calculation for different fusion operations
     struct {
         bool bad_xmag:1;
@@ -1306,4 +1334,24 @@ private:
 
     // vehicle specific initial gyro bias uncertainty
     float InitialGyroBiasUncertainty(void) const;
+
+    /*
+      learn magnetometer biases from GPS yaw. Return true if the
+      resulting mag vector is close enough to the one predicted by GPS
+      yaw to use it for fallback
+    */
+    bool learnMagBiasFromGPS(void);
+
+    uint32_t last_gps_yaw_fusion_ms;
+    bool gps_yaw_mag_fallback_ok;
+    bool gps_yaw_mag_fallback_active;
+    uint8_t gps_yaw_fallback_good_counter;
+
+    /*
+    Update the on ground and not moving check.
+    Should be called once per IMU update.
+    Only updates when on ground and when operating with an external yaw sensor
+    */
+    void updateMovementCheck(void);
+
 };

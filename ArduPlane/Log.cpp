@@ -181,35 +181,6 @@ void Plane::Log_Write_Status()
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
-struct PACKED log_Sonar {
-    LOG_PACKET_HEADER;
-    uint64_t time_us;
-    float distance;
-    float voltage;
-    uint8_t count;
-    float correction;
-};
-
-// Write a sonar packet.  Note that RFND log messages are written by
-// RangeFinder itself as part of update().
-void Plane::Log_Write_Sonar()
-{
-    uint16_t distance = 0;
-    if (rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::Status::Good) {
-        distance = rangefinder.distance_cm_orient(ROTATION_PITCH_270);
-    }
-
-    struct log_Sonar pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_SONAR_MSG),
-        time_us     : AP_HAL::micros64(),
-        distance    : (float)distance*0.01f,
-        voltage     : rangefinder.voltage_mv_orient(ROTATION_PITCH_270)*0.001f,
-        count       : rangefinder_state.in_range_count,
-        correction  : rangefinder_state.correction
-    };
-    logger.WriteBlock(&pkt, sizeof(pkt));
-}
-
 struct PACKED log_AETR {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -252,13 +223,26 @@ const struct LogStructure Plane::log_structure[] = {
     LOG_COMMON_STRUCTURES,
     { LOG_STARTUP_MSG, sizeof(log_Startup),         
       "STRT", "QBH",         "TimeUS,SType,CTot", "s--", "F--" },
+
+// @LoggerMessage: CTUN
+// @Description: Control Tuning information
+// @Field: TimeUS: Time since system startup
+// @Field: NavRoll: desired roll
+// @Field: Roll: achieved roll
+// @Field: NavPitch: desired pitch
+// @Field: Pitch: achieved pitch
+// @Field: ThrOut: scaled output throttle
+// @Field: RdrOut: scaled output rudder
+// @Field: ThrDem: demanded speed-height-controller throttle
+// @Field: Aspd: airspeed estimate
+
     { LOG_CTUN_MSG, sizeof(log_Control_Tuning),     
       "CTUN", "Qcccchhhf",    "TimeUS,NavRoll,Roll,NavPitch,Pitch,ThrOut,RdrOut,ThrDem,Aspd", "sdddd---n", "FBBBB---0" },
 
 // @LoggerMessage: NTUN
 // @Description: Navigation Tuning information - e.g. vehicle destination
 // @URL: http://ardupilot.org/rover/docs/navigation.html
-// @Field: TimeUS: Microseconds since system startup
+// @Field: TimeUS: Time since system startup
 // @Field: Dist: distance to the current navigation waypoint
 // @Field: TBrg: bearing to the current navigation waypoint
 // @Field: NavBrg: the vehicle's desired heading
@@ -273,26 +257,87 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: TAspd: target airspeed
     { LOG_NTUN_MSG, sizeof(log_Nav_Tuning),         
       "NTUN", "QfcccfffLLii",  "TimeUS,Dist,TBrg,NavBrg,AltErr,XT,XTi,AspdE,TLat,TLng,TAlt,TAspd", "smddmmmnDUmn", "F0BBB0B0GGBB" },
-    { LOG_SONAR_MSG, sizeof(log_Sonar),             
-      "SONR", "QffBf",   "TimeUS,Dist,Volt,Cnt,Corr", "smv--", "FB0--" },
+
+// @LoggerMessage: ATRP
+// @Description: Pitch/Roll AutoTune messages for Plane 
+// @Field: TimeUS: Time since system startup
+// @Field: Type: Type of autotune (0 = Roll/ 1 = Pitch)
+// @Field: State: AutoTune state
+// @Field: Servo: Normalised control surface output (between -4500 to 4500)
+// @Field: Demanded: Desired Pitch/Roll rate
+// @Field: Achieved: Achieved Pitch/Roll rate
+// @Field: P: Proportional part of PID
     { LOG_ATRP_MSG, sizeof(AP_AutoTune::log_ATRP),
       "ATRP", "QBBcfff",  "TimeUS,Type,State,Servo,Demanded,Achieved,P", "s---dd-", "F---00-" },
+
+// @LoggerMessage: STAT
+// @Description: Current status of the aircraft
+// @Field: TimeUS: Time since system startup
+// @Field: isFlying: True if aircraft is probably flying
+// @Field: isFlyProb: Probabilty that the aircraft is flying
+// @Field: Armed: Arm status of the aircraft
+// @Field: Safety: State of the safety switch
+// @Field: Crash: True if crash is detected
+// @Field: Still: True when vehicle is not moving in any axis
+// @Field: Stage: Current stage of the flight
+// @Field: Hit: True if impact is detected
     { LOG_STATUS_MSG, sizeof(log_Status),
       "STAT", "QBfBBBBBB",  "TimeUS,isFlying,isFlyProb,Armed,Safety,Crash,Still,Stage,Hit", "s--------", "F--------" },
+
+// @LoggerMessage: QTUN
+// @Description: QuadPlane vertical tuning message
+// @Field: TimeUS: Time since system startup
+// @Field: ThI: throttle input
+// @Field: ABst: angle boost
+// @Field: ThO: throttle output
+// @Field: ThH: calculated hover throttle
+// @Field: DAlt: desired altitude
+// @Field: Alt: achieved altitude
+// @Field: BAlt: barometric altitude
+// @Field: DCRt: desired climb rate
+// @Field: CRt: climb rate
+// @Field: TMix: transition throttle mix value
+// @Field: Sscl: speed scalar for tailsitter control surfaces
     { LOG_QTUN_MSG, sizeof(QuadPlane::log_QControl_Tuning),
       "QTUN", "Qffffffeccff", "TimeUS,ThI,ABst,ThO,ThH,DAlt,Alt,BAlt,DCRt,CRt,TMix,Sscl", "s----mmmnn--", "F----00000-0" },
+
+// @LoggerMessage: AOA
+// @Description: Angle of attack and Side Slip Angle values
+// @Field: TimeUS: Time since system startup
+// @Field: AOA: Angle of Attack calculated from airspeed, wind vector,velocity vector 
+// @Field: SSA: Side Slip Angle calculated from airspeed, wind vector,velocity vector
     { LOG_AOA_SSA_MSG, sizeof(log_AOA_SSA),
       "AOA", "Qff", "TimeUS,AOA,SSA", "sdd", "F00" },
-    { LOG_PIQR_MSG, sizeof(log_PID), \
-      "PIQR", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS },  \
-    { LOG_PIQP_MSG, sizeof(log_PID), \
-      "PIQP", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS }, \
-    { LOG_PIQY_MSG, sizeof(log_PID), \
-      "PIQY", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS }, \
-    { LOG_PIQA_MSG, sizeof(log_PID), \
-      "PIQA", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS }, \
-    { LOG_AETR_MSG, sizeof(log_AETR), \
-      "AETR", "Qhhhhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap", "s-----", "F-----" },  \
+
+// @LoggerMessage: PIQR,PIQP,PIQY,PIQA
+// @Description: QuadPlane Proportional/Integral/Derivative gain values for Roll/Pitch/Yaw/Z
+// @Field: TimeUS: Time since system startup
+// @Field: Tar: desired value
+// @Field: Act: achieved value
+// @Field: Err: error between target and achieved
+// @Field: P: proportional part of PID
+// @Field: I: integral part of PID
+// @Field: D: derivative part of PID
+// @Field: FF: controller feed-forward portion of response
+    { LOG_PIQR_MSG, sizeof(log_PID),
+      "PIQR", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS },
+    { LOG_PIQP_MSG, sizeof(log_PID),
+      "PIQP", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS },
+    { LOG_PIQY_MSG, sizeof(log_PID),
+      "PIQY", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS },
+    { LOG_PIQA_MSG, sizeof(log_PID),
+      "PIQA", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS },
+
+// @LoggerMessage: AETR
+// @Description: Normalised pre-mixer control surface outputs
+// @Field: TimeUS: Time since system startup
+// @Field: Ail: Pre-mixer value for aileron output (between -4500 to 4500)
+// @Field: Elev: Pre-mixer value for elevator output (between -4500 to 4500)
+// @Field: Thr: Pre-mixer value for throttle output (between -4500 to 4500)
+// @Field: Rudd: Pre-mixer value for rudder output (between -4500 to 4500)
+// @Field: Flap: Pre-mixer value for flaps output (between -4500 to 4500)
+    { LOG_AETR_MSG, sizeof(log_AETR),
+      "AETR", "Qhhhhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap", "s-----", "F-----" },
 };
 
 void Plane::Log_Write_Vehicle_Startup_Messages()
@@ -321,7 +366,6 @@ void Plane::Log_Write_Startup(uint8_t type) {}
 void Plane::Log_Write_Control_Tuning() {}
 void Plane::Log_Write_Nav_Tuning() {}
 void Plane::Log_Write_Status() {}
-void Plane::Log_Write_Sonar() {}
 
 void Plane::Log_Write_RC(void) {}
 void Plane::Log_Write_Vehicle_Startup_Messages() {}

@@ -1308,6 +1308,10 @@ float QuadPlane::get_pilot_input_yaw_rate_cds(void) const
         return 0;
     }
 
+    if (plane.g.stick_mixing == STICK_MIXING_DISABLED) {
+        return 0;
+    }
+
     // add in rudder input
     float max_rate = yaw_rate_max;
     if (is_tailsitter() &&
@@ -2824,7 +2828,7 @@ void QuadPlane::Log_Write_QControl_Tuning()
         target_climb_rate   : target_climb_rate_cms,
         climb_rate          : int16_t(inertial_nav.get_velocity_z()),
         throttle_mix        : attitude_control->get_throttle_mix(),
-        speed_scaler         : last_spd_scaler,
+        speed_scaler        : last_spd_scaler,
     };
     plane.logger.WriteBlock(&pkt, sizeof(pkt));
 
