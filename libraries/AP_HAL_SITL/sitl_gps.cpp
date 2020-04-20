@@ -1141,6 +1141,19 @@ void SITL_State::_nova_send_message(uint8_t *header, uint8_t headerlength, uint8
     _gps_write((uint8_t*)&crc, 4, instance);
 }
 
+
+
+
+void SITL_State::_update_gps_MAV (const struct gps_data *d, uint8_t instance)
+{
+    return ;
+}
+void SITL_State::_update_gps_NMEA_MAV (const struct gps_data *d, uint8_t instance)
+{
+    return ;
+}
+
+
 #define CRC32_POLYNOMIAL 0xEDB88320L
 uint32_t SITL_State::CRC32Value(uint32_t icrc)
 {
@@ -1357,7 +1370,7 @@ void SITL_State::_update_gps_instance(SITL::SITL::GPSType gps_type, const struct
             break;
 
         case SITL::SITL::GPS_TYPE_NMEA:
-            _update_gps_nmea(data, instance);
+            //_update_gps_nmea(data, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_SBP:
@@ -1375,6 +1388,16 @@ void SITL_State::_update_gps_instance(SITL::SITL::GPSType gps_type, const struct
         case SITL::SITL::GPS_TYPE_FILE:
             _update_gps_file(instance);
             break;
+        
+        case SITL::SITL::GPS_TYPE_MAV:
+            _update_gps_MAV(data, instance);
+            break;
+
+        case SITL::SITL::GPS_TYPE_NMEA_MAV:
+            _update_gps_NMEA_MAV(data, instance);
+            break;
+
+        
     }
 }
 

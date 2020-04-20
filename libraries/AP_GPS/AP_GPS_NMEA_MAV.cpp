@@ -1,80 +1,74 @@
-/*
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-//
-// NMEA parser, adapted by Michael Smith from TinyGPS v9:
-//
-// TinyGPS - a small GPS library for Arduino providing basic NMEA parsing
-// Copyright (C) 2008-9 Mikal Hart
-// All rights reserved.
-//
-
-/// @file	AP_GPS_NMEA.cpp
-/// @brief	NMEA protocol parser
-///
-/// This is a lightweight NMEA parser, derived originally from the
-/// TinyGPS parser by Mikal Hart.
-///
-
-#include <AP_Common/AP_Common.h>
-
+#include "AP_GPS_NMEA_MAV.h"
 #include <ctype.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "AP_GPS_NMEA.h"
-
 extern const AP_HAL::HAL& hal;
 
-// optionally log all NMEA data for debug purposes
-// #define NMEA_LOG_PATH "nmea.log"
-
-#ifdef NMEA_LOG_PATH
-#include <stdio.h>
-#endif
-
-// Convenience macros //////////////////////////////////////////////////////////
-//
 #define DIGIT_TO_VAL(_x)        (_x - '0')
 #define hexdigit(x) ((x)>9?'A'+((x)-10):'0'+(x))
 
-bool AP_GPS_NMEA::read(void)
+AP_GPS_NMEA_MAV::AP_GPS_NMEA_MAV(AP_GPS &_gps, AP_GPS::GPS_State &_state, AP_HAL::UARTDriver *_port) :
+    AP_GPS_Backend(_gps, _state, _port)
 {
-    int16_t numc;
-    bool parsed = false;
-    numc = port->available();
-    while (numc--) {
-        char c = port->read();
-#ifdef NMEA_LOG_PATH
-        static FILE *logf = nullptr;
-        if (logf == nullptr) {
-            logf = fopen(NMEA_LOG_PATH, "wb");
-        }
-        if (logf != nullptr) {
-            ::fwrite(&c, 1, 1, logf);
-        }
-#endif
-        if (_decode(c)) {
-            parsed = true;
-        }
-        
-    }
-    return parsed;
 }
 
-bool AP_GPS_NMEA::_decode(char c)
+// Reading does nothing in this class; we simply return whether or not
+// the latest reading has been consumed.  By calling this function we assume
+// the caller is consuming the new data;
+bool AP_GPS_NMEA_MAV::read(void)
+{
+    if (_new_data) {
+        _new_data = false;
+        return true;
+    }
+
+    return false;
+}
+
+void AP_GPS_NMEA_MAV::inject_data(const uint8_t *data, uint16_t len)
+{
+    //hal.console->printf("AP_GPS_NMEA_MAV::inject_data\n");
+    
+    for (int i=0; i<len; ++i)
+    {
+        _decode(data[i]);
+
+        //hal.console->printf("%c",data[i]);
+    }
+}
+// handles an incoming mavlink message (HIL_GPS) and sets
+// corresponding gps data appropriately;
+void AP_GPS_NMEA_MAV::handle_msg(const mavlink_message_t &msg)
+{
+    hal.console->printf("AP_GPS_NMEA_MAV::read\n");
+    
+    switch (msg.msgid) {
+
+        case MAVLINK_MSG_ID_GPS_INJECT_DATA: {
+            mavlink_gps_inject_data_t packet;
+            mavlink_msg_gps_inject_data_decode(&msg, &packet);
+            
+            if (packet.len > sizeof(packet.data)) {
+                // invalid packet
+            return;
+            }
+
+            for (int i=0; i<packet.len; ++i)
+            {
+                _decode(packet.data[i]);
+
+                hal.console->printf("%c",packet.data[i]);
+            }
+        }
+
+        default:
+            // ignore all other messages
+            break;
+    }
+}
+
+bool AP_GPS_NMEA_MAV::_decode(char c)
 {
     bool valid_sentence = false;
 
@@ -115,7 +109,7 @@ bool AP_GPS_NMEA::_decode(char c)
     return valid_sentence;
 }
 
-int32_t AP_GPS_NMEA::_parse_decimal_100(const char *p)
+int32_t AP_GPS_NMEA_MAV::_parse_decimal_100(const char *p)
 {
     char *endptr = nullptr;
     long ret = 100 * strtol(p, &endptr, 10);
@@ -146,7 +140,7 @@ int32_t AP_GPS_NMEA::_parse_decimal_100(const char *p)
 /*
   parse a NMEA latitude/longitude degree value. The result is in degrees*1e7
  */
-uint32_t AP_GPS_NMEA::_parse_degrees()
+uint32_t AP_GPS_NMEA_MAV::_parse_degrees()
 {
     char *p, *q;
     uint8_t deg = 0, min = 0;
@@ -191,7 +185,7 @@ uint32_t AP_GPS_NMEA::_parse_degrees()
 /*
   see if we have a new set of NMEA messages
  */
-bool AP_GPS_NMEA::_have_new_message()
+bool AP_GPS_NMEA_MAV::_have_new_message()
 {
     if (_last_RMC_ms == 0 ||
         _last_GGA_ms == 0) {
@@ -223,7 +217,7 @@ bool AP_GPS_NMEA::_have_new_message()
 
 // Processes a just-completed term
 // Returns true if new sentence has just passed checksum test and is validated
-bool AP_GPS_NMEA::_term_complete()
+bool AP_GPS_NMEA_MAV::_term_complete()
 {
     // handle the last term in a message
     if (_is_checksum_term) {
@@ -422,44 +416,5 @@ bool AP_GPS_NMEA::_term_complete()
         }
     }
 
-    return false;
-}
-
-/*
-  detect a NMEA GPS. Adds one byte, and returns true if the stream
-  matches a NMEA string
- */
-bool
-AP_GPS_NMEA::_detect(struct NMEA_detect_state &state, uint8_t data)
-{
-	switch (state.step) {
-	case 0:
-		state.ck = 0;
-		if ('$' == data) {
-			state.step++;
-		}
-		break;
-	case 1:
-		if ('*' == data) {
-			state.step++;
-		} else {
-			state.ck ^= data;
-		}
-		break;
-	case 2:
-		if (hexdigit(state.ck>>4) == data) {
-			state.step++;
-		} else {
-			state.step = 0;
-		}
-		break;
-	case 3:
-		if (hexdigit(state.ck&0xF) == data) {
-            state.step = 0;
-			return true;
-		}
-		state.step = 0;
-		break;
-    }
     return false;
 }

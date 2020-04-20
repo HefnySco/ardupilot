@@ -35,6 +35,7 @@
 #include "AP_GPS_SIRF.h"
 #include "AP_GPS_UBLOX.h"
 #include "AP_GPS_MAV.h"
+#include "AP_GPS_NMEA_MAV.h"
 #include "GPS_Backend.h"
 
 #if HAL_WITH_UAVCAN
@@ -315,6 +316,7 @@ bool AP_GPS::needs_uart(GPS_Type type) const
     case GPS_TYPE_HIL:
     case GPS_TYPE_UAVCAN:
     case GPS_TYPE_MAV:
+    case GPS_TYPE_NMEA_MAV:
         return false;
     default:
         break;
@@ -476,6 +478,15 @@ void AP_GPS::detect_instance(uint8_t instance)
         new_gps = new AP_GPS_MAV(*this, state[instance], nullptr);
         goto found_gps;
 #endif
+        break;
+    // user has to explicitly set the MAV type, do not use AUTO
+    // do not try to detect the MAV type, assume it's there
+    case GPS_TYPE_NMEA_MAV:
+#ifndef HAL_BUILD_AP_PERIPH
+        dstate->auto_detected_baud = false; // specified, not detected
+        new_gps = new AP_GPS_NMEA_MAV(*this, state[instance], nullptr);
+        goto found_gps;
+ #endif
         break;
 
     // user has to explicitly set the UAVCAN type, do not use AUTO
@@ -709,7 +720,7 @@ void AP_GPS::update_instance(uint8_t instance)
             timing[instance].last_message_time_ms = tnow;
             timing[instance].delta_time_ms = GPS_TIMEOUT_MS;
             // do not try to detect again if type is MAV
-            if (_type[instance] == GPS_TYPE_MAV) {
+            if ((_type[instance] == GPS_TYPE_MAV)  || (_type[instance] == GPS_TYPE_NMEA_MAV)){
                 state[instance].status = NO_FIX;
             } else {
                 // free the driver before we run the next detection, so we
@@ -941,6 +952,7 @@ void AP_GPS::handle_msg(const mavlink_message_t &msg)
         uint8_t i;
         for (i=0; i<num_instances; i++) {
             if ((drivers[i] != nullptr) && (_type[i] != GPS_TYPE_NONE)) {
+                hal.console->printf("fire::read\n");
                 drivers[i]->handle_msg(msg);
             }
         }
@@ -1036,8 +1048,10 @@ void AP_GPS::inject_data(const uint8_t *data, uint16_t len)
 void AP_GPS::inject_data(uint8_t instance, const uint8_t *data, uint16_t len)
 {
     if (instance < GPS_MAX_RECEIVERS && drivers[instance] != nullptr) {
+        //hal.console->printf("inject_data1::read\n");
         drivers[instance]->inject_data(data, len);
     }
+    
 }
 
 /*
@@ -1181,6 +1195,7 @@ void AP_GPS::handle_gps_rtcm_fragment(uint8_t flags, const uint8_t *data, uint8_
     if ((flags & 1) == 0) {
         // it is not fragmented, pass direct
         inject_data(data, len);
+    
         return;
     }
 

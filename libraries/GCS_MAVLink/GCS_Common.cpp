@@ -925,9 +925,9 @@ ap_message GCS_MAVLINK::next_deferred_bucket_message_to_send()
     const int16_t next = bucket_message_ids_to_send.first_set();
     if (next == -1) {
         // should not happen
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        AP_HAL::panic("next_deferred_bucket_message_to_send called on empty bucket");
-#endif
+// MHEFNY WRONG #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+//         AP_HAL::panic("next_deferred_bucket_message_to_send called on empty bucket");
+// #endif
         find_next_bucket_to_send();
         return no_message_to_send;
     }

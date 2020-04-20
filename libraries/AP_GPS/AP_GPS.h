@@ -99,6 +99,7 @@ public:
         GPS_TYPE_HEMI = 16, // hemisphere NMEA
         GPS_TYPE_UBLOX_RTK_BASE = 17,
         GPS_TYPE_UBLOX_RTK_ROVER = 18,
+        GPS_TYPE_NMEA_MAV = 19,
     };
 
     /// GPS status codes

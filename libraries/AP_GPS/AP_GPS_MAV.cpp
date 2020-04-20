@@ -19,6 +19,9 @@
 #include "AP_GPS_MAV.h"
 #include <stdint.h>
 
+extern const AP_HAL::HAL& hal;
+
+
 AP_GPS_MAV::AP_GPS_MAV(AP_GPS &_gps, AP_GPS::GPS_State &_state, AP_HAL::UARTDriver *_port) :
     AP_GPS_Backend(_gps, _state, _port)
 {
@@ -120,6 +123,7 @@ void AP_GPS_MAV::handle_msg(const mavlink_message_t &msg)
                 }
                 uint32_t timestamp_ms = (packet.time_week - first_week) * AP_MSEC_PER_WEEK + packet.time_week_ms;
                 uint32_t corrected_ms = jitter.correct_offboard_timestamp_msec(timestamp_ms, AP_HAL::millis());
+                //hal.console->printf ("timestamp_ms %d  corrected_ms %d",timestamp_ms,corrected_ms);
                 state.uart_timestamp_ms = corrected_ms;
             }
 
