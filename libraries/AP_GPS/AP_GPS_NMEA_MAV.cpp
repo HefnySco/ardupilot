@@ -36,37 +36,12 @@ void AP_GPS_NMEA_MAV::inject_data(const uint8_t *data, uint16_t len)
 
         //hal.console->printf("%c",data[i]);
     }
+
+    //uint32_t corrected_ms = jitter.correct_offboard_timestamp_msec(0, AP_HAL::millis());
+                //hal.console->printf ("timestamp_ms %d  corrected_ms %d",timestamp_ms,corrected_ms);
+    state.uart_timestamp_ms = AP_HAL::millis();
 }
-// handles an incoming mavlink message (HIL_GPS) and sets
-// corresponding gps data appropriately;
-void AP_GPS_NMEA_MAV::handle_msg(const mavlink_message_t &msg)
-{
-    hal.console->printf("AP_GPS_NMEA_MAV::read\n");
-    
-    switch (msg.msgid) {
 
-        case MAVLINK_MSG_ID_GPS_INJECT_DATA: {
-            mavlink_gps_inject_data_t packet;
-            mavlink_msg_gps_inject_data_decode(&msg, &packet);
-            
-            if (packet.len > sizeof(packet.data)) {
-                // invalid packet
-            return;
-            }
-
-            for (int i=0; i<packet.len; ++i)
-            {
-                _decode(packet.data[i]);
-
-                hal.console->printf("%c",packet.data[i]);
-            }
-        }
-
-        default:
-            // ignore all other messages
-            break;
-    }
-}
 
 bool AP_GPS_NMEA_MAV::_decode(char c)
 {

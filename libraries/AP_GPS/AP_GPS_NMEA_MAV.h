@@ -33,14 +33,13 @@ public:
 
     static bool _detect(struct MAV_detect_state &state, uint8_t data);
 
-    void handle_msg(const mavlink_message_t &msg) override;
-
     void inject_data(const uint8_t *data, uint16_t len) override;
 
     const char *name() const override { return "NMEA_MAV"; }
 
 private:
     bool _new_data;
+    JitterCorrection jitter{2000};
      /// Coding for the GPS sentences that the parser handles
     enum _sentence_types {      //there are some more than 10 fields in some sentences , thus we have to increase these value.
         _GPS_SENTENCE_RMC = 32,

@@ -952,7 +952,6 @@ void AP_GPS::handle_msg(const mavlink_message_t &msg)
         uint8_t i;
         for (i=0; i<num_instances; i++) {
             if ((drivers[i] != nullptr) && (_type[i] != GPS_TYPE_NONE)) {
-                hal.console->printf("fire::read\n");
                 drivers[i]->handle_msg(msg);
             }
         }
