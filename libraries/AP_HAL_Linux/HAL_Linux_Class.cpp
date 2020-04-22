@@ -210,7 +210,7 @@ static RCOutput_Sysfs rcoutDriver(0, 0, 15);
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ
 static RCOutput_Sysfs rcoutDriver(0, 0, 8);
 #elif  CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHEFNY
-static RCOutput_MW_I2C rcoutDriver(i2c_mgr_instance.get_device(1, MW_I2C_PRIMARY_ADDRESS), true, 0, -1);
+static RCOutput_MW_I2C rcoutDriver(i2c_mgr_instance.get_device(1, MW_I2C_PRIMARY_ADDRESS), true, 0);
 //static Empty::RCOutput rcoutDriver;
 #else
 static Empty::RCOutput rcoutDriver;

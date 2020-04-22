@@ -15,32 +15,26 @@
 
 #include "GPIO.h"
 
-#define PCA9685_RA_MODE1           0x00
-#define PCA9685_RA_MODE2           0x01
-#define PCA9685_RA_LED0_ON_L       0x06
-#define PCA9685_RA_LED0_ON_H       0x07
-#define PCA9685_RA_LED0_OFF_L      0x08
-#define PCA9685_RA_LED0_OFF_H      0x09
-#define PCA9685_RA_ALL_LED_ON_L    0xFA
-#define PCA9685_RA_ALL_LED_ON_H    0xFB
-#define PCA9685_RA_ALL_LED_OFF_L   0xFC
-#define PCA9685_RA_ALL_LED_OFF_H   0xFD
-#define PCA9685_RA_PRE_SCALE       0xFE
+#define MW_I2C_CH0                0x00
+#define MW_I2C_CH1                0x01
+#define MW_I2C_CH2                0x02
+#define MW_I2C_CH3                0x03
+#define MW_I2C_CH4                0x04
+#define MW_I2C_CH5                0x05
+#define MW_I2C_CH6                0x06
+#define MW_I2C_CH7                0x07
+#define MW_I2C_CH8                0x08
+#define MW_I2C_CH9                0x09
+#define MW_I2C_CH10               0x0a
+#define MW_I2C_CH11               0x0b
+#define MW_I2C_CH12               0x0c
+#define MW_I2C_CH13               0x0d
+#define MW_I2C_CH14               0x0e
+#define MW_I2C_CH15               0x0f
+#define MW_I2C_CH16               0x10
+#define MW_I2C_CH17               0x11
+#define MW_I2C_RA_ALL_OUTPUT_SAME   0xFA
 
-#define PCA9685_MODE1_RESTART_BIT  (1 << 7)
-#define PCA9685_MODE1_EXTCLK_BIT   (1 << 6)
-#define PCA9685_MODE1_AI_BIT       (1 << 5)
-#define PCA9685_MODE1_SLEEP_BIT    (1 << 4)
-#define PCA9685_MODE1_SUB1_BIT     (1 << 3)
-#define PCA9685_MODE1_SUB2_BIT     (1 << 2)
-#define PCA9685_MODE1_SUB3_BIT     (1 << 1)
-#define PCA9685_MODE1_ALLCALL_BIT  (1 << 0)
-#define PCA9685_ALL_LED_OFF_H_SHUT (1 << 4)
-#define PCA9685_MODE2_INVRT_BIT    (1 << 4)
-#define PCA9685_MODE2_OCH_BIT      (1 << 3)
-#define PCA9685_MODE2_OUTDRV_BIT   (1 << 2)
-#define PCA9685_MODE2_OUTNE1_BIT   (1 << 1)
-#define PCA9685_MODE2_OUTNE0_BIT   (1 << 0)
 
 /*
  * Drift for internal oscillator
@@ -58,16 +52,14 @@ extern const AP_HAL::HAL& hal;
 
 RCOutput_MW_I2C::RCOutput_MW_I2C(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
                                    bool external_clock,
-                                   uint8_t channel_offset,
-                                   int16_t oe_pin_number) :
+                                   uint8_t channel_offset) :
     _dev(std::move(dev)),
     _enable_pin(nullptr),
     _frequency(50),
     _pulses_buffer(new uint16_t[PWM_CHAN_COUNT - channel_offset]),
     _external_clock(external_clock),
     _channel_offset(channel_offset),
-    _last_ch(channel_offset),
-    _oe_pin_number(oe_pin_number)
+    _last_ch(channel_offset)
 {
     if (_external_clock)
         _osc_clock = PCA9685_EXTERNAL_CLOCK;
@@ -105,7 +97,9 @@ void RCOutput_MW_I2C::reset_all_channels()
 
     _dev->get_semaphore()->take_blocking();
 
-    uint8_t data[] = {PCA9685_RA_ALL_LED_ON_L, 0, 0, 0, 0};
+    
+
+    uint8_t data[] = {MW_I2C_RA_ALL_OUTPUT_SAME, 0, 0};
     _dev->transfer(data, sizeof(data), nullptr, 0);
 
     /* Wait for the last pulse to end */
@@ -170,11 +164,10 @@ void RCOutput_MW_I2C::push()
     // Calculate the number of channels for this transfer.
     if (_last_ch >= PWM_CHAN_COUNT -1) _last_ch = _channel_offset;
     
-    uint8_t min_ch =  _last_ch; //__builtin_ctz(_pending_write_mask);
+    uint8_t min_ch =  _last_ch;
     ++_last_ch;
-    uint8_t max_ch = _last_ch; //(sizeof(unsigned) * 8) - __builtin_clz(_pending_write_mask);
+    uint8_t max_ch = _last_ch;
     ++_last_ch;
-    //hal.console->printf("max_ch %x min_ch %x \r\n",max_ch,min_ch);
     
     /*
      * scratch buffer size is always for all the channels, but we write only
@@ -184,54 +177,37 @@ void RCOutput_MW_I2C::push()
         uint8_t reg;
         uint8_t data[PWM_CHAN_COUNT * 2];
     } pwm_values;
+
     size_t payload_size = 1;
+
     for (unsigned ch = min_ch; ch <= max_ch; ch++) {
         const uint16_t period_us = _pulses_buffer[ch];
-
-        // if (period_us) {
-        //     length = round((period_us * 4096) / (1000000.f / _frequency)) - 1;
-        // }
 
         uint8_t *d = &pwm_values.data[(ch - min_ch) * 2];
         *d++ = 0xFF & period_us;
         *d++ = 0xFF & (period_us >> 8);
         payload_size +=2;
-        //hal.console->printf("ch %d   period_us %x  o/p %x %x \n",ch,period_us,d[-2],d[-1]);
     }
-
-    // if (!_dev || !_dev->get_semaphore()->take_nonblocking()) {
-    //      return;
-    // }
 
 
     pwm_values.reg = min_ch;
-    /* reg + all the channels we are going to write */
-    //size_t payload_size = 1 + (max_ch - min_ch) * 2;
 
-    _dev->transfer((uint8_t *)&pwm_values, payload_size, nullptr, 0);
-    //hal.console->printf("payload_size %d  \n",payload_size);
-
-
-    // if (!_dev || !_dev->get_semaphore()->take_blocking()) {
-    //      _pending_write_mask = 0; //MHEfny
-    //     return;
+    // if (_dev->get_semaphore()->take_nonblocking())
+    // {
+    //     return ;
     // }
 
-    // uint8_t data[] = {PCA9685_RA_LED0_ON_L, 0x4C, 0x04, 0x08, 0x07, 0xDC, 0x05, 0x4C, 0x04};
-    // _dev->transfer(data, sizeof(data), nullptr, 0);
-
-    /* Wait for the last pulse to end */
-    //hal.scheduler->delay(2);
+    _dev->transfer((uint8_t *)&pwm_values, payload_size, nullptr, 0);
+    
+    
 
     //_dev->get_semaphore()->give();
 
-    //_pending_write_mask = 0;
+    // _pending_write_mask = 0;
 }
 
 uint16_t RCOutput_MW_I2C::read(uint8_t ch)
 {
-    //hal.console->printf("RCOutput_MW_I2C::read(uint8_t %d) ret %d\n",ch, _pulses_buffer[ch]);  //MHEFNY
-    
     return _pulses_buffer[ch];
 }
 

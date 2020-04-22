@@ -12,8 +12,7 @@ class RCOutput_MW_I2C : public AP_HAL::RCOutput {
 public:
     RCOutput_MW_I2C(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
                      bool external_clock,
-                     uint8_t channel_offset,
-                     int16_t oe_pin_number);
+                     uint8_t channel_offset);
 
     ~RCOutput_MW_I2C();
     void     init() override;
@@ -41,8 +40,7 @@ private:
     bool _external_clock;
     bool _corking = false;
     uint8_t _channel_offset;
-    int16_t _oe_pin_number;
-    uint16_t _pending_write_mask;
+    // uint16_t _pending_write_mask;
     uint16_t _last_ch;
 };
 
