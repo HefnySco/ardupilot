@@ -51,13 +51,11 @@ using namespace Linux;
 extern const AP_HAL::HAL& hal;
 
 RCOutput_MW_I2C::RCOutput_MW_I2C(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
-                                   bool external_clock,
                                    uint8_t channel_offset) :
     _dev(std::move(dev)),
     _enable_pin(nullptr),
     _frequency(50),
     _pulses_buffer(new uint16_t[PWM_CHAN_COUNT - channel_offset]),
-    _external_clock(external_clock),
     _channel_offset(channel_offset),
     _last_ch(channel_offset)
 {
@@ -135,17 +133,18 @@ void RCOutput_MW_I2C::write(uint8_t ch, uint16_t period_us)
         return;
     }
 
-    if (ch & 0b01)
-    {
-        return ; // skip odd ports as we sends in pairs
-    }
     _pulses_buffer[ch] = period_us;
 
+    // if (!(ch & 0b01))
+    // {
+    //     return ; // skip odd ports as we sends in pairs
+    // }
+    
     if (!_corking) {
         _corking = true;
-        
+        push();
     }
-    push();
+    
 }
 
 void RCOutput_MW_I2C::cork()
@@ -160,46 +159,47 @@ void RCOutput_MW_I2C::push()
     }
     _corking = false;
 
-    
-    // Calculate the number of channels for this transfer.
-    if (_last_ch >= PWM_CHAN_COUNT -1) _last_ch = _channel_offset;
-    
-    uint8_t min_ch =  _last_ch;
-    ++_last_ch;
-    uint8_t max_ch = _last_ch;
-    ++_last_ch;
-    
-    /*
-     * scratch buffer size is always for all the channels, but we write only
-     * from min_ch to max_ch
-     */
-    struct PACKED pwm_values {
-        uint8_t reg;
-        uint8_t data[PWM_CHAN_COUNT * 2];
-    } pwm_values;
+    for (_last_ch=0; _last_ch< PWM_CHAN_COUNT; _last_ch+=2)
+    {
+        // Calculate the number of channels for this transfer.
+        if (_last_ch >= PWM_CHAN_COUNT -1) _last_ch = _channel_offset;
+        
+        uint8_t min_ch =  _last_ch;
+        //++_last_ch;
+        uint8_t max_ch = _last_ch+1;
+        //++_last_ch;
+        
+        /*
+        * scratch buffer size is always for all the channels, but we write only
+        * from min_ch to max_ch
+        */
+        struct PACKED pwm_values {
+            uint8_t reg;
+            uint8_t data[PWM_CHAN_COUNT * 2];
+        } pwm_values;
 
-    size_t payload_size = 1;
+        size_t payload_size = 1;
 
-    for (unsigned ch = min_ch; ch <= max_ch; ch++) {
-        const uint16_t period_us = _pulses_buffer[ch];
+        for (unsigned ch = min_ch; ch <= max_ch; ch++) {
+            const uint16_t period_us = _pulses_buffer[ch];
 
-        uint8_t *d = &pwm_values.data[(ch - min_ch) * 2];
-        *d++ = 0xFF & period_us;
-        *d++ = 0xFF & (period_us >> 8);
-        payload_size +=2;
+            uint8_t *d = &pwm_values.data[(ch - min_ch) * 2];
+            *d++ = 0xFF & period_us;
+            *d++ = 0xFF & (period_us >> 8);
+            payload_size +=2;
+        }
+
+
+        pwm_values.reg = min_ch;
+
+        // if (_dev->get_semaphore()->take_nonblocking())
+        // {
+        //     return ;
+        // }
+
+        _dev->transfer((uint8_t *)&pwm_values, payload_size, nullptr, 0);
+    
     }
-
-
-    pwm_values.reg = min_ch;
-
-    // if (_dev->get_semaphore()->take_nonblocking())
-    // {
-    //     return ;
-    // }
-
-    _dev->transfer((uint8_t *)&pwm_values, payload_size, nullptr, 0);
-    
-    
 
     //_dev->get_semaphore()->give();
 

@@ -270,11 +270,8 @@ bool AP_InertialSensor_L3G4200D_2::_gyro_init()
 bool AP_InertialSensor_L3G4200D_2::_init_sensor(void)
 {
     
-    _accel_init();
+    return _accel_init() && _gyro_init();
 
-    _gyro_init();
-
-    return true;
 }
 
 /*

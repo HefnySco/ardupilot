@@ -11,7 +11,6 @@ namespace Linux {
 class RCOutput_MW_I2C : public AP_HAL::RCOutput {
 public:
     RCOutput_MW_I2C(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
-                     bool external_clock,
                      uint8_t channel_offset);
 
     ~RCOutput_MW_I2C();
