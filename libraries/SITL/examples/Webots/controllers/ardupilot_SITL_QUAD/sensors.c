@@ -133,7 +133,7 @@ void getGyro (const WbDeviceTag gyro, const double *northDirection, char *buf)
 
 void getLinearVelocity (WbNodeRef nodeRef, const double *northDirection,  char * buf)
 {
-    linear_velocity = wb_supervisor_node_get_velocity (nodeRef);
+    linear_velocity = (double *) wb_supervisor_node_get_velocity (nodeRef);
     if (linear_velocity != NULL)
     {
       if (northDirection[0] == 1)

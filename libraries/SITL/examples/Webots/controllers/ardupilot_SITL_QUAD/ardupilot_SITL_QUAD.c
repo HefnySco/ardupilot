@@ -4,6 +4,8 @@
  * Description: integration with ardupilot SITL simulation.
  * Author: M.S.Hefny (HefnySco)
  * Modifications:
+ *  - Blocking sockets
+ *  - Advance simulation time only when receive motor data.
  */
 
 
@@ -261,7 +263,7 @@ bool parse_controls(const char *json)
         // find key inside section
         p = strstr(p, key->key);
         if (!p) {
-            printf("Failed to find key %s/%s\n", key->section, key->key);
+            printf("Failed to find key %s/%s DATA:%s\n", key->section, key->key, json);
             return false;
         }
 
@@ -307,10 +309,13 @@ void run ()
 {
 
     char send_buf[1000]; //1000 just a safe margin
-    char command_buffer[200];
+    char command_buffer[1000];
     fd_set rfds;
-
-    while (wb_robot_step(timestep) != -1) 
+    
+    // trigget ArduPilot to send motor data
+    wb_robot_step(timestep);
+    
+    while (true) 
     {
         for (int i=0;i<maxSimCycleTime;++i)
         {
@@ -325,7 +330,9 @@ void run ()
           // if no socket wait till you get a socket
             fd = socket_accept(sfd);
             if (fd > 0)
-              socket_set_non_blocking(fd);
+            {
+              //socket_set_non_blocking(fd);
+            }
             else if (fd < 0)
               break;
         }
@@ -352,7 +359,7 @@ void run ()
           if (number != 0) 
           {
             // there is a valid connection
-                int n = recv(fd, (char *)command_buffer, 200, 0);
+                int n = recv(fd, (char *)command_buffer, 1000, 0);
 
                 if (n < 0) {
         #ifdef _WIN32
@@ -382,9 +389,13 @@ void run ()
                 {
 
                   command_buffer[n] = 0;
-                  parse_controls (command_buffer);
-                  update_controls();
-                  
+                  if (parse_controls (command_buffer))
+                  {
+                    update_controls();
+                    //https://cyberbotics.com/doc/reference/robot#wb_robot_step
+                    wb_robot_step(timestep);
+                  }
+
                 }
           }
           
@@ -499,13 +510,13 @@ void initialize (int argc, char *argv[])
 
   // camera
   camera = wb_robot_get_device("camera1");
-   wb_camera_enable(camera, timestep);
+   wb_camera_enable(camera, CAMERA_FRAME_RATE_FACTOR * timestep);
 
   #ifdef WIND_SIMULATION
   // emitter
   emitter = wb_robot_get_device("emitter_plugin");
   #endif
-  
+
   const char *MOTOR_NAMES[] = {"motor1", "motor2", "motor3", "motor4"};
   
   // get motor device tags

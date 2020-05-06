@@ -1,4 +1,4 @@
-#VRML_SIM R2019b utf8
+#VRML_SIM R2020a utf8
 WorldInfo {
   gravity 0 -9.80665 0
   physics "sitl_physics_env"
@@ -8,10 +8,10 @@ WorldInfo {
   randomSeed 52
 }
 Viewpoint {
-  orientation 0.5542589845891367 0.8247263718920818 0.11235385844706426 5.801159266912386
-  position -4.295082945651872 3.093288102690911 9.827811912728198
+  orientation 0.9997978097496996 0.017446300161270606 0.009998311376764756 5.242214502651711
+  position -0.08877125396218113 6.241975164116458 3.2197344629045386
   follow "quad_plus_sitl"
-  followOrientation TRUE
+  followType "Mounted Shot"
 }
 DogHouse {
   translation 34.82 0.76 -24.56
@@ -29,8 +29,6 @@ Background {
   skyColor [
     0.15 0.5 1
   ]
-  cubemap Cubemap {
-  }
 }
 Solid {
   translation 36.93 0.77 -37.93
