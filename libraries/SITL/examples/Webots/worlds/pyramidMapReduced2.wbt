@@ -12,6 +12,24 @@ WorldInfo {
   northDirection 0 0 1
   randomSeed 52
 }
+Robot {
+  translation -1.949999999999999 0.23391237384410402 0
+  rotation 0 0 1 2.533555103014215e-15
+  children [
+    Emitter {
+      type "serial"
+      channel 1
+    }
+  ]
+  name "supervisor_sync"
+  boundingObject Box {
+    size 0.1 0.1 0.1
+  }
+  physics Physics {
+  }
+  controller "ardupilot_SITL_Supervisor"
+  supervisor TRUE
+}
 Viewpoint {
   orientation -0.008430334675332775 -0.9889506387233125 -0.1480052824260481 2.792301901785628
   position -44.85708948922592 41.47847179839409 -120.78477309902298
@@ -38,6 +56,12 @@ Floor {
 DEF DEF_VEHICLE Robot {
   rotation -1.6967771456756733e-10 1 2.4151813868919206e-10 -0.7512383045779282
   children [
+    Receiver {
+      name "receiver_main"
+      type "serial"
+      channel 1
+      bufferSize 32
+    }
     Emitter {
       name "emitter_plugin"
       description "commuicates with physics plugin"
@@ -348,8 +372,8 @@ DEF DEF_VEHICLE Robot {
   }
   rotationStep 0.261799
   controller "ardupilot_SITL_QUAD"
-  controllerArgs "-p 5599 -df 0.02"
-  supervisor TRUE
+  controllerArgs "-p 5599 -df 0.01"
+  customData "1"
 }
 Road {
   translation -972.826351 0.01 137.636697

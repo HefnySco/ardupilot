@@ -84,7 +84,8 @@ Webots::Webots(const char *frame_str) :
     Aircraft(frame_str)
 {
     use_time_sync = false;   //HERE
-    rate_hz = 4000;         //HERE
+    use_smoothing = false;
+    rate_hz = 1000;         //HERE
     last_state.timestamp = 0.0l;
     char *saveptr = nullptr;
     char *s = strdup(frame_str);
