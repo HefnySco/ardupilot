@@ -34,12 +34,12 @@ int UtilRPI::_check_rpi_version()
 {
     const unsigned int MAX_SIZE_LINE = 50;
     char buffer[MAX_SIZE_LINE];
+    char version[MAX_SIZE_LINE];
     int hw;
 
     FILE *f = fopen("/sys/firmware/devicetree/base/model", "r");
     if (f != nullptr && fgets(buffer, MAX_SIZE_LINE, f) != nullptr) {
         int ret = sscanf(buffer + 12, "%d", &_rpi_version);
-        fclose(f);
         if (ret != EOF) {
             if (_rpi_version > 3)  {
                 _rpi_version = 4;
@@ -48,7 +48,17 @@ int UtilRPI::_check_rpi_version()
                 _rpi_version = 2;
             } else if (_rpi_version == 0) {
                 // RPi 1 doesn't have a number there, so sscanf() won't have read anything.
-                _rpi_version = 1;
+                // test for RPI Zero
+                ret = sscanf (buffer +12, "%s", &version[0]);
+                if (ret != EOF)
+                {
+                    printf("RPI ZERO\n");
+                    _rpi_version = 1;
+                }
+                else
+                {
+                    _rpi_version = 1;
+                }
             }
 
             printf("%s. (intern: %d)\n", buffer, _rpi_version);
@@ -67,6 +77,9 @@ int UtilRPI::_check_rpi_version()
         _rpi_version = 2;
     } else if (hw == UTIL_HARDWARE_RPI1) {
         printf("Raspberry Pi 1 with BCM2708!\n");
+        _rpi_version = 1;
+    }else if (hw == UTIL_HARDWARE_RPI0) {
+        printf("Raspberry Pi Zero with BCM2835!\n");
         _rpi_version = 1;
     } else {
         /* defaults to RPi version 2/3 */

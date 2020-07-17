@@ -288,11 +288,14 @@
     #define HAL_HAVE_GETTIME_SETTIME 1
 
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHefny
+    // #define HAL_BOARD_LOG_DIRECTORY "/data/ftp/internal_000/ardupilot/logs"
+    // #define HAL_BOARD_TERRAIN_DIRECTORY "/data/ftp/internal_000/ardupilot/terrain"
+    // #define HAL_BOARD_STORAGE_DIRECTORY "/data/ftp/internal_000/ardupilot"
     #define HAL_BARO_PROBE_LIST PROBE_BARO_I2C(BMP085, 1, 0x77) 
     #define HAL_INS_PROBE_LIST PROBE_IMU_I2C2(L3G4200D,1, 0x69, 0x53)
     #define HAL_MAG_PROBE_LIST PROBE_MAG_I2C(HMC5843, 1, 0x1e, true, ROTATION_NONE)
     #define BMP085_EOC                  0 
-    #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
+    //#define HAL_PROBE_EXTERNAL_I2C_COMPASSES
     #define HAL_GPIO_A_LED_PIN        24
     #define HAL_GPIO_B_LED_PIN        25
     #define HAL_GPIO_C_LED_PIN        16

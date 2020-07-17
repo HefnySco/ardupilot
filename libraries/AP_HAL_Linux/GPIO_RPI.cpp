@@ -21,6 +21,7 @@
 #include "Util_RPI.h"
 
 // Raspberry Pi GPIO memory
+#define BCM2835_PERI_BASE   0x20000000
 #define BCM2708_PERI_BASE   0x20000000
 #define BCM2709_PERI_BASE   0x3F000000
 #define BCM2711_PERI_BASE   0xFE000000
@@ -47,7 +48,9 @@ void GPIO_RPI::init()
 {
     int rpi_version = UtilRPI::from(hal.util)->get_rpi_version();
     uint32_t gpio_address;
-    if(rpi_version == 1) {
+    if(rpi_version == 0) {
+        gpio_address = GPIO_BASE(BCM2835_PERI_BASE);
+    } else if(rpi_version == 1) {
         gpio_address = GPIO_BASE(BCM2708_PERI_BASE);
     } else if (rpi_version == 2) {
         gpio_address = GPIO_BASE(BCM2709_PERI_BASE);
