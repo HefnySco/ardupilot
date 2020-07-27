@@ -6,6 +6,7 @@
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DARK ||         \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHEFNY
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -32,6 +33,8 @@
 #define debug(fmt, args ...)
 #endif
 
+#define PAGE_SIZE           (4*1024)
+
 //Parametres
 #define RCIN_RPI_BUFFER_LENGTH   4
 #define RCIN_RPI_SAMPLE_FREQ     125
@@ -46,7 +49,7 @@
 // the first one in RcChnGpioTbl is channel 1 in receiver
 static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
     RPI_GPIO_<5>(),  RPI_GPIO_<6>(),  RPI_GPIO_<12>(),
-    RPI_GPIO_<13>(), RPI_GPIO_<19>(), RPI_GPIO_<20>(), 
+    RPI_GPIO_<13>(), RPI_GPIO_<19>(), RPI_GPIO_<20>(),
     RPI_GPIO_<21>(), RPI_GPIO_<26>()
 };
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO //MHEFNY
@@ -54,7 +57,7 @@ static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
 #define RCIN_RPI_SIG_LOW         1
 static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
 RPI_GPIO_<5>(),  RPI_GPIO_<6>(),  RPI_GPIO_<12>(),
-    RPI_GPIO_<22>(), RPI_GPIO_<27>(), RPI_GPIO_<20>(), //RPI_GPIO_<13>(), RPI_GPIO_<19>(), RPI_GPIO_<20>(), //MHefny
+    RPI_GPIO_<22>(), RPI_GPIO_<13>(),  RPI_GPIO_<20>(), //RPI_GPIO_<13>(), RPI_GPIO_<19>(), RPI_GPIO_<20>(), //MHefny
     RPI_GPIO_<21>(), RPI_GPIO_<26>()
 };
 #else
@@ -188,7 +191,7 @@ void *Memory_table::get_page(void **const pages, uint32_t addr) const
     if (addr >= PAGE_SIZE * _page_count) {
         return nullptr;
     }
-    return (uint8_t *)pages[(uint32_t)addr / 4096] + addr % 4096;
+    return (uint8_t *)pages[(uint32_t)addr / PAGE_SIZE] + addr % PAGE_SIZE;
 }
 
 //Get virtual address from the corresponding physical address from memory_table.
@@ -321,7 +324,7 @@ void RCInput_RPI::init_ctrl_data()
         if (i % 7 == 0) {
             cbp_curr = (dma_cb_t*)con_blocks->get_page(con_blocks->_virt_pages, cbp);
 
-            init_dma_cb(&cbp_curr, RCIN_RPI_DMA_NO_WIDE_BURSTS | RCIN_RPI_DMA_WAIT_RESP | RCIN_RPI_DMA_DEST_INC | RCIN_RPI_DMA_SRC_INC, RCIN_RPI_TIMER_BASE,
+            init_dma_cb(&cbp_curr, RCIN_RPI_DMA_NO_WIDE_BURSTS | RCIN_RPI_DMA_WAIT_RESP , RCIN_RPI_TIMER_BASE,
                         (uintptr_t)circle_buffer->get_page(circle_buffer->_phys_pages, dest),
                         8,
                         0,
@@ -402,6 +405,12 @@ void RCInput_RPI::init_DMA()
     dma_reg[RCIN_RPI_DMA_CONBLK_AD | RCIN_RPI_DMA_CHANNEL << 8] = reinterpret_cast<uintptr_t>(con_blocks->get_page(con_blocks->_phys_pages, 0));//Set first control block address
     dma_reg[RCIN_RPI_DMA_DEBUG | RCIN_RPI_DMA_CHANNEL << 8] = 7;                      // clear debug error flags
     dma_reg[RCIN_RPI_DMA_CS | RCIN_RPI_DMA_CHANNEL << 8] = 0x10880001;                // go, mid priority, wait for outstanding writes    
+        
+    // 000010000100010000000000000000001
+    // b0       : Active: 1
+    // b19:16   : PRIORITY: 1000
+    // b23:20   : PANIC_PRIORITY: 1000
+    // b28      : WAIT_FOR_OUTSTANDING_WRITES
 }
 
 
@@ -521,7 +530,8 @@ void RCInput_RPI::_timer_tick()
     }
 
     // Now we are getting address in which DMAC is writing at current moment
-    dma_cb_t *ad = (dma_cb_t *)con_blocks->get_virt_addr(dma_reg[RCIN_RPI_DMA_CONBLK_AD | RCIN_RPI_DMA_CHANNEL << 8]);
+    const uint32_t phys_addr = dma_reg[RCIN_RPI_DMA_CONBLK_AD | RCIN_RPI_DMA_CHANNEL << 8];
+    dma_cb_t *ad = (dma_cb_t *)con_blocks->get_virt_addr(phys_addr);
 
     if (!ad) {
         debug("DMA sampling stopped, restarting...\n");
@@ -531,12 +541,25 @@ void RCInput_RPI::_timer_tick()
         return;
     }
 
-    for (int j = 1; j >= -1; j--) {
-        void *x = circle_buffer->get_virt_addr((ad + j)->dst);
+    uint32_t offset = con_blocks->get_offset(con_blocks->_virt_pages,(uintptr_t)ad);
+    for (int16_t j = 1; j >= -1; j--) {
+        dma_cb_t * index = (dma_cb_t *)con_blocks->get_page(con_blocks->_virt_pages,offset + (uint32_t)(sizeof(dma_cb_t) * j));
+        if (!index) 
+        {
+           //TODO: MAKE contiue Here & TEST AGAIN
+            continue ;
+        }
+        
+
+        
+        dma_cb_t * cb = index;
+        
+        void *x = circle_buffer->get_virt_addr((cb)->dst);
+        
         if (x != nullptr) {
             counter = circle_buffer->bytes_available(curr_pointer,
-                                                     circle_buffer->get_offset(circle_buffer->_virt_pages, (uintptr_t)x));
-            break;
+                        circle_buffer->get_offset(circle_buffer->_virt_pages, (uintptr_t)x));
+                break;
         }
     }
 
