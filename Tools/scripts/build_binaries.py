@@ -564,6 +564,7 @@ is bob we will attempt to checkout bob-AVR'''
                 "edge",
                 "pxf",
                 "pxfmini",
+                "rzero",
                 "KakuteF4",
                 "KakuteF7",
                 "KakuteF7Mini",

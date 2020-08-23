@@ -10,6 +10,7 @@
 
 // make sensor selection clearer
 #define PROBE_IMU_I2C(driver, bus, addr, args ...) ADD_BACKEND(AP_InertialSensor_ ## driver::probe(*this,GET_I2C_DEVICE(bus, addr),##args))
+#define PROBE_IMU_I2C2(driver, bus, addr_gyro, addr_accel, args ...) ADD_BACKEND(AP_InertialSensor_ ## driver::probe(*this,hal.i2c_mgr->get_device(bus, addr_gyro),hal.i2c_mgr->get_device(bus, addr_accel),##args))
 #define PROBE_IMU_SPI(driver, devname, args ...) ADD_BACKEND(AP_InertialSensor_ ## driver::probe(*this,hal.spi->get_device(devname),##args))
 #define PROBE_IMU_SPI2(driver, devname1, devname2, args ...) ADD_BACKEND(AP_InertialSensor_ ## driver::probe(*this,hal.spi->get_device(devname1),hal.spi->get_device(devname2),##args))
 
@@ -286,6 +287,17 @@
 
     #define HAL_HAVE_GETTIME_SETTIME 1
 
+#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO
+    #define HAL_INS_PROBE_LIST PROBE_IMU_I2C2(L3G4200D,1, 0x69, 0x53)
+    #define HAL_BARO_PROBE_LIST PROBE_BARO_I2C(BMP085, 1, 0x77) 
+    #define HAL_MAG_PROBE_LIST PROBE_MAG_I2C(HMC5843, 1, 0x1e, true, ROTATION_NONE)
+    #define BMP085_EOC                  0 
+    //#define HAL_PROBE_EXTERNAL_I2C_COMPASSES
+    #define HAL_GPIO_A_LED_PIN        24
+    #define HAL_GPIO_B_LED_PIN        25
+    #define HAL_GPIO_C_LED_PIN        16
+    #define HAL_GPIO_LED_ON           1
+    #define HAL_GPIO_LED_OFF          0
 #else
     #error "no Linux board subtype set"
 #endif
