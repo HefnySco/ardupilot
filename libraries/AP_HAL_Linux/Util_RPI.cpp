@@ -47,7 +47,16 @@ int UtilRPI::_check_rpi_version()
                 _rpi_version = 2;
             } else if (_rpi_version == 0) {
                 // RPi 1 doesn't have a number there, so sscanf() won't have read anything.
-                _rpi_version = 1;
+                ret = sscanf (buffer +12, "%s", &version[0]);
+                if (ret != EOF)
+                {
+                    printf("RPI ZERO\n");
+                    _rpi_version = 0;
+                }
+                else
+                {
+                    _rpi_version = 1;
+                }
             }
 
             printf("%s. (intern: %d)\n", buffer, _rpi_version);
