@@ -34,6 +34,7 @@ int UtilRPI::_check_rpi_version()
 {
     const unsigned int MAX_SIZE_LINE = 50;
     char buffer[MAX_SIZE_LINE];
+    char version[MAX_SIZE_LINE];
     int hw;
 
     FILE *f = fopen("/sys/firmware/devicetree/base/model", "r");
