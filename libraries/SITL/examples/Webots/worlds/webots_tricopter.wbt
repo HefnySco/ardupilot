@@ -1,9 +1,10 @@
-#VRML_SIM R2020a utf8
+#VRML_SIM R2020b utf8
 WorldInfo {
-  gravity 0 -9.80665 0
+  gravity 9.80665
   physics "sitl_physics_env"
   basicTimeStep 1
   FPS 25
+  coordinateSystem "NUE"
   randomSeed 52
 }
 Robot {
@@ -37,8 +38,8 @@ DogHouse {
   name "dog house(5)"
 }
 Viewpoint {
-  orientation 0.9952082156446058 0.09310572995296737 0.02986520656892867 5.659589519324221
-  position -0.1971228135348432 5.281009887921962 4.9181113380378845
+  orientation 0.9817595579497901 0.18074833080110114 0.05897636210252833 5.641450773408579
+  position -0.566956533525816 5.343450345647435 4.848611699018408
   follow "tricopter"
 }
 Background {
@@ -96,8 +97,8 @@ DEF DEF_VEHICLE Robot {
             }
           ]
           endPoint Solid {
-            translation -4.8849852365954544e-15 -4.102262941093136e-12 1.8091922030330322e-13
-            rotation 3.4266344293343444e-10 1 -6.900208306501498e-10 1.5707963071795863
+            translation -4.884985390644269e-15 -4.1022629410929515e-12 1.8091922030330322e-13
+            rotation 3.614395204976792e-10 1 -7.087969085826934e-10 1.5707963071795863
             children [
               Propeller {
                 shaftAxis 0 1 0
@@ -285,7 +286,12 @@ DEF DEF_VEHICLE Robot {
     mass 0.001
   }
   controller "ardupilot_SITL_TRICOPTER"
-  controllerArgs "-p 5599  -df 0.01"
+  controllerArgs [
+    "-p"
+    "5599"
+    "-df"
+    "0.01"
+  ]
   customData "1"
 }
 DirectionalLight {

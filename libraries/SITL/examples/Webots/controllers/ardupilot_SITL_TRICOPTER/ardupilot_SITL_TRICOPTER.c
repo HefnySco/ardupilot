@@ -59,7 +59,6 @@ static WbDeviceTag receiver;
 static WbDeviceTag emitter;
 #endif
 static double _linear_velocity[3] = {0.0,0.0,0.0};
-static double northDirection = 1;
 static double v[MOTOR_NUM];
 static double servo_value = 0;
 #ifdef DEBUG_USE_KB
@@ -163,7 +162,6 @@ static void read_incoming_messages()
      _linear_velocity[0] = data[0];
      _linear_velocity[1] = data[1];
      _linear_velocity[2] = data[2];
-     northDirection      = data[3];
      //printf("RAW Data [%f, %f, %f]\n", linear_velocity[0], linear_velocity[2], linear_velocity[1]);
     
      wb_receiver_next_packet(receiver);
@@ -342,7 +340,7 @@ void run ()
         
         
         // trigget ArduPilot to send motor data
-        getAllSensors ((char *)send_buf, northDirection, gyro,accelerometer,compass,gps, inertialUnit);
+        getAllSensors ((char *)send_buf, gyro,accelerometer,compass,gps, inertialUnit);
 
         #ifdef DEBUG_SENSORS
         printf("at %lf  %s\n",wb_robot_get_time(), send_buf);

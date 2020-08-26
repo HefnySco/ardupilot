@@ -38,9 +38,8 @@ static Robot *robots[MAX_NUM_ROBOTS];
 static int actualRobots = 0;
 double *linear_velocity;
 
-
-static double northDirection[3] = {1.0,0.0,0.0};
-static double outputData[4] = {0.0,0.0,0.0,0.0};
+static bool osm_dimentions = false;
+static double outputData[3] = {0.0,0.0,0.0};
     
 /*
  * You may want to add macros here.
@@ -51,6 +50,24 @@ static int timestep;
 void initialize (int argc, char *argv[])
 {
 
+  
+  
+  for (int i = 0; i < argc; ++i)
+  {
+      if (strcmp (argv[i],"-o")==0)
+      { 
+        osm_dimentions = true;
+        printf("OSM coordinates.\n");
+      }
+      else
+      {
+        printf("Default Axis.\n");
+      }
+      
+      
+  }
+  
+  
   WbNodeRef root, node;
   WbFieldRef children, field;
   int n, i , note_type;
@@ -66,6 +83,7 @@ void initialize (int argc, char *argv[])
   children = wb_supervisor_node_get_field(root, "children");
   n = wb_supervisor_field_get_count(children);
   printf("This world contains %d nodes:\n", n);
+  
   for (i = 0, actualRobots=0; i < n; i++) {
     node = wb_supervisor_field_get_mf_node(children, i);
     field = wb_supervisor_node_get_field(node, "name");
@@ -77,7 +95,7 @@ void initialize (int argc, char *argv[])
     }
     else if ((note_type == WB_NODE_ROBOT) && (node != self_node))
     {
-      /* code */
+       // if nodes are defined as robot & has index in customData then add it to robots list.
        if (actualRobots < MAX_NUM_ROBOTS)
         {
           WbFieldRef channel = wb_supervisor_node_get_field(node, "customData");
@@ -98,54 +116,30 @@ void initialize (int argc, char *argv[])
     
     
   }
-  node = wb_supervisor_field_get_mf_node(children, 0);
   
+  // read coordinates based on webots version.
+  // first check if property "coordinateSystem" exists then it is webots2020b or later.
+  node = wb_supervisor_field_get_mf_node(children, 0);
   field = wb_supervisor_node_get_field(node, "coordinateSystem");
   if (field != 0)
   {
-    char coor[4];
-    strcpy(&coor[0],wb_supervisor_field_get_sf_string(field));
-
-    printf("coordinateSystem property found %s\n",coor);
-
-    if (strcmp(coor,"NUE")==0)
-    {
-      outputData[3] = 1.0;
-      printf ("Axis Default Directions\n");
-    }
-    else
-    {
-      outputData[3] = 0.0;
-    }
-    
+    // if (osm_dimentions == true)
+    // {
+    //   outputData[3]= 0.0;
+    // }
+    // else
+    // {
+    //   outputData[3]= 1.1;
+    // }
   }
   else
   {
 
-    // OLDER Webots version < webots_2020b
-    printf("Version less than  Webots2020b\n");
-    field = wb_supervisor_node_get_field(node, "northDirection");
-    memcpy(&northDirection,wb_supervisor_field_get_sf_vec3f(field),sizeof(double)*3);
-  
-    
-    if (northDirection[0] == 1)
-    {
-      printf ("Axis Default Directions\n");
-    }
-
-    //printf("WorldInfo.northDirection = %g %g %g\n\n", northDirection[0], northDirection[1], northDirection[2]);
-    printf("WorldInfo.coordinateSystem = %g %g %g\n\n", northDirection[0], northDirection[1], northDirection[2]);
-
-    /*
-    * This is used to handle sensors axis when northDirection is different than [1,0,0]
-    * Note: that only two values are handled here.
-    * Local map northDirection [1,0,0]
-    * OpenStreetView map northDirection [0,0,1]
-    */
-    outputData[3] = northDirection[0]; // send Map indicator;
-      
+    printf("OLD Webots version please upgrade");
+    wb_robot_cleanup();
+    exit(-1);
   }
-  outputData[3] = 0;
+  
   printf("SUPVERVISOR timestep %d\n", timestep);
   
 
@@ -202,7 +196,7 @@ int main(int argc, char **argv) {
       memcpy(outputData,linear_velocity, sizeof(double) * 3);
 
       wb_emitter_set_channel(emitter, robots[i]->receiver_channel);
-      wb_emitter_send(emitter, (const void *) outputData, sizeof(double) * 4);
+      wb_emitter_send(emitter, (const void *) outputData, sizeof(double) * 3);
       #ifdef DEBUG_DATA
       printf ("#%d at %lf Robot#%d  [%lf, %lf, %lf, %lf]\n", test, wb_robot_get_time(), i, outputData[0], outputData[1], outputData[2], outputData[3]); 
       #endif

@@ -1,15 +1,16 @@
-#VRML_SIM R2020a utf8
+#VRML_SIM R2020b utf8
 WorldInfo {
   info [
     "World generated using the Open Street Map to Webots importer"
     "Author: David Mansolino <david.mansolino@epfl.ch>"
   ]
+  gravity 9.80665
   physics "sitl_physics_env"
   basicTimeStep 2
   FPS 5
   optimalThreadCount 4
   physicsDisableTime 0
-  northDirection 0 0 1
+  coordinateSystem "NUE"
   randomSeed 52
 }
 Robot {
@@ -31,8 +32,8 @@ Robot {
   supervisor TRUE
 }
 Viewpoint {
-  orientation 0.014725779314097494 -0.9919834300212472 -0.12550707544546588 3.0995220684886386
-  position 2.89801721483057 4.724764389642478 -15.01424412872485
+  orientation 0.023655638392062722 -0.9621351207409219 -0.2715445087073493 3.1821863189944
+  position 3.800720974869158 9.35613646229581 -15.461795653834624
   near 3
   follow "quad_plus_sitl"
   followType "Mounted Shot"
@@ -373,7 +374,12 @@ DEF DEF_VEHICLE Robot {
   }
   rotationStep 0.261799
   controller "ardupilot_SITL_QUAD"
-  controllerArgs "-p 5599 -df 0.01"
+  controllerArgs [
+    "-p"
+    "5599"
+    "-df"
+    "0.01"
+  ]
   customData "1"
 }
 DEF DEF_VEHICLE2 Robot {
@@ -383,7 +389,7 @@ DEF DEF_VEHICLE2 Robot {
     Receiver {
       name "receiver_main"
       type "serial"
-      channel 1
+      channel 2
       bufferSize 32
     }
     Emitter {
@@ -696,7 +702,12 @@ DEF DEF_VEHICLE2 Robot {
   }
   rotationStep 0.261799
   controller "ardupilot_SITL_QUAD"
-  controllerArgs "-p 5598 -df 0.01"
+  controllerArgs [
+    "-p"
+    "5598"
+    "-df"
+    "0.01"
+  ]
   customData "2"
 }
 Road {

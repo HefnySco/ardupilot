@@ -14,10 +14,10 @@
 WbNodeRef self_node;
 double *linear_velocity;
 
-void getInertia (const WbDeviceTag inertialUnit, const double coordinateSystem_NUE, char *buf);
-void getLinearVelocity (WbNodeRef nodeRef, const double coordinateSystem_NUE, char * buf);
-void getCompass (const WbDeviceTag compass, const double coordinateSystem_NUE, char *buf);
-void getAcc (const WbDeviceTag accelerometer, const double coordinateSystem_NUE, char *buf);
-void getGyro (const WbDeviceTag gyro, const double coordinateSystem_NUE, char *buf);
-void getGPS (const WbDeviceTag gps, const double coordinateSystem_NUE, char *buf);
-void getAllSensors (char *buf, const double coordinateSystem_NUE, WbDeviceTag gyro, WbDeviceTag accelerometer, WbDeviceTag compass, const WbDeviceTag gps, const WbDeviceTag inertial_unit);
+void getInertia (const WbDeviceTag inertialUnit, char *buf);
+void getLinearVelocity (WbNodeRef nodeRef, char * buf);
+void getCompass (const WbDeviceTag compass, char *buf);
+void getAcc (const WbDeviceTag accelerometer, char *buf);
+void getGyro (const WbDeviceTag gyro, char *buf);
+void getGPS (const WbDeviceTag gps, char *buf);
+void getAllSensors (char *buf, WbDeviceTag gyro, WbDeviceTag accelerometer, WbDeviceTag compass, const WbDeviceTag gps, const WbDeviceTag inertial_unit);

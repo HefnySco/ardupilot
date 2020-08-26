@@ -57,7 +57,6 @@ static WbDeviceTag emitter;
 static WbDeviceTag receiver;
 
 static double _linear_velocity[3] = {0.0,0.0,0.0};
-double coordinateSystem_NUE = 1;
 static double v[MOTOR_NUM];
 int port;
 float dragFactor = VEHICLE_DRAG_FACTOR;
@@ -160,7 +159,6 @@ static void read_incoming_messages()
      _linear_velocity[0]  = data[0];
      _linear_velocity[1]  = data[1];
      _linear_velocity[2]  = data[2];
-     coordinateSystem_NUE = data[3];
      //printf("RAW Data [%f, %f, %f]\n", linear_velocity[0], linear_velocity[2], linear_velocity[1]);
     
      wb_receiver_next_packet(receiver);
@@ -223,18 +221,11 @@ void update_controls()
     A is the cross section of our quad in m³ in the direction of movement
     v is the velocity in m/s
   */
-  if (coordinateSystem_NUE == 1)
-  {
-    wind_webots_axis.x =  state.wind.x - linear_velocity[0];
-    wind_webots_axis.z = -state.wind.y - linear_velocity[2];   // "-state.wind.y" as angle 90 wind is from EAST.
-    wind_webots_axis.y =  state.wind.z - linear_velocity[1];
-  }
-  else
-  { // as in pyramids and any open map street world.
-    wind_webots_axis.x =  state.wind.y - linear_velocity[0]; // always add "linear_velocity" as there is no axis transformation here.
-    wind_webots_axis.z = -state.wind.x - linear_velocity[2];
-    wind_webots_axis.y =  state.wind.z - linear_velocity[1];
-  }
+  
+  wind_webots_axis.x =  state.wind.x - linear_velocity[0];
+  wind_webots_axis.z = -state.wind.y - linear_velocity[2];   // "-state.wind.y" as angle 90 wind is from EAST.
+  wind_webots_axis.y =  state.wind.z - linear_velocity[1];
+  
 
   wind_webots_axis.x = dragFactor * wind_webots_axis.x * abs(wind_webots_axis.x);
   wind_webots_axis.z = dragFactor * wind_webots_axis.z * abs(wind_webots_axis.z);
@@ -343,7 +334,7 @@ void run ()
         read_incoming_messages();
         
         // trigget ArduPilot to send motor data 
-        getAllSensors ((char *)send_buf, coordinateSystem_NUE, gyro,accelerometer,compass,gps, inertialUnit);
+        getAllSensors ((char *)send_buf, gyro,accelerometer,compass,gps, inertialUnit);
 
         #ifdef DEBUG_SENSORS
         printf("at %lf  %s\n",wb_robot_get_time(), send_buf);
