@@ -1,10 +1,11 @@
-#VRML_SIM R2020a utf8
+#VRML_SIM R2020b utf8
 WorldInfo {
-  gravity 0 -9.80665 0
+  gravity 9.80665
   physics "sitl_physics_env"
   basicTimeStep 1
   FPS 15
   optimalThreadCount 4
+  coordinateSystem "NUE"
   randomSeed 52
 }
 Robot {
@@ -27,7 +28,7 @@ Robot {
 }
 Viewpoint {
   orientation 0.9997978097496996 0.017446300161270606 0.009998311376764756 5.242214502651711
-  position -0.10961792118984595 8.021071573852062 4.261928842800047
+  position -0.0606963703566146 27.9314450318999 16.11184197640243
   follow "quad_plus_sitl"
   followType "Mounted Shot"
 }
@@ -66,7 +67,6 @@ Solid {
 }
 DEF DEF_VEHICLE Robot {
   translation -0.027601 0.674307 0.005031
-  rotation -0.012461000916064287 0.999885073506054 -0.008635000634797779 -0.22761130717958622
   children [
     Receiver {
       name "receiver_main"
@@ -99,6 +99,7 @@ DEF DEF_VEHICLE Robot {
     }
     GPS {
       name "gps1"
+      type "laser"
     }
     Accelerometer {
       name "accelerometer1"
@@ -383,7 +384,12 @@ DEF DEF_VEHICLE Robot {
   }
   rotationStep 0.261799
   controller "ardupilot_SITL_QUAD"
-  controllerArgs "-p 5599 -df 0.01"
+  controllerArgs [
+    "-p"
+    "5599"
+    "-df"
+    "0.01"
+  ]
   customData "1"
 }
 DirectionalLight {

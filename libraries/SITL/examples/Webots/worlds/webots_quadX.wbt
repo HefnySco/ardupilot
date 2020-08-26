@@ -5,6 +5,7 @@ WorldInfo {
   basicTimeStep 2
   FPS 15
   optimalThreadCount 4
+  coordinateSystem "NUE"
   randomSeed 52
 }
 Robot {

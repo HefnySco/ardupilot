@@ -40,7 +40,8 @@ double *linear_velocity;
 
 
 static double northDirection[3] = {1.0,0.0,0.0};
-
+static double outputData[4] = {0.0,0.0,0.0,0.0};
+    
 /*
  * You may want to add macros here.
  */
@@ -98,19 +99,53 @@ void initialize (int argc, char *argv[])
     
   }
   node = wb_supervisor_field_get_mf_node(children, 0);
-  field = wb_supervisor_node_get_field(node, "northDirection");
-  memcpy(&northDirection,wb_supervisor_field_get_sf_vec3f(field),sizeof(double)*3);
-    
-  if (northDirection[0] == 1)
-  {
-    printf ("Axis Default Directions\n");
-  }
-
-  printf("WorldInfo.northDirection = %g %g %g\n\n", northDirection[0], northDirection[1], northDirection[2]);
-
-
-
   
+  field = wb_supervisor_node_get_field(node, "coordinateSystem");
+  if (field != 0)
+  {
+    char coor[4];
+    strcpy(&coor[0],wb_supervisor_field_get_sf_string(field));
+
+    printf("coordinateSystem property found %s\n",coor);
+
+    if (strcmp(coor,"NUE")==0)
+    {
+      outputData[3] = 1.0;
+      printf ("Axis Default Directions\n");
+    }
+    else
+    {
+      outputData[3] = 0.0;
+    }
+    
+  }
+  else
+  {
+
+    // OLDER Webots version < webots_2020b
+    printf("Version less than  Webots2020b\n");
+    field = wb_supervisor_node_get_field(node, "northDirection");
+    memcpy(&northDirection,wb_supervisor_field_get_sf_vec3f(field),sizeof(double)*3);
+  
+    
+    if (northDirection[0] == 1)
+    {
+      printf ("Axis Default Directions\n");
+    }
+
+    //printf("WorldInfo.northDirection = %g %g %g\n\n", northDirection[0], northDirection[1], northDirection[2]);
+    printf("WorldInfo.coordinateSystem = %g %g %g\n\n", northDirection[0], northDirection[1], northDirection[2]);
+
+    /*
+    * This is used to handle sensors axis when northDirection is different than [1,0,0]
+    * Note: that only two values are handled here.
+    * Local map northDirection [1,0,0]
+    * OpenStreetView map northDirection [0,0,1]
+    */
+    outputData[3] = northDirection[0]; // send Map indicator;
+      
+  }
+  outputData[3] = 0;
   printf("SUPVERVISOR timestep %d\n", timestep);
   
 
@@ -156,7 +191,6 @@ int main(int argc, char **argv) {
      * Enter here functions to send actuator commands, like:
      * wb_motor_set_position(my_actuator, 10.0);
      */
-    static double outputData[4];
     for (int i=0; i < actualRobots; ++i)
     {
 
@@ -167,13 +201,6 @@ int main(int argc, char **argv) {
       //printf("%s",buf);
       memcpy(outputData,linear_velocity, sizeof(double) * 3);
 
-      /*
-      * This is used to handle sensors axis when northDirection is different than [1,0,0]
-      * Note: that only two values are handled here.
-      * Local map northDirection [1,0,0]
-      * OpenStreetView map northDirection [0,0,1]
-      */
-      outputData[3] = northDirection[0]; // send Map indicator;
       wb_emitter_set_channel(emitter, robots[i]->receiver_channel);
       wb_emitter_send(emitter, (const void *) outputData, sizeof(double) * 4);
       #ifdef DEBUG_DATA

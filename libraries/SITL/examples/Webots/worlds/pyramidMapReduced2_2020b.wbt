@@ -13,8 +13,8 @@ WorldInfo {
   randomSeed 52
 }
 Robot {
-  translation -1.949999999999999 0.23391237384410402 0
-  rotation 0 0 1 2.533555103014215e-15
+  translation -1.949999999999999 0.04997547499999999 1.6968437977767313e-18
+  rotation -5.258755247531688e-05 -0.002146513377770023 0.9999976948547774 2.5334277161700667e-15
   children [
     Emitter {
       type "serial"
@@ -29,10 +29,12 @@ Robot {
   }
   controller "ardupilot_SITL_Supervisor"
   supervisor TRUE
+  linearVelocity -3.335387524695017e-18 1.1356570281500562e-15 1.8981184227344e-18
+  angularVelocity 4.9960036108131694e-17 2.53948928941432e-18 5.828670879282056e-17
 }
 Viewpoint {
-  orientation 0.0214072417543039 0.6775004432427076 0.7352107720962796 3.10221843710644
-  position 148.77722856695596 1545.2382279069236 92.64479990243377
+  orientation -0.285220616665308 -0.694859754614263 -0.6601659800735478 2.644997428599139
+  position 101.02129913838945 1552.1068970483052 -102.73492382252934
   near 3
   follow "quad_plus_sitl"
   followType "Mounted Shot"
@@ -54,8 +56,8 @@ Floor {
   }
 }
 DEF DEF_VEHICLE Robot {
-  translation 7.15062e-12 0.06 1.08491e-11
-  rotation -1.6967771456756733e-10 1 2.4151813868919206e-10 -0.7512383045779282
+  translation -43.749999813410405 0.04993868746984293 33.51000174389255
+  rotation -0.9989836409947543 6.320674942463307e-07 -0.04507421684804243 -3.4944107838470876e-05
   children [
     Receiver {
       name "receiver_main"
@@ -84,6 +86,7 @@ DEF DEF_VEHICLE Robot {
       height 128
     }
     Compass {
+      rotation 0 1 0 -1.5707996938995747
       name "compass1"
       rotationStep 0.261799
     }
@@ -97,6 +100,7 @@ DEF DEF_VEHICLE Robot {
       name "gyro1"
     }
     InertialUnit {
+      rotation 0 1 0 1.5707950010791611
       name "inertial_unit"
     }
     Transform {
@@ -380,6 +384,8 @@ DEF DEF_VEHICLE Robot {
     "0.01"
   ]
   customData "1"
+  linearVelocity 8.921129729157473e-07 -1.154789815822301e-09 3.333411363692297e-05
+  angularVelocity 0.0006666211652219772 8.405749536065378e-10 -1.784443550492608e-05
 }
 Road {
   translation -972.826351 0.01 137.636697
