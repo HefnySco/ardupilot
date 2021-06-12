@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "AP_HAL_Linux.h"
 
+#define GPIO_RPI_MAX_NUMBER_PINS 32
+
 /**
  * @brief Check for valid Raspberry Pi pin range
  *
@@ -11,7 +13,7 @@
  */
 template <uint8_t pin> constexpr uint8_t RPI_GPIO_()
 {
-    static_assert(pin > 1 && pin < 32, "Invalid pin value.");
+    static_assert(pin > 1 && pin < GPIO_RPI_MAX_NUMBER_PINS, "Invalid pin value.");
     return pin;
 }
 
@@ -192,6 +194,9 @@ private:
     // File descriptor for the memory device file
     // If it's negative, then there was an error opening the file.
     int _system_memory_device;
+
+    uint8_t _gpio_output_state[GPIO_RPI_MAX_NUMBER_PINS];
+
 };
 
 }

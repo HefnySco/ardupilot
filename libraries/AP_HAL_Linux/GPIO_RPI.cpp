@@ -20,7 +20,7 @@
 #include "GPIO.h"
 #include "Util_RPI.h"
 
-#define GPIO_RPI_MAX_NUMBER_PINS 32
+
 
 using namespace Linux;
 
@@ -228,7 +228,7 @@ void GPIO_RPI::write(uint8_t pin, uint8_t value)
 
 void GPIO_RPI::toggle(uint8_t pin)
 {
-    write(pin, !read(pin));
+    write(pin, !_gpio_output_state[pin]);
 }
 
 /* Alternative interface: */
