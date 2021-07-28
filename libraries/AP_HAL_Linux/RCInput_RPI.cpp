@@ -541,25 +541,22 @@ void RCInput_RPI::_timer_tick()
         return;
     }
 
-    uint32_t offset = con_blocks->get_offset(con_blocks->_virt_pages,(uintptr_t)ad);
-    for (int16_t j = 1; j >= -1; j--) {
-        dma_cb_t * index = (dma_cb_t *)con_blocks->get_page(con_blocks->_virt_pages,offset + (uint32_t)(sizeof(dma_cb_t) * j));
-        if (!index) 
+    const uint32_t offset = con_blocks->get_offset(con_blocks->_virt_pages,(uintptr_t)ad);
+    for (int j = 1; j >= -1; j--) {
+        
+        // Get address of next or previous (dma_cb_t)
+        ad = (dma_cb_t *)con_blocks->get_page(con_blocks->_virt_pages,offset + (uint32_t)(sizeof(dma_cb_t) * j));
+        if (!ad) 
         {
-           //TODO: MAKE contiue Here & TEST AGAIN
-            continue ;
+           continue ;
         }
         
-
-        
-        dma_cb_t * cb = index;
-        
-        void *x = circle_buffer->get_virt_addr((cb)->dst);
+        void *x = circle_buffer->get_virt_addr((ad)->dst);
         
         if (x != nullptr) {
             counter = circle_buffer->bytes_available(curr_pointer,
-                        circle_buffer->get_offset(circle_buffer->_virt_pages, (uintptr_t)x));
-                break;
+                                                     circle_buffer->get_offset(circle_buffer->_virt_pages, (uintptr_t)x));
+            break;
         }
     }
 
