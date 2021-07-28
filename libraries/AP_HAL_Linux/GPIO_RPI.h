@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "AP_HAL_Linux.h"
 
+#define GPIO_RPI_MAX_NUMBER_PINS 32
+
 /**
  * @brief Check for valid Raspberry Pi pin range
  *
@@ -11,7 +13,7 @@
  */
 template <uint8_t pin> constexpr uint8_t RPI_GPIO_()
 {
-    static_assert(pin > 1 && pin < 32, "Invalid pin value.");
+    static_assert(pin > 1 && pin < GPIO_RPI_MAX_NUMBER_PINS, "Invalid pin value.");
     return pin;
 }
 
@@ -42,7 +44,6 @@ public:
 private:
     // Raspberry Pi BASE memory address
     enum class Address : uint32_t {
-        BCM2835_PERIPHERAL_BASE = 0x20000000, // Raspberry Pi 0
         BCM2708_PERIPHERAL_BASE = 0x20000000, // Raspberry Pi 0/1
         BCM2709_PERIPHERAL_BASE = 0x3F000000, // Raspberry Pi 2/3
         BCM2711_PERIPHERAL_BASE = 0xFE000000, // Raspberry Pi 4
@@ -193,6 +194,9 @@ private:
     // File descriptor for the memory device file
     // If it's negative, then there was an error opening the file.
     int _system_memory_device;
+
+    uint8_t _gpio_output_state[GPIO_RPI_MAX_NUMBER_PINS];
+
 };
 
 }

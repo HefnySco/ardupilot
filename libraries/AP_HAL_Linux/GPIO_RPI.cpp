@@ -6,7 +6,7 @@
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO
-    
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -21,21 +21,7 @@
 #include "GPIO.h"
 #include "Util_RPI.h"
 
-// Raspberry Pi GPIO memory
-#define BCM2835_PERI_BASE   0x20000000
-#define BCM2708_PERI_BASE   0x20000000
-#define BCM2709_PERI_BASE   0x3F000000
-#define BCM2711_PERI_BASE   0xFE000000
-#define GPIO_BASE(address)  (address + 0x200000)
 
-// GPIO setup. Always use INP_GPIO(x) before OUT_GPIO(x) or SET_GPIO_ALT(x,y)
-#define GPIO_MODE_IN(g)     *(_gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
-#define GPIO_MODE_OUT(g)    *(_gpio+((g)/10)) |=  (1<<(((g)%10)*3))
-#define GPIO_MODE_ALT(g,a)  *(_gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
-#define GPIO_SET_HIGH       *(_gpio+7)  // sets   bits which are 1
-#define GPIO_SET_LOW        *(_gpio+10) // clears bits which are 1
-#define GPIO_GET(g)         (*(_gpio+13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
-#define GPIO_RPI_MAX_NUMBER_PINS 32
 
 using namespace Linux;
 
@@ -174,16 +160,12 @@ void GPIO_RPI::closeMemoryDevice()
 
 void GPIO_RPI::init()
 {
-    int rpi_version = UtilRPI::from(hal.util)->get_rpi_version();
-    GPIO_RPI::Address peripheral_base;
-    
-    if(rpi_version == 0) {
-        peripheral_base = Address::BCM2835_PERIPHERAL_BASE;
-    } else if(rpi_version == 1) {
-        peripheral_base = Address::BCM2708_PERIPHERAL_BASE;
+    const int rpi_version = UtilRPI::from(hal.util)->get_rpi_version();
 
-    } else
-     if (rpi_version == 2) {
+    GPIO_RPI::Address peripheral_base;
+    if(rpi_version == 1) {
+        peripheral_base = Address::BCM2708_PERIPHERAL_BASE;
+    } else if (rpi_version == 2) {
         peripheral_base = Address::BCM2709_PERIPHERAL_BASE;
     } else {
         peripheral_base = Address::BCM2711_PERIPHERAL_BASE;
@@ -217,7 +199,6 @@ void GPIO_RPI::pinMode(uint8_t pin, uint8_t output)
 
 void GPIO_RPI::pinMode(uint8_t pin, uint8_t output, uint8_t alt)
 {
-    assert(alt < 6);
     if (output == HAL_GPIO_INPUT) {
         set_gpio_mode_in(pin);
     } else if (output == HAL_GPIO_ALT) {
@@ -248,7 +229,7 @@ void GPIO_RPI::write(uint8_t pin, uint8_t value)
 
 void GPIO_RPI::toggle(uint8_t pin)
 {
-    write(pin, !read(pin));
+    write(pin, !_gpio_output_state[pin]);
 }
 
 /* Alternative interface: */
