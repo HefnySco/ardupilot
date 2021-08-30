@@ -12,7 +12,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "AP_BoardLED_RZero.h"
+#include "AP_BoardLED_OBAL.h"
 
 #include "AP_Notify.h"
 
@@ -26,7 +26,7 @@ static_assert((HAL_GPIO_A_LED_PIN != HAL_GPIO_C_LED_PIN), "Duplicate LED assignm
 
 extern const AP_HAL::HAL& hal;
 
-bool AP_BoardLED_RZero::init(void)
+bool AP_BoardLED_OBAL::init(void)
 {
     // setup the main LEDs as outputs
     hal.gpio->pinMode(HAL_GPIO_A_LED_PIN, HAL_GPIO_OUTPUT);
@@ -41,7 +41,7 @@ bool AP_BoardLED_RZero::init(void)
 /*
   main update function called at 50Hz
  */
-void AP_BoardLED_RZero::update(void)
+void AP_BoardLED_OBAL::update(void)
 {
     _counter++;
 
@@ -167,6 +167,6 @@ void AP_BoardLED_RZero::update(void)
     }
 }
 #else
-bool AP_BoardLED_RZero::init(void) {return true;}
-void AP_BoardLED_RZero::update(void) {return;}
+bool AP_BoardLED_OBAL::init(void) {return true;}
+void AP_BoardLED_OBAL::update(void) {return;}
 #endif

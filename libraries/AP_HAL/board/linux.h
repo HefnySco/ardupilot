@@ -292,19 +292,19 @@
 
     #define HAL_HAVE_GETTIME_SETTIME 1
 
-#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO_V3
+#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
     
     //#define HAL_BARO_ALLOW_INIT_NO_BARO
     
     // Activate SUB Model Configuratopm
-    #define HAL_BOARD_SUBTYPE_LINUX_RZERO_V3_GY_91_SPI_COMPASS_SPI
+    #define HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_GY_91_SPI_COMPASS_SPI
     
     // Define Notify
-    #define RZERO_NOTIFY_LED
+    #define OBAL_NOTIFY_LED
     
 
     // GY-91 SPI Connection
-    #ifdef HAL_BOARD_SUBTYPE_LINUX_RZERO_V3_GY_91_10DOF_ALL_SPI
+    #ifdef HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_GY_91_10DOF_ALL_SPI
         #define HAL_BOARD_LOG_DIRECTORY "/home/pi/ardupilot/logs"
         #define HAL_BOARD_TERRAIN_DIRECTORY "/home/pi/ardupilot/terrain"
         #define HAL_BOARD_STORAGE_DIRECTORY "/home/pi/ardupilot"
@@ -317,7 +317,7 @@
         
         #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
 
-    #elif defined(HAL_BOARD_SUBTYPE_LINUX_RZERO_V3_GY_91_SPI_COMPASS_SPI)
+    #elif defined(HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_GY_91_SPI_COMPASS_SPI)
         #define HAL_BOARD_LOG_DIRECTORY "/home/pi/ardupilot/logs"
         #define HAL_BOARD_TERRAIN_DIRECTORY "/home/pi/ardupilot/terrain"
         #define HAL_BOARD_STORAGE_DIRECTORY "/home/pi/ardupilot"
@@ -332,7 +332,7 @@
     #endif
 
     
-    #ifdef RZERO_NOTIFY_LED
+    #ifdef OBAL_NOTIFY_LED
         #define NOTIFY_LED4
         #define HAL_GPIO_A_LED_PIN        27
         //#define HAL_GPIO_B_LED_PIN       22   // dummy number to accept compile
@@ -341,7 +341,7 @@
         #define HAL_GPIO_LED_OFF          0
     #endif
     #define HAL_BUZZER_PIN                12
-    #define RZERO_ALLOW_ADC               1
+    #define OBAL_ALLOW_ADC               1
 
 #else
     #error "no Linux board subtype set"

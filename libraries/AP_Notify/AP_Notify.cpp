@@ -39,7 +39,7 @@
 #include "ProfiLED.h"
 #include "ScriptingLED.h"
 #include "DShotLED.h"
-#include "AP_BoardLED_RZero.h"
+#include "AP_BoardLED_Obal.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -77,7 +77,7 @@ AP_Notify *AP_Notify::_singleton;
         CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI || \
         CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH || \
         CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DISCO || \
-        CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO_V3
+        CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
         #define BUILD_DEFAULT_LED_TYPE (Notify_LED_Board)
 
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ
@@ -264,8 +264,8 @@ void AP_Notify::add_backends(void)
                 ADD_BACKEND(new DiscoLED());
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR
                 ADD_BACKEND(new NavigatorLED());
-  #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO_V3
-            ADD_BACKEND(new AP_BoardLED_RZero());
+  #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
+            ADD_BACKEND(new AP_BoardLED_OBAL());
   #endif
 #endif // CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 
@@ -367,7 +367,7 @@ void AP_Notify::add_backends(void)
 
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BBBMINI || \
         CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_POCKET || \  
-        CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RZERO_V3
+        CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
     ADD_BACKEND(new Buzzer());
 
   #else // other linux

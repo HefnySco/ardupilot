@@ -19,7 +19,7 @@
 
 #include "NotifyDevice.h"
 
-class AP_BoardLED_RZero: public NotifyDevice
+class AP_BoardLED_OBAL: public NotifyDevice
 {
 public:
     // initialise the LED driver

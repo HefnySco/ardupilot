@@ -1078,14 +1078,14 @@ class rst_zynq(linux):
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ',
         )
 
-class rzerov3(linux):
+class obalv1(linux):
     toolchain = 'arm-linux-gnueabihf'
 
     def configure_env(self, cfg, env):
-        super(rzerov3, self).configure_env(cfg, env)
+        super(obalv1, self).configure_env(cfg, env)
 
         env.DEFINES.update(
-            CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_RZERO_V3',
+            CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_OBAL_V1',
         )
 
 class SITL_static(sitl):
