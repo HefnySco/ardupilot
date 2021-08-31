@@ -1078,11 +1078,11 @@ class rst_zynq(linux):
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ',
         )
 
-class obalv1(linux):
+class obal(linux):
     toolchain = 'arm-linux-gnueabihf'
 
     def configure_env(self, cfg, env):
-        super(obalv1, self).configure_env(cfg, env)
+        super(obal, self).configure_env(cfg, env)
 
         env.DEFINES.update(
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_OBAL_V1',
