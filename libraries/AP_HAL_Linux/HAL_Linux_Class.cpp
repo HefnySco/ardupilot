@@ -294,8 +294,9 @@ void _usage(void)
     printf("\t                   --module-directory %s\n", AP_MODULE_DEFAULT_DIRECTORY);
     printf("\t                   -M %s\n", AP_MODULE_DEFAULT_DIRECTORY);
 #endif
-    printf("\tcpu affinity       --cpu-affinity 0,3 or 0,3\n");
-    printf("\t                   -c 0,3  or range -c 1,3\n");
+    printf("\tcpu affinity:\n");
+    printf("\t                   --cpu-affinity 1 (single cpu) or 1,3 (multiple cpus) or 1-3 (range of cpus)\n");
+    printf("\t                   -c 1 (single cpu) or 1,3 (multiple cpus) or 1-3 (range of cpus)\n");
 }
 
 void HAL_Linux::run(int argc, char* const argv[], Callbacks* callbacks) const
@@ -380,6 +381,7 @@ void HAL_Linux::run(int argc, char* const argv[], Callbacks* callbacks) const
         case 'c':
             cpu_set_t cpu_affinity;
             if (!utilInstance.parse_cpu_set(gopt.optarg, &cpu_affinity)) {
+                fprintf(stderr, "Could not parse cpu affinity: %s\n", gopt.optarg);
                 exit(1);
             }
             Linux::Scheduler::from(scheduler)->set_cpu_affinity(cpu_affinity);
