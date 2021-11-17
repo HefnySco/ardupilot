@@ -635,8 +635,16 @@ void RCInput_RPI::_timer_tick()
                             if (1 == RCIN_RPI_CHN_NUM) {
                                 _process_rc_pulse(rc_channels[i].width_s0,
                                                   rc_channels[i].width_s1);
+                                if (i==0) 
+                                {
+                                    printf("s0 %d       s1 %d\r\n", rc_channels[i].width_s0,rc_channels[i].width_s1);
+                                }
                             }
                             else {
+                                if (i==0) 
+                                {
+                                    printf("s0 %d       s1 %d\r\n", rc_channels[i].width_s0,rc_channels[i].width_s1);
+                                }
                                 _process_pwm_pulse(i, rc_channels[i].width_s0,
                                                    rc_channels[i].width_s1);
                             }
