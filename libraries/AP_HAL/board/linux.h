@@ -294,28 +294,26 @@
     //#define HAL_BARO_ALLOW_INIT_NO_BARO
     
     // Activate SUB Model Configuratopm
-    #define HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_MPU_9250_SPI
-    
+    //#define HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_MPU_9250_SPI
+    #define HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_GY_91_SPI
     // Define Notify
     #define OBAL_NOTIFY_LED
     
+    #define HAL_BOARD_TERRAIN_DIRECTORY "/home/pi/ardupilot/terrain"
+    #define HAL_PARAM_DEFAULTS_PATH "/home/pi/ardupilot.parm"
 
+        
     // GY-91 SPI Connection
     #ifdef HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_MPU_9250_SPI
-        #define HAL_BOARD_LOG_DIRECTORY "/home/pi/ardupilot/logs"
-        #define HAL_BOARD_TERRAIN_DIRECTORY "/home/pi/ardupilot/terrain"
         #define HAL_BOARD_STORAGE_DIRECTORY "/home/pi/ardupilot"
-        #define HAL_PARAM_DEFAULTS_PATH "/home/pi/ardupilot.parm"
-
+        #define HAL_BOARD_LOG_DIRECTORY "/home/pi/ardupilot/logs"
+    
         #define HAL_INS_PROBE_LIST PROBE_IMU_SPI(Invensense, "mpu9250", ROTATION_NONE)
-        //#define HAL_MAG_PROBE_LIST PROBE_MAG_IMU(AK8963, mpu9250, 0, ROTATION_NONE)
-        //#define HAL_BARO_PROBE_LIST PROBE_BARO_I2C(BMP085, 1, 0x77) 
+        #define HAL_MAG_PROBE_LIST PROBE_MAG_IMU(AK8963, mpu9250, 0, ROTATION_NONE)
+        #define HAL_BARO_PROBE_LIST PROBE_BARO_I2C(BMP085, 1, 0x77) 
         //#define HAL_MAG_PROBE_LIST PROBE_MAG_I2C(QMC5883L, 1, 0x0d,true ,  ROTATION_NONE)
 
-        #define ALLOW_ARM_NO_COMPASS
-        #define HAL_DISABLE_I2C_MAGS_BY_DEFAULT
-        #define HAL_BARO_ALLOW_INIT_NO_BARO
-        
+        #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
     #endif
 
     
