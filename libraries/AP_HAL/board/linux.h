@@ -311,8 +311,17 @@
         #define HAL_INS_PROBE_LIST PROBE_IMU_SPI(Invensense, "mpu9250", ROTATION_NONE)
         #define HAL_MAG_PROBE_LIST PROBE_MAG_IMU(AK8963, mpu9250, 0, ROTATION_NONE)
         #define HAL_BARO_PROBE_LIST PROBE_BARO_I2C(BMP085, 1, 0x77) 
-        //#define HAL_MAG_PROBE_LIST PROBE_MAG_I2C(QMC5883L, 1, 0x0d,true ,  ROTATION_NONE)
 
+        #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
+    #endif
+    #ifdef HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_GY_91_SPI
+        #define HAL_BOARD_STORAGE_DIRECTORY "/home/pi/ardupilot.gy91"
+        #define HAL_BOARD_LOG_DIRECTORY "/home/pi/ardupilot.gy91/logs"
+    
+        #define HAL_INS_PROBE_LIST PROBE_IMU_SPI(Invensense, "mpu9250", ROTATION_NONE)
+        #define HAL_MAG_PROBE_LIST PROBE_MAG_IMU(AK8963, mpu9250, 0, ROTATION_NONE)
+        #define HAL_BARO_PROBE_LIST PROBE_BARO_SPI(BMP280, "bmp280")
+        
         #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
     #endif
 
