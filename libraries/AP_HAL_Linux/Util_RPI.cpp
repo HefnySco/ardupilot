@@ -66,13 +66,13 @@ int UtilRPI::_check_rpi_version_by_rev()
         { revision:"920093", soc_code:1},   // Zero 1.3	
         { revision:"9000c1", soc_code:1},   // Zero W 1.1
         
-        { revision:"a02082", soc_code:3},   // 3 Model B
-        { revision:"a020a0", soc_code:3},   // Compute Module 3 (and CM3 Lite)
-        { revision:"a22082", soc_code:3},   // 3 Model B
-        { revision:"a32082", soc_code:3},   // 3 Model B
-        { revision:"a020d3", soc_code:3},   // 3 Model B+
-        { revision:"9020e0", soc_code:3},   // 3 Model A+
-        { revision:"a02100", soc_code:3},   // Compute Module 3+
+        { revision:"a02082", soc_code:2},   // 3 Model B
+        { revision:"a020a0", soc_code:2},   // Compute Module 3 (and CM3 Lite)
+        { revision:"a22082", soc_code:2},   // 3 Model B
+        { revision:"a32082", soc_code:2},   // 3 Model B
+        { revision:"a020d3", soc_code:2},   // 3 Model B+
+        { revision:"9020e0", soc_code:2},   // 3 Model A+
+        { revision:"a02100", soc_code:2},   // Compute Module 3+
 
         { revision:"a03111", soc_code:4},   // 4 Model B
         { revision:"b03111", soc_code:4},   // 4 Model B
