@@ -5,8 +5,8 @@ WorldInfo {
   FPS 30
 }
 Viewpoint {
-  orientation 0.39101848028251013 0.25263909961995884 -0.8850299618774343 2.1026993413923445
-  position 2618.592417710747 6408.606687976131 5733.958453673689
+  orientation 0.07871038585861735 0.9866975420610384 -0.14224146951115424 1.0221853633172735
+  position -1.8186395709030658 0.5116996075476361 3.2575243753997056
   follow "quad1"
 }
 Robot {
@@ -40,7 +40,7 @@ Robot {
         Propeller {
           shaftAxis 0 0 1
           thrustConstants 0.00400012 0
-          torqueConstants 0.00400011 0
+          torqueConstants 0.060011 0
           fastHelixThreshold 100
           device RotationalMotor {
             name "motor2"
@@ -91,7 +91,7 @@ Robot {
         Propeller {
           shaftAxis 0 0 -1
           thrustConstants -0.00400012 0
-          torqueConstants 0.00400011 0
+          torqueConstants 0.060011 0
           device RotationalMotor {
             name "motor3"
             maxVelocity 80000
@@ -141,7 +141,7 @@ Robot {
         Propeller {
           shaftAxis 0 0 1
           thrustConstants 0.00400012 0
-          torqueConstants 0.00400011 0
+          torqueConstants 0.060011 0
           device RotationalMotor {
             name "motor1"
             maxVelocity 80000
@@ -191,7 +191,7 @@ Robot {
         Propeller {
           shaftAxis 0 0 -1
           thrustConstants -0.00400012 0
-          torqueConstants 0.00400011 0
+          torqueConstants 0.060011 0
           fastHelixThreshold 100
           device RotationalMotor {
             name "motor4"
@@ -243,7 +243,7 @@ Robot {
         }
       }
       geometry Box {
-        size 0.4 0.4 0.1
+        size 0.1 0.1 0.1
       }
     }
   ]
@@ -273,7 +273,6 @@ Solid {
       geometry Sphere {
         radius 1.2
       }
-      castShadows FALSE
     }
   ]
   name "ball"
@@ -283,159 +282,6 @@ Solid {
   physics Physics {
     mass 1
   }
-}
-Solid {
-  translation 0 100.98 72.48
-  rotation 0 1 0 0
-  scale 15 15 15
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.203922 0.396078 0.643137
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-    }
-  ]
-  name "ball(1)"
-}
-Solid {
-  translation 0 282.1 72.48
-  rotation 0 1 0 0
-  scale 15 15 15
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.203922 0.396078 0.643137
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-    }
-  ]
-  name "ball(6)"
-}
-Solid {
-  translation 130.64 282.1 582.56
-  rotation 0 1 0 0
-  scale 15 15 15
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.203922 0.396078 0.643137
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-    }
-  ]
-  name "ball(7)"
-}
-Solid {
-  translation -402.42 247.18 72.48
-  rotation 0 1 0 0
-  scale 20 20 20
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.8 0 0
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-    }
-  ]
-  name "ball(2)"
-}
-Solid {
-  translation 120.35 337.28 351.31
-  rotation 0 1 0 0
-  scale 20 20 20
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.8 0 0
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-    }
-  ]
-  name "ball(8)"
-}
-Solid {
-  translation 21.16 -978.13 36.14
-  rotation 0 1 0 0
-  scale 20 20 20
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.8 0 0
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-      isPickable FALSE
-    }
-  ]
-  name "ball(4)"
-}
-Solid {
-  translation 861.43 -1992.15 165.64
-  rotation 0 1 0 0
-  scale 20 20 20
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.8 0 0
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-    }
-  ]
-  name "ball(5)"
-}
-Solid {
-  translation -1628.79 -1153.4 524.65
-  rotation 0 1 0 0
-  scale 20 20 20
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.929412 0.831373 0
-        }
-      }
-      geometry Sphere {
-        radius 1.2
-      }
-      castShadows FALSE
-    }
-  ]
-  name "ball(3)"
 }
 TexturedBackground {
   texture "noon_sunny_empty"
@@ -451,12 +297,12 @@ Solid {
         }
       }
       geometry Plane {
-        size 10000 10000
+        size 100 100
       }
     }
   ]
   name "ground"
   boundingObject Plane {
-    size 10000 10000
+    size 100 100
   }
 }
