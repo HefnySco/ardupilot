@@ -55,9 +55,7 @@ static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
 #define RCIN_RPI_SIG_HIGH        0
 #define RCIN_RPI_SIG_LOW         1
 static uint16_t RcChnGpioTbl[RCIN_RPI_CHN_NUM] = {
-    RPI_GPIO_<5>(),  RPI_GPIO_<6>(),  RPI_GPIO_<13>(),
-    RPI_GPIO_<19>(), RPI_GPIO_<26>(), RPI_GPIO_<21>(), 
-    RPI_GPIO_<20>(), RPI_GPIO_<16>()
+    RPI_GPIO_<5>()
 };
 #else
 #define RCIN_RPI_SIG_HIGH        1
