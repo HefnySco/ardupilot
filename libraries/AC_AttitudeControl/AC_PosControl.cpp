@@ -960,7 +960,7 @@ void AC_PosControl::update_z_controller()
     thr_out += _motors.get_throttle_hover();
 
     // Actuator commands
-
+    //MHEFNY: _attitude_control is called here to take action. This is not consistent with other code.
     // send throttle to attitude controller with angle boost
     _attitude_control.set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ);
 

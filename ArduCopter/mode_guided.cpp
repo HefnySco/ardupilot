@@ -706,7 +706,7 @@ void ModeGuided::pos_control_run()
 
     // run position controllers
     pos_control->update_xy_controller();
-    pos_control->update_z_controller();
+    pos_control->update_z_controller(); //MHEFNY: internally it called attitude_control.set_throttle_out
 
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
