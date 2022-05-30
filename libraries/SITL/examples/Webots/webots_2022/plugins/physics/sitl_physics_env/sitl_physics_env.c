@@ -71,10 +71,12 @@ void webots_physics_step() {
       {
         float wind[4];
         memcpy (&wind[0],data,sizeof(float)*4);
-#if 0        
-        dWebotsConsolePrintf("wind: %f %f %f %f \n", wind[0],wind[1],wind[2],wind[3]);
-#endif        
-        dBodyAddForce(vehicleID, wind[1]+1.1, wind[2], wind[3]);
+//#if 0        
+       // dWebotsConsolePrintf("wind: %f %f %f %f \n", wind[0],wind[1],wind[2],wind[3]);
+       //dWebotsConsolePrintf("wind: %f \n", wind[1]);
+//#endif        
+        dBodyAddForce(vehicleID, wind[1], wind[2], wind[3]);
+        
       }
      
    }

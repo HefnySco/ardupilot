@@ -36,7 +36,7 @@ DEF DEF_VEHICLE Robot {
       rotation 0 0 1 -1.5707996938995747
     }
     Solid {
-      translation -0.52001 0.52001 0
+      translation -0.450001 0.450001 0
       children [
         Propeller {
           shaftAxis 0 0 1
@@ -87,7 +87,7 @@ DEF DEF_VEHICLE Robot {
       }
     }
     Solid {
-      translation 0.52001 0.52001 0
+      translation 0.450001 0.450001 0
       children [
         Propeller {
           shaftAxis 0 0 -1
@@ -137,7 +137,7 @@ DEF DEF_VEHICLE Robot {
       }
     }
     Solid {
-      translation 0.52001 -0.52001 0
+      translation 0.450001 -0.450001 0
       children [
         Propeller {
           shaftAxis 0 0 1
@@ -187,7 +187,7 @@ DEF DEF_VEHICLE Robot {
       }
     }
     Solid {
-      translation -0.52001 -0.52001 0
+      translation -0.450001 -0.450001 0
       children [
         Propeller {
           shaftAxis 0 0 -1
@@ -257,6 +257,8 @@ DEF DEF_VEHICLE Robot {
   }
   controller "ardupilot_SITL_QUAD_2022"
   controllerArgs [
+    "-df"
+    "0.01"
     "-p"
     "5577"
   ]

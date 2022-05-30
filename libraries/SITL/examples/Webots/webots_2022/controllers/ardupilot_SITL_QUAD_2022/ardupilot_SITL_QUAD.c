@@ -63,9 +63,6 @@ float dragFactor = VEHICLE_DRAG_FACTOR;
 
 static int timestep;
 
-#ifdef DEBUG_SENSORS
-FILE *fptr;
-#endif
 
 /**
 // apply motor thrust.
@@ -147,9 +144,9 @@ for (int i=0; i<4; ++i)
     v is the velocity in m/s
   */
   
-  wind_webots_axis.x =  state.wind.x - linear_velocity[0];
-  wind_webots_axis.z = -state.wind.y - linear_velocity[2];   // "-state.wind.y" as angle 90 wind is from EAST.
-  wind_webots_axis.y =  state.wind.z - linear_velocity[1];
+  wind_webots_axis.x = state.wind.x - lllinear_velocity[DIM_SECOND];
+  wind_webots_axis.z = state.wind.z; // - lllinear_velocity[2];   // "-state.wind.y" as angle 90 wind is from EAST.
+  wind_webots_axis.y = state.wind.y - lllinear_velocity[DIM_FIRST];
   
 
   wind_webots_axis.x = dragFactor * wind_webots_axis.x * abs(wind_webots_axis.x);
@@ -157,6 +154,9 @@ for (int i=0; i<4; ++i)
   wind_webots_axis.y = dragFactor * wind_webots_axis.y * abs(wind_webots_axis.y);
 
   wb_emitter_send(emitter, &wind_webots_axis, sizeof(VECTOR4F));
+
+  
+  //printf("lllinear_velocity %f %f %f\n",wind_webots_axis.x, wind_webots_axis.y, wind_webots_axis.z);
   
   #ifdef DEBUG_WIND
   printf("wind sitl: %f %f %f %f\n",state.wind.w, state.wind.x, state.wind.y, state.wind.z);
@@ -359,9 +359,7 @@ void run ()
 bool initialize (int argc, char *argv[])
 {
   fd_set rfds;
-  #ifdef DEBUG_SENSORS
-  fptr = fopen ("/tmp/log.txt","w");
-  #endif
+
   port = 5599;  // default port
   for (int i = 0; i < argc; ++i)
   {
@@ -454,8 +452,6 @@ bool initialize (int argc, char *argv[])
  */
 int main(int argc, char **argv)
 {
-
-  
 
   if (initialize( argc, argv))
   {

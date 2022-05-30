@@ -6,9 +6,7 @@
 #define M_PI  3.14159265358979323846
 #define M_PI2 6.28318530718
 
-#define DIM_FIRST  1
-#define DIM_SECOND 0
-#define DIM_THIRD  2
+
 /*
 https://discuss.ardupilot.org/t/copter-x-y-z-which-is-which/6823/2
 
@@ -33,13 +31,13 @@ copter.rotate_body_frame_to_NE(vel_vector.x, vel_vector.y);
 
  */
 /*
-  returns: "yaw":_6.594794831471518e-05,"pitch":_-0.0005172680830582976,"roll":_0.022908752784132957}}
+  returns: "roll":6.594794831471518e-05,"pitch":-0.0005172680830582976,"yaw":0.022908752784132957}}
 */
 void getInertia (const WbDeviceTag inertialUnit, char *buf)
 {
   const double *inertial_directions = wb_inertial_unit_get_roll_pitch_yaw (inertialUnit);
   
-  sprintf(buf,"\"roll\": %f,\"pitch\": %f,\"yaw\": %f",inertial_directions[0], inertial_directions[1], inertial_directions[2]);
+  sprintf(buf,"\"roll\": %f,\"pitch\": %f,\"yaw\": %f",inertial_directions[DIM_FIRST], inertial_directions[DIM_SECOND], inertial_directions[DIM_THIRD]);
   
   return ;
 
@@ -60,8 +58,6 @@ void getCompass (const WbDeviceTag compass, char *buf)
 
 
 double old_north3D[3];
-double lllinear_velocity[3];
-double llspeed;
 /*
   returns: "vehicle.gps":{"timestamp":_1563301031.055164,"x":_5.5127296946011484e-05,"y":_-0.0010968948481604457,"z":_0.037179552018642426}, 
 */
@@ -69,7 +65,6 @@ void getGPS (const WbDeviceTag gps, char *buf)
 {
 
     const double *north3D = wb_gps_get_values(gps);
-    llspeed = wb_gps_get_speed(gps);
     const double delta = (north3D[0] - old_north3D[0]);
     if (delta != 0.0)
     {
@@ -121,7 +116,6 @@ void getLinearVelocity (WbNodeRef nodeRef,  char * buf)
     if (linear_velocity != NULL)
     {
       sprintf (buf,"[%f, %f, %f]", lllinear_velocity[DIM_FIRST], lllinear_velocity[DIM_SECOND], lllinear_velocity[DIM_THIRD]);
-      //sprintf (pBug,"[%f, %f, %f]", lllinear_velocity[0], lllinear_velocity[2], lllinear_velocity[1]);
     }
 
     return ;

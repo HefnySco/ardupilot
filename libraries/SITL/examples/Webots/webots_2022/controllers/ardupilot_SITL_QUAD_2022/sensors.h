@@ -10,11 +10,16 @@
 #include <webots/motor.h>
 #include <webots/camera.h>
 
+#define DIM_FIRST  1
+#define DIM_SECOND 0
+#define DIM_THIRD  2
+
 
 WbNodeRef self_node;
 double *linear_velocity;
 double timestep_scale;
 char pBug[1024];
+double lllinear_velocity[3];
 void getInertia (const WbDeviceTag inertialUnit, char *buf);
 void getLinearVelocity (WbNodeRef nodeRef, char * buf);
 void getCompass (const WbDeviceTag compass, char *buf);

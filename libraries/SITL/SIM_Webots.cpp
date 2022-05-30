@@ -487,7 +487,7 @@ void Webots::update(const struct sitl_input &input)
         position.xy() += origin.get_distance_NE_double(home);
 
         // limit to 16G to match pixhawk1
-        float a_limit = GRAVITY_MSS*16;
+        float a_limit = GRAVITY_MSS*32;
         accel_body.x = constrain_float(accel_body.x, -a_limit, a_limit);
         accel_body.y = constrain_float(accel_body.y, -a_limit, a_limit);
         accel_body.z = constrain_float(accel_body.z, -a_limit, a_limit);
