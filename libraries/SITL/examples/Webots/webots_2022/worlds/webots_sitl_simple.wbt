@@ -6,8 +6,8 @@ WorldInfo {
   FPS 30
 }
 Viewpoint {
-  orientation 0.07871038585861735 0.9866975420610384 -0.14224146951115424 1.0221853633172735
-  position -1.8186395709030658 0.5116996075476361 3.2575243753997056
+  orientation -0.18907866480950825 0.8775786219106289 0.4405735135925619 0.9096860057460404
+  position -4.117933444981208 -1.8564811753090291 4.964759176264969
   follow "quad1"
 }
 DEF DEF_VEHICLE Robot {
@@ -286,12 +286,97 @@ Solid {
     mass 1
   }
 }
+Solid {
+  translation 0 35.26 59.34
+  rotation 0 1 0 0
+  scale 9 9 9
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.937255 0.160784 0.160784
+        }
+      }
+      geometry Sphere {
+        radius 1.2
+      }
+    }
+  ]
+  name "ball(1)"
+  boundingObject Sphere {
+    radius 0.1
+  }
+}
+Solid {
+  translation 537.71 35.26 298.07
+  rotation 0 1 0 0
+  scale 9 9 9
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.937255 0.160784 0.160784
+        }
+      }
+      geometry Sphere {
+        radius 1.2
+      }
+    }
+  ]
+  name "ball(2)"
+  boundingObject Sphere {
+    radius 0.1
+  }
+}
+Solid {
+  translation 8.95 -449.95 249.32
+  rotation 0 1 0 0
+  scale 9 9 9
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.937255 0.160784 0.160784
+        }
+      }
+      geometry Sphere {
+        radius 1.2
+      }
+    }
+  ]
+  name "ball(3)"
+  boundingObject Sphere {
+    radius 0.1
+  }
+}
+Solid {
+  translation -681.15 440.37 249.32
+  rotation 0 1 0 0
+  scale 36 36 36
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.988235 0.913725 0.309804
+        }
+      }
+      geometry Sphere {
+        radius 1.2
+      }
+    }
+  ]
+  name "ball(4)"
+  boundingObject Sphere {
+    radius 0.1
+  }
+}
 TexturedBackground {
   texture "noon_sunny_empty"
 }
 TexturedBackgroundLight {
 }
 Solid {
+  scale 18 18 18
   children [
     Shape {
       appearance Appearance {
@@ -308,4 +393,75 @@ Solid {
   boundingObject Plane {
     size 100 100
   }
+}
+Solid {
+  translation 0 396.36 29.98
+  scale 550 550 550
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.203922 0.396078 0.643137
+        }
+      }
+      geometry Cone {
+        bottomRadius 0.05
+        height 0.1
+      }
+    }
+  ]
+}
+Solid {
+  translation -447.47 -650.39 29.98
+  scale 550 550 550
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.960784 0.47451 0
+        }
+      }
+      geometry Cone {
+        bottomRadius 0.05
+        height 0.1
+      }
+    }
+  ]
+  name "solid(1)"
+}
+Solid {
+  translation 596.79 -650.39 29.98
+  scale 550 550 550
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.678431 0.498039 0.658824
+        }
+      }
+      geometry Cone {
+        bottomRadius 0.05
+        height 0.1
+      }
+    }
+  ]
+  name "solid(2)"
+}
+Solid {
+  translation 596.79 399.41 29.98
+  scale 550 550 550
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.960784 0.47451 0
+        }
+      }
+      geometry Cone {
+        bottomRadius 0.05
+        height 0.1
+      }
+    }
+  ]
+  name "solid(3)"
 }
