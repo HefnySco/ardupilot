@@ -37,7 +37,7 @@
 #include <sys/types.h>
 #include <webots/robot.h>
 #include <webots/emitter.h>
-#include "ardupilot_SITL_QUAD.h"
+#include "ardupilot_SITL_TRI.h"
 #include "sockets.h"
 #include "sensors.h"
 
@@ -119,14 +119,32 @@ void update_controls()
 
 // SCALE SERVO SIGNALS from 1000-2000
 for (int i=0;i<MOTOR_NUM;++i) {
-  state.motors.v[i] = (state.motors.v[i] - 1000.0f) * 0.001f;
-  motor_value[i] = (state.motors.v[i]) * factorDyn[10 * (int)(state.motors.v[i])]  + offset;
+  if (i==3) 
+  {
+    state.motors.v[i] = (state.motors.v[i] - 1000) * 0.001f - 0.5f;
+    motor_value[i] = (state.motors.v[i]);// * factorDyn[10 * (int)(state.motors.v[i])]  + offset;
+  }
+  else
+  {
+    state.motors.v[i] = (state.motors.v[i] - 1000.0f) * 0.001f;
+    motor_value[i] = (state.motors.v[i]) * factorDyn[10 * (int)(state.motors.v[i])]  + offset;
+  }
 }
 
 for (int i=0; i<MOTOR_NUM; ++i)
 {
-  wb_motor_set_position(motors[i], INFINITY);
-  wb_motor_set_velocity(motors[i], motor_value[i]); 
+  if (i==3) 
+  {
+    wb_motor_set_position(motors[3], motor_value[3]);
+    wb_motor_set_velocity(motors[3],10); 
+  }
+  else
+  { // not the servo
+    wb_motor_set_position(motors[i], INFINITY);
+    wb_motor_set_velocity(motors[i], motor_value[i]); 
+  }
+  
+  
 }
 
   #ifdef DEBUG_MOTORS

@@ -427,7 +427,7 @@ void Webots::output (const struct sitl_input &input)
             output_pwm(input);
             break;
         case OUTPUT_TRICOPTER:
-            output_tricopter(input);
+            output_pwm(input);
             break;
         case OUTPUT_PWM:
             output_pwm(input);
