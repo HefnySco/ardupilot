@@ -390,7 +390,6 @@ void Webots::output_tricopter(const struct sitl_input &input)
     const int len = snprintf(buf, sizeof(buf)-1, "{\"eng\": [%.3f, %.3f, %.3f, %.3f], \"wnd\": [%f, %3.1f, %1.1f, %2.1f]}\n",
              m_right, m_left, m_servo, m_back,
              input.wind.speed, wind_ef.x, wind_ef.y, wind_ef.z);
-    //printf("\"eng\": [%.3f, %.3f, %.3f, %.3f]\n",m_right, m_left, m_servo, m_back);
     buf[len] = 0;
 
     sim_sock->send(buf, len);

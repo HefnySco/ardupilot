@@ -6,8 +6,8 @@ WorldInfo {
   FPS 30
 }
 Viewpoint {
-  orientation 0.06619386768809074 -0.9801458596431246 -0.18690228919125568 5.589665241541095
-  position -2.4446989363561666 -0.0324997976599478 1.9251754491753394
+  orientation -0.04218570329652089 -0.9904182026265073 0.13149962107723565 5.656763850316557
+  position -2.6005179384905186 0.5904244895108399 1.7290915433665206
   follow "quad1"
 }
 DEF DEF_VEHICLE Robot {
@@ -19,18 +19,17 @@ DEF DEF_VEHICLE Robot {
       rotation 1 0 0 1.5707963267948968
       children [
         Transform {
-          rotation 0 1 0 1.01503e-06
+          rotation 1 2.43348e-15 -5.07515e-07 3.14159
           children [
             Propeller {
-              shaftAxis 0 0 -1
-              thrustConstants 0.00400012 0
-              torqueConstants 0.0020011 0
+              shaftAxis 0 0 1
+              thrustConstants 0.00450012 0
+              torqueConstants 0 0
               fastHelixThreshold 100
               device RotationalMotor {
                 name "motor3"
-                controlPID 1 0 0
-                maxVelocity 80000
-                maxTorque 1000
+                controlPID 10.001 0 0
+                maxVelocity 1000
               }
               fastHelix Solid {
                 children [
@@ -71,7 +70,7 @@ DEF DEF_VEHICLE Robot {
       physics Physics {
         mass 0.001
       }
-      position -1.5
+      position -0.5
     }
     Camera {
     }
@@ -110,11 +109,11 @@ DEF DEF_VEHICLE Robot {
         Propeller {
           shaftAxis 0 0 -1
           thrustConstants -0.00400012 0
-          torqueConstants 0.0020011 0
+          torqueConstants 0 0
           device RotationalMotor {
             name "motor2"
-            maxVelocity 80000
-            maxTorque 80000
+            controlPID 10.001 0 0
+            maxVelocity 1000
           }
           fastHelix Solid {
             children [
@@ -160,11 +159,11 @@ DEF DEF_VEHICLE Robot {
         Propeller {
           shaftAxis 0 0 1
           thrustConstants 0.00400012 0
-          torqueConstants 0.0020011 0
+          torqueConstants 0 0
           device RotationalMotor {
             name "motor1"
-            maxVelocity 80000
-            maxTorque 80000
+            controlPID 10.001 0 0
+            maxVelocity 1000
           }
           fastHelix Solid {
             children [

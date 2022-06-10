@@ -41,7 +41,7 @@ typedef struct vector16f VECTOR16F;
 struct {
         double timestamp;
         VECTOR16F motors;
-        VECTOR4F wind; 
+        VECTOR4F wind; // wind.speed, wind_ef.x, wind_ef.y, wind_ef.z
         } state, last_state;
 
 

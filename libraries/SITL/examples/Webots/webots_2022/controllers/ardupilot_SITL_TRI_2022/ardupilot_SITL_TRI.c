@@ -121,7 +121,7 @@ void update_controls()
 for (int i=0;i<MOTOR_NUM;++i) {
   if (i==3) 
   {
-    state.motors.v[i] = (state.motors.v[i] - 1000) * 0.001f - 0.5f;
+    state.motors.v[i] = ((state.motors.v[i] - 1000) * 0.001f + 0.5f);
     motor_value[i] = (state.motors.v[i]);// * factorDyn[10 * (int)(state.motors.v[i])]  + offset;
   }
   else
@@ -148,7 +148,7 @@ for (int i=0; i<MOTOR_NUM; ++i)
 }
 
   #ifdef DEBUG_MOTORS
-  printf ("RAW    1:%f 2:%f 3:%f 4:%f\n", motor_value[0], motor_value[1], motor_value[2], motor_value[3]);
+  printf ("RAW    1:%f 2:%f 3:%f 4:%f\n", state.motors.v[0], motor_value[1], motor_value[2], motor_value[3]);
   #endif
 
   #ifdef WIND_SIMULATION
