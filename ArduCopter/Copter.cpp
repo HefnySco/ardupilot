@@ -372,7 +372,7 @@ bool Copter::set_target_angle_and_climbrate(float roll_deg, float pitch_deg, flo
         return false;
     }
 
-    Quaternion q;
+    Quaternion q; //MHEFNY:BUG:These are not Euler Angles.
     q.from_euler(radians(roll_deg),radians(pitch_deg),radians(yaw_deg));
 
     mode_guided.set_angle(q, Vector3f{}, climb_rate_ms*100, false);

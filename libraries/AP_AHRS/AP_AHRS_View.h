@@ -203,7 +203,7 @@ private:
     Matrix3f rot_view;
     // transpose of rot_view
     Matrix3f rot_view_T;
-    Matrix3f rot_body_to_ned;
+    Matrix3f rot_body_to_ned; //MHEFNY:VAR:BODY_TO_NED_ROTATION_MATRIX
     Vector3f gyro;
 
     struct {

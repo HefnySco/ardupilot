@@ -862,6 +862,7 @@ float Mode::throttle_hover() const
 // used only for manual throttle modes
 // thr_mid should be in the range 0 to 1
 // returns throttle output 0 to 1
+//MHEFNY: maps throttle stick into 0-1 value.
 float Mode::get_pilot_desired_throttle() const
 {
     const float thr_mid = throttle_hover();
