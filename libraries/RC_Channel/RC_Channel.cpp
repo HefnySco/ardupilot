@@ -163,7 +163,7 @@ bool RC_Channel::update(void)
   used for thr_mid in copter
  */
 int16_t RC_Channel::get_control_mid() const
-{
+{ //MHEFNY: this function should not be called every time. values can be saved in temp static using a low frequency caller.
     if (type_in == ControlType::RANGE) {
         int16_t r_in = (radio_min.get() + radio_max.get())/2;
 

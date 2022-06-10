@@ -301,7 +301,7 @@ void AP_AHRS::reset_gyro_drift(void)
     EKF3.resetGyroBias();
 #endif
 }
-
+//MHEFNY: READ FROM IMU THEN UPDATES DCM, EKF2, EKF3
 void AP_AHRS::update(bool skip_ins_update)
 {
     if (!skip_ins_update) {

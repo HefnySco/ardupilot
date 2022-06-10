@@ -89,7 +89,7 @@ void AP_MotorsTri::set_update_rate(uint16_t speed_hz)
 	    1U << AP_MOTORS_MOT_4;
     rc_set_freq(mask, _speed_hz);
 }
-
+//MHEFNY: output motors to TRICOPTER
 void AP_MotorsTri::output_to_motors()
 {
     switch (_spool_state) {
@@ -155,7 +155,7 @@ void AP_MotorsTri::output_armed_stabilizing()
     float   rpy_low = 0.0f;             // lowest motor value
     float   rpy_high = 0.0f;            // highest motor value
     float   thr_adj;                    // the difference between the pilot's desired throttle and throttle_thrust_best_rpy
-
+    
     SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_MOTORS_CH_TRI_YAW), _yaw_servo_angle_max_deg*100);
 
     // sanity check YAW_SV_ANGLE parameter value to avoid divide by zero
@@ -188,7 +188,7 @@ void AP_MotorsTri::output_armed_stabilizing()
     if (throttle_thrust <= 0.0f) {
         throttle_thrust = 0.0f;
         limit.throttle_lower = true;
-    }
+    } //MHEFNY:BUG: add else here
     if (throttle_thrust >= _throttle_thrust_max) {
         throttle_thrust = _throttle_thrust_max;
         limit.throttle_upper = true;

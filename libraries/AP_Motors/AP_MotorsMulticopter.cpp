@@ -231,13 +231,13 @@ void AP_MotorsMulticopter::output()
     update_throttle_filter();
 
     // calc filtered battery voltage and lift_max
-    update_lift_max_from_batt_voltage();
+    update_lift_max_from_batt_voltage(); //MHEFNY: can be called on lower rate.
 
     // run spool logic
     output_logic();
 
     // calculate thrust
-    output_armed_stabilizing();
+    output_armed_stabilizing(); //MHEFNY::IMPORTANT
 
     // apply any thrust compensation for the frame
     thrust_compensation();
@@ -282,7 +282,7 @@ void AP_MotorsMulticopter::output_min()
 
 // update the throttle input filter
 void AP_MotorsMulticopter::update_throttle_filter()
-{
+{ //MHEFNY:NEED TO UNDERSTAND
     if (armed()) {
         _throttle_filter.apply(_throttle_in, 1.0f / _loop_rate);
         // constrain filtered throttle
@@ -384,7 +384,7 @@ void AP_MotorsMulticopter::update_lift_max_from_batt_voltage()
 
     _batt_voltage_min = MAX(_batt_voltage_min, _batt_voltage_max * 0.6f);
 
-    // contrain resting voltage estimate (resting voltage is actual voltage with sag removed based on current draw and resistance)
+    // constrain resting voltage estimate (resting voltage is actual voltage with sag removed based on current draw and resistance)
     _batt_voltage_resting_estimate = constrain_float(_batt_voltage_resting_estimate, _batt_voltage_min, _batt_voltage_max);
 
     // filter at 0.5 Hz
@@ -430,7 +430,7 @@ float AP_MotorsMulticopter::get_compensation_gain() const
 
 // convert actuator output (0~1) range to pwm range
 int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
-{
+{ //MHEFNY::Important:Converts actuator (0-1) range to pwm.
     float pwm_output;
     if (_spool_state == SpoolState::SHUT_DOWN) {
         // in shutdown mode, use PWM 0 or minimum PWM

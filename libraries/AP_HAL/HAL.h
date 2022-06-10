@@ -17,7 +17,7 @@ class AP_Param;
 #include "DSP.h"
 #include "CANIface.h"
 
-
+//MHEFNY: All components are here.
 class AP_HAL::HAL {
 public:
     HAL(AP_HAL::UARTDriver* _uartA, // console
@@ -134,7 +134,7 @@ public:
     AP_HAL::UARTDriver* console;
     AP_HAL::GPIO*       gpio;
     AP_HAL::RCInput*    rcin;
-    AP_HAL::RCOutput*   rcout;
+    AP_HAL::RCOutput*   rcout; //MHEFNY:RCOUT
     AP_HAL::Scheduler*  scheduler;
     AP_HAL::Util        *util;
     AP_HAL::OpticalFlow *opticalflow;

@@ -408,12 +408,12 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_out_cd
     // fetch roll and pitch stick positions
     float thrust_angle_x_cd = - channel_pitch->get_control_in();
     float thrust_angle_y_cd = channel_roll->get_control_in();
-
+    //MHEFNY: calculate RC sticks as angles.
     // limit max lean angle
     angle_limit_cd = constrain_float(angle_limit_cd, 1000.0f, angle_max_cd);
 
     // scale roll and pitch inputs to +- angle_max
-    float scaler = angle_max_cd/(float)ROLL_PITCH_YAW_INPUT_MAX;
+    float scaler = angle_max_cd/(float)ROLL_PITCH_YAW_INPUT_MAX; //MHEFNY: max_angle/4500 scale the TX Stick from -angle_max to angle_max
     thrust_angle_x_cd *= scaler;
     thrust_angle_y_cd *= scaler;
 
@@ -869,7 +869,7 @@ float Mode::get_pilot_desired_throttle() const
 
     int16_t mid_stick = copter.get_throttle_mid();
     // protect against unlikely divide by zero
-    if (mid_stick <= 0) {
+    if (mid_stick <= 0) { //MHEFNY:BUG: should we move this to get_throttle_mid()
         mid_stick = 500;
     }
 
@@ -877,9 +877,9 @@ float Mode::get_pilot_desired_throttle() const
     throttle_control = constrain_int16(throttle_control,0,1000);
 
     // calculate normalised throttle input
-    float throttle_in;
+    float throttle_in; //MHEFNY: 0.5 means mid_stick
     if (throttle_control < mid_stick) {
-        throttle_in = ((float)throttle_control)*0.5f/(float)mid_stick;
+        throttle_in = ((float)throttle_control)*0.5f/(float)mid_stick; //MHEFNY: want to make sure that if mid_stick is 450 then 450 will read 0.5
     } else {
         throttle_in = 0.5f + ((float)(throttle_control-mid_stick)) * 0.5f / (float)(1000-mid_stick);
     }
@@ -966,7 +966,7 @@ float Mode::get_pilot_desired_yaw_rate(float yaw_in)
     if (copter.failsafe.radio || !copter.ap.rc_receiver_present) {
         return 0.0f;
     }
-
+    //MHEFNY: return YAW as centi-degree per seconds using YAW channel as an input.
     // convert pilot input to the desired yaw rate
     return g2.pilot_y_rate * 100.0 * input_expo(yaw_in, g2.pilot_y_expo);
 }

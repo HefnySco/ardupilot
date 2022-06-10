@@ -160,7 +160,7 @@ AP_AHRS_DCM::matrix_update(float _G_Dt)
     for (uint8_t i=0; i<_ins.get_gyro_count(); i++) {
         if (_ins.use_gyro(i) && healthy_count < 2) {
             Vector3f dangle;
-            float dangle_dt;
+            float dangle_dt; //MHEFNY: dangle_dt is not USED
             if (_ins.get_delta_angle(i, dangle, dangle_dt)) {
                 healthy_count++;
                 delta_angle += dangle;
@@ -168,12 +168,12 @@ AP_AHRS_DCM::matrix_update(float _G_Dt)
         }
     }
     if (healthy_count > 1) {
-        delta_angle /= healthy_count;
+        delta_angle /= healthy_count; //MHEFNY: average reading from all INS
     }
-    if (_G_Dt > 0) {
-        _omega = delta_angle / _G_Dt;
+    if (_G_Dt > 0) { 
+        _omega = delta_angle / _G_Dt; //MHEFNY: rate of change. : :BUG: Why dont we use dangle_dt
         _omega += _omega_I;
-        _dcm_matrix.rotate((_omega + _omega_P + _omega_yaw_P) * _G_Dt);
+        _dcm_matrix.rotate((_omega + _omega_P + _omega_yaw_P) * _G_Dt); // MHEFNY: it may be ok here to use _G_DT
     }
 }
 
@@ -451,7 +451,7 @@ bool AP_AHRS_DCM::use_compass(void)
         // no compass available
         return false;
     }
-    if (!AP::ahrs().get_fly_forward() || !have_gps()) {
+    if (!AP::ahrs().get_fly_forward() || !have_gps()) {//MHEFNY:BUG: for copters...if !have_gps return true always
         // we don't have any alterative to the compass
         return true;
     }
@@ -620,6 +620,8 @@ AP_AHRS_DCM::drift_correction_yaw(void)
  */
 Vector3f AP_AHRS_DCM::ra_delayed(uint8_t instance, const Vector3f &ra)
 {
+    //MHefny: only to make sure that it does not return zero and make error. Q: can we init it randomly and avoid extra function call.
+
     // get the old element, and then fill it with the new element
     const Vector3f ret = _ra_delay_buffer[instance];
     _ra_delay_buffer[instance] = ra;

@@ -197,7 +197,7 @@ void AC_AttitudeControl::reset_rate_controller_I_terms_smoothly()
     get_rate_pitch_pid().relax_integrator(0.0, AC_ATTITUDE_RATE_RELAX_TC);
     get_rate_yaw_pid().relax_integrator(0.0, AC_ATTITUDE_RATE_RELAX_TC);
 }
-
+//MHEFNY: IMPORTANT 
 // The attitude controller works around the concept of the desired attitude, target attitude
 // and measured attitude. The desired attitude is the attitude input into the attitude controller
 // that expresses where the higher level code would like the aircraft to move to. The target attitude is moved

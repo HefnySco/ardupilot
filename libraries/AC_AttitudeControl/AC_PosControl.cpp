@@ -326,7 +326,7 @@ AC_PosControl::AC_PosControl(AP_AHRS_View& ahrs, const AP_InertialNav& inav,
 ///
 /// 3D position shaper
 ///
-
+//MHEFNY: IMPORTANT
 /// input_pos_xyz - calculate a jerk limited path from the current position, velocity and acceleration to an input position.
 ///     The function takes the current position, velocity, and acceleration and calculates the required jerk limited adjustment to the acceleration for the next time dt.
 ///     The kinematic path is constrained by the maximum jerk parameter and the velocity and acceleration limits set using the function set_max_speed_accel_xy.
@@ -344,7 +344,7 @@ void AC_PosControl::input_pos_xyz(const Vector3p& pos, float pos_offset_z, float
     _accel_desired.z -= _accel_offset_z;
 
     // calculated increased maximum acceleration and jerk if over speed
-    float accel_max_z_cmss = _accel_max_z_cmss * calculate_overspeed_gain();
+    float accel_max_z_cmss = _accel_max_z_cmss * calculate_overspeed_gain(); //MHEFNY: should stored in const instead of double call.
     float jerk_max_z_cmsss = _jerk_max_z_cmsss * calculate_overspeed_gain();
 
     update_pos_vel_accel_xy(_pos_target.xy(), _vel_desired.xy(), _accel_desired.xy(), _dt, _limit_vector.xy(), _p_pos_xy.get_error(), _pid_vel_xy.get_error());
@@ -1217,12 +1217,13 @@ bool AC_PosControl::calculate_yaw_and_rate_yaw()
 
 // calculate_overspeed_gain - calculated increased maximum acceleration and jerk if over speed condition is detected
 float AC_PosControl::calculate_overspeed_gain()
-{
+{ //MHEFNY: returns 1 if within limits otherwise POSCONTROL_OVERSPEED_GAIN_Z * (n )
+//MHEFNY:BUG: why n >1 & <1
     if (_vel_desired.z < _vel_max_down_cms && !is_zero(_vel_max_down_cms)) {
-        return POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_down_cms;
+        return POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_down_cms; // MHEFNY: n = _vel_desired.z / _vel_max_down_cms  < 1 
     }
     if (_vel_desired.z > _vel_max_up_cms && !is_zero(_vel_max_up_cms)) {
-        return POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_up_cms;
+        return POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_up_cms; // MHEFNY: n = _vel_desired.z / _vel_max_up_cms  > 1
     }
     return 1.0;
 }

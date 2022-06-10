@@ -1881,7 +1881,7 @@ bool AP_InertialSensor::get_delta_angle(uint8_t i, Vector3f &delta_angle, float 
     delta_angle_dt = MIN(delta_angle_dt, _loop_delta_t_max);
 
     if (_delta_angle_valid[i]) {
-        delta_angle = _delta_angle[i];
+        delta_angle = _delta_angle[i]; //MHEFNY: AP_InertialSensor_Backend::_publish_gyro >> _imu._delta_angle[instance] = _imu._delta_angle_acc[instance];
         return true;
     } else if (get_gyro_health(i)) {
         // provide delta angle from raw gyro, so we use the same code

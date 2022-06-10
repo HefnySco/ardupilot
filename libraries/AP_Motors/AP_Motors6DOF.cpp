@@ -282,7 +282,7 @@ float AP_Motors6DOF::get_current_limit_max_throttle()
 {
     return 1.0f;
 }
-
+//MHEFNY:IMPORTANT::MIXING LOGIC for Motors
 // output_armed - sends commands to the motors
 // includes new scaling stability patch
 // TODO pull code that is common to output_armed_not_stabilizing into helper functions
@@ -320,7 +320,7 @@ void AP_Motors6DOF::output_armed_stabilizing()
         limit.throttle_upper = false;
 
         // sanity check throttle is above zero and below current limited throttle
-        if (throttle_thrust <= -_throttle_thrust_max) {
+        if (throttle_thrust <= -_throttle_thrust_max) { //MHEFNY:BUG:IN TRI COPTER it is if (throttle_thrust <= 0.0f) { throttle_thrust =0;
             throttle_thrust = -_throttle_thrust_max;
             limit.throttle_lower = true;
         }

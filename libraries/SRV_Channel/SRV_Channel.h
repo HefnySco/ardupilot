@@ -506,7 +506,7 @@ public:
 
     // SERVO* parameters
     static void upgrade_parameters(void);
-
+    //MHEFNY:ex: SRV_Channels::get_motor_function(AP_MOTORS_CH_TRI_YAW)
     // given a zero-based motor channel, return the k_motor function for that channel
     static SRV_Channel::Aux_servo_function_t get_motor_function(uint8_t channel) {
         if (channel < 8) {

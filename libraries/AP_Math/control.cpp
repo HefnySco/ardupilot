@@ -500,7 +500,7 @@ float kinematic_limit(Vector3f direction, float max_xy, float max_z_pos, float m
 // The input must be in the range of -1 to 1.
 // The expo should be less than 1.0 but limited to be less than 0.95.
 float input_expo(float input, float expo)
-{
+{ //MHEFNY: calculate expo 
     input = constrain_float(input, -1.0, 1.0);
     if (expo < 0.95) {
         return (1 - expo) * input / (1 - expo * fabsf(input));
