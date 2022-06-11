@@ -703,7 +703,7 @@ void ModeGuided::pos_control_run()
         pos_offset_z_buffer = MIN(copter.wp_nav->get_terrain_margin() * 100.0, 0.5 * fabsF(guided_pos_target_cm.z));
     }
     pos_control->input_pos_xyz(guided_pos_target_cm, terr_offset, pos_offset_z_buffer);
-
+    //MHEFNY input_pos_xyz needs to update xy & z that is why the following functions are called.
     // run position controllers
     pos_control->update_xy_controller();
     pos_control->update_z_controller(); //MHEFNY: internally it called attitude_control.set_throttle_out

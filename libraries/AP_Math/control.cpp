@@ -93,7 +93,7 @@ void update_pos_vel_accel_xy(Vector2p& pos, Vector2f& vel, const Vector2f& accel
 
     pos += delta_pos.topostype();
 
-    update_vel_accel_xy(vel, accel, dt, limit, vel_error);
+    update_vel_accel_xy(vel, accel, dt, limit, vel_error); // MHEFNY:commenting this function makes GUIDED mode goto pos does not work.
 }
 
 /* shape_accel calculates a jerk limited path from the current acceleration to an input acceleration.

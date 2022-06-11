@@ -682,7 +682,7 @@ void AP_Baro::init(void)
 #endif
 
 #if HAL_MSP_BARO_ENABLED
-    if ((_baro_probe_ext.get() & PROBE_MSP) && msp_instance_mask == 0) {
+    if ((_baro_probe_ext.get() & PROBE_MSP) && msp_instance_mask == 0) {  //MHEFNY
         // allow for late addition of MSP sensor
         msp_instance_mask |= 1;
     }
@@ -714,7 +714,7 @@ void AP_Baro::init(void)
 }
 
 /*
-  probe all the i2c barometers enabled with BARO_PROBE_EXT. This is
+  probe all the i2c barometers enabled with BARO_PROBE_EXT. This is //MHEFNY https://github.com/ArduPilot/ardupilot/issues/20887
   used on boards without a builtin barometer
  */
 void AP_Baro::_probe_i2c_barometers(void)

@@ -365,7 +365,7 @@ bool Copter::should_log(uint32_t mask)
   allocate the motors class
  */
 void Copter::allocate_motors(void)
-{
+{ //MHEFNY:IMPORTANT:Allocate Motors for each Vehicle Class.
     switch ((AP_Motors::motor_frame_class)g2.frame_class.get()) {
 #if FRAME_CONFIG != HELI_FRAME
         case AP_Motors::MOTOR_FRAME_QUAD:

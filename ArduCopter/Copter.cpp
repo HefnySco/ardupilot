@@ -364,7 +364,7 @@ bool Copter::set_target_velaccel_NED(const Vector3f& target_vel, const Vector3f&
     mode_guided.set_velaccel(vel_neu_cms, accel_neu_cms, use_yaw, yaw_deg * 100.0, use_yaw_rate, yaw_rate_degs * 100.0, relative_yaw);
     return true;
 }
-
+//MHEFNY:LUA function
 bool Copter::set_target_angle_and_climbrate(float roll_deg, float pitch_deg, float yaw_deg, float climb_rate_ms, bool use_yaw_rate, float yaw_rate_degs)
 {
     // exit if vehicle is not in Guided mode or Auto-Guided mode
@@ -372,7 +372,7 @@ bool Copter::set_target_angle_and_climbrate(float roll_deg, float pitch_deg, flo
         return false;
     }
 
-    Quaternion q; //MHEFNY:BUG:These are not Euler Angles.
+    Quaternion q;
     q.from_euler(radians(roll_deg),radians(pitch_deg),radians(yaw_deg));
 
     mode_guided.set_angle(q, Vector3f{}, climb_rate_ms*100, false);

@@ -141,7 +141,7 @@ void AP_MotorsMatrix::set_frame_class_and_type(motor_frame_class frame_class, mo
 }
 
 void AP_MotorsMatrix::output_to_motors()
-{
+{ //MHEFNY:OUTPUT to QUADCOPTER Motors
     int8_t i;
 
     switch (_spool_state) {

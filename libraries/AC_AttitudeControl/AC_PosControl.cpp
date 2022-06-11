@@ -541,7 +541,6 @@ void AC_PosControl::input_vel_accel_xy(Vector2f& vel, const Vector2f& accel, boo
 
     shape_vel_accel_xy(vel, accel, _vel_desired.xy(), _accel_desired.xy(),
         _accel_max_xy_cmss, _jerk_max_xy_cmsss, _dt, limit_output);
-
     update_vel_accel_xy(vel, accel, _dt, Vector2f(), Vector2f());
 }
 
@@ -592,7 +591,7 @@ bool AC_PosControl::is_active_xy() const
 ///     Desired velocity and accelerations are added to these corrections as they are calculated
 ///     Kinematically consistent target position and desired velocity and accelerations should be provided before calling this function
 void AC_PosControl::update_xy_controller()
-{
+{ //MHEFNY: called whenever postion XY has been updated by pilot calculated needs to run on new values.
     // check for ekf xy position reset
     handle_ekf_xy_reset();
 
@@ -907,7 +906,7 @@ bool AC_PosControl::is_active_z() const
 ///     Desired velocity and accelerations are added to these corrections as they are calculated
 ///     Kinematically consistent target position and desired velocity and accelerations should be provided before calling this function
 void AC_PosControl::update_z_controller()
-{
+{ //MHEFNY: called whenever postion Z has been updated by pilot calculated needs to run on new values.
     // check for ekf z-axis position reset
     handle_ekf_z_reset();
 

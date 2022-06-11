@@ -52,7 +52,7 @@ void ModeBrake::run()
     // use position controller to stop
     Vector2f vel;
     Vector2f accel;
-    pos_control->input_vel_accel_xy(vel, accel);
+    pos_control->input_vel_accel_xy(vel, accel); //MHEFNY: we want zero velocity & acc in XY
     pos_control->update_xy_controller();
 
     // call attitude controller

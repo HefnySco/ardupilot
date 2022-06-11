@@ -903,7 +903,7 @@ float Mode::get_avoidance_adjusted_climbrate(float target_rate)
 
 // send output to the motors, can be overridden by subclasses
 void Mode::output_to_motors()
-{
+{ //MHEFNY:Important: output to motors.
     motors->output();
 }
 
