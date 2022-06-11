@@ -216,7 +216,7 @@ void AP_InertialSensor_Backend::_notify_new_gyro_raw_sample(uint8_t instance,
 #endif
 
     // push gyros if optical flow present
-    if (hal.opticalflow) {
+    if (hal.opticalflow) { //MHEFNY: push gyro data to optical flow to use it.
         hal.opticalflow->push_gyro(gyro.x, gyro.y, dt);
     }
     
