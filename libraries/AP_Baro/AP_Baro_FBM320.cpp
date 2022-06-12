@@ -100,7 +100,7 @@ bool AP_Baro_FBM320::read_calibration(void)
 
 bool AP_Baro_FBM320::init()
 {
-    if (!dev) {
+    if ((!dev) || (_backend_exists(dev->get_bus_id()))) {
         return false;
     }
     dev->get_semaphore()->take_blocking();

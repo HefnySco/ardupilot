@@ -152,7 +152,7 @@ void AP_Baro_DPS280::set_config_registers(void)
 
 bool AP_Baro_DPS280::init()
 {
-    if (!dev) {
+    if ((!dev) || (_backend_exists(dev->get_bus_id()))) {
         return false;
     }
     dev->get_semaphore()->take_blocking();
