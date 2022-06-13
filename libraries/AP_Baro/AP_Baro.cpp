@@ -729,13 +729,8 @@ void AP_Baro::init(void)
     _probe_i2c_barometers();
 #endif
 
-<<<<<<< HEAD
-#if HAL_MSP_BARO_ENABLED
-    if ((_baro_probe_ext.get() & PROBE_MSP) && msp_instance_mask == 0) {  //MHEFNY
-=======
 #if AP_BARO_MSP_ENABLED
     if ((_baro_probe_ext.get() & PROBE_MSP) && msp_instance_mask == 0) { //MHEFNY
->>>>>>> master
         // allow for late addition of MSP sensor
         msp_instance_mask |= 1;
     }

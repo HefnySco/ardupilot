@@ -529,7 +529,8 @@ void rc_input_to_roll_pitch(float roll_in_unit, float pitch_in_unit, float angle
 {
     angle_max_deg = MIN(angle_max_deg, 85.0);
     float rc_2_rad = radians(angle_max_deg);
-
+    
+    //MHEFNY: Thrust affected by ROLL & PITCH
     // fetch roll and pitch stick positions and convert them to normalised horizontal thrust
     Vector2f thrust;
     thrust.x = - tanf(rc_2_rad * pitch_in_unit);
@@ -544,7 +545,7 @@ void rc_input_to_roll_pitch(float roll_in_unit, float pitch_in_unit, float angle
 
     // Conversion from angular thrust vector to euler angles.
     float pitch_rad = - atanf(thrust.x);
-    float roll_rad = atanf(cosf(pitch_rad) * thrust.y);
+    float roll_rad = atanf(cosf(pitch_rad) * thrust.y); 
 
     // Convert to degrees
     roll_out_deg = degrees(roll_rad);
