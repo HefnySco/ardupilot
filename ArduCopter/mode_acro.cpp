@@ -124,9 +124,14 @@ void ModeAcro::get_pilot_desired_angle_rates(float roll_in, float pitch_in, floa
     // calculate earth frame rate corrections to pull the copter back to level while in ACRO mode
 
     if (g.acro_trainer != (uint8_t)Trainer::OFF) {
-
+        //MHEFNY:DESC:Trainer mode is on makes (mode 1) automatic leveling when leaving stick and (mode 2) lean langle limiting.
+        
+        //MHEFNY: Trainer mode 1
+        
         // get attitude targets
         const Vector3f att_target = attitude_control->get_att_target_euler_cd();
+
+        //MHEFNY::DESC:: g.acro_balance_roll rate at which roll angle returns to level in acro mode.
 
         // Calculate trainer mode earth frame rate command for roll
         int32_t roll_angle = wrap_180_cd(att_target.x);
@@ -139,8 +144,13 @@ void ModeAcro::get_pilot_desired_angle_rates(float roll_in, float pitch_in, floa
         // Calculate trainer mode earth frame rate command for yaw
         rate_ef_level_cd.z = 0;
 
+        //MHEFNY: Angle limiting (mode 2) in trainer
+
         // Calculate angle limiting earth frame rate commands
         if (g.acro_trainer == (uint8_t)Trainer::LIMITED) {
+            //MHEFNY::DESC:: Note that the following lines are called only if angle exceeded the max angle.
+            //And first parameter is always negative. Thus return is correction_rate = -safe_sqrt(2.0 * second_ord_lim * (-error));
+            // and if DT is > 0 then return is divided by DT
             const float angle_max = copter.aparm.angle_max;
             if (roll_angle > angle_max){
                 rate_ef_level_cd.x += sqrt_controller(angle_max - roll_angle, g2.acro_rp_rate * 100.0 / ACRO_LEVEL_MAX_OVERSHOOT, attitude_control->get_accel_roll_max_cdss(), G_Dt);
@@ -164,10 +174,26 @@ void ModeAcro::get_pilot_desired_angle_rates(float roll_in, float pitch_in, floa
             rate_bf_request_cd.y += rate_bf_level_cd.y;
             rate_bf_request_cd.z += rate_bf_level_cd.z;
         }else{
+
+            //MHEFNY::DESC::This remember me of multiwii [acro_level_mix] reduces effect of level restoring if
+            //the sticks is far from center. (1-RC)
+            // another factor is used *ahrs.cos_pitch() I believe it is used to avoid correction aggressivly when drone is tilted not sure why.
+            // maybe because gyro lock ... I am not sure.
+
             float acro_level_mix = constrain_float(1-float(MAX(MAX(abs(roll_in), abs(pitch_in)), abs(yaw_in))/4500.0), 0, 1)*ahrs.cos_pitch();
 
             // Scale levelling rates by stick input
             rate_bf_level_cd = rate_bf_level_cd * acro_level_mix;
+
+            //MHEFNY::DESC::limit measure the distance abstract.
+            //so assume -5, -2 then += -> -7
+            // but distance is 3
+            // then constrains (-7,-3,3) returns -3
+            // another example 7 & 1 then += -> 8
+            // but distance is 6
+            // then constrains (8,6,-6) = 6
+            // The formula makes sure the correction is not beyond rate_bf_request_cd which so that we dont
+            // see quad rotates faster than we expect. I GUESS
 
             // Calculate rate limit to prevent change of rate through inverted
             rate_limit = fabsf(fabsf(rate_bf_request_cd.x)-fabsf(rate_bf_level_cd.x));

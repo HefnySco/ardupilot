@@ -24,7 +24,7 @@ void ModeStabilize::run()
     } else if (copter.ap.throttle_zero) {
         // Attempting to Land
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
-    } else { //MHEFNY: motors are ON
+    } else { //MHEFNY: DO Arming
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
     }
 

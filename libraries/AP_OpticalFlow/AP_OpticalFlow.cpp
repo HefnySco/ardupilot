@@ -253,6 +253,8 @@ void OpticalFlow::update_state(const OpticalFlow_state &state)
 {
     _state = state;
     _last_update_ms = AP_HAL::millis();
+    //MHEFNY::DESC::Sends optical flow data to EKFx
+    //also there is a bug issue here https://github.com/ArduPilot/ardupilot/issues/20967
 
     // write to log and send to EKF if new data has arrived
     AP::ahrs().writeOptFlowMeas(quality(),

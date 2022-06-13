@@ -1,10 +1,10 @@
 #include "Copter.h"
-
+//MHEFNY:IMPORTANT:Read Baro value
 // return barometric altitude in centimeters
 void Copter::read_barometer(void)
 {
     barometer.update();
-
+    //MHEFNY:gets altitude from primary sensor. ... This variable is not used in [armin check, log, crash check]
     baro_alt = barometer.get_altitude() * 100.0f;
 
     motors->set_air_density_ratio(barometer.get_air_density_ratio());
@@ -24,9 +24,10 @@ void Copter::init_rangefinder(void)
 #endif
 }
 
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION::RANGEFINDER Logic called by Scheduler.
 // return rangefinder altitude in centimeters
 void Copter::read_rangefinder(void)
-{ //MHEFNY:IMPORTANT RANGEFINDER LOGIC.
+{
 #if RANGEFINDER_ENABLED == ENABLED
     rangefinder.update();
 
@@ -73,7 +74,7 @@ void Copter::read_rangefinder(void)
         if (abs(rf_state.glitch_count) >= RANGEFINDER_GLITCH_NUM_SAMPLES) {
             // clear glitch and record time so consumers (i.e. surface tracking) can reset their target altitudes
             rf_state.glitch_count = 0;
-            rf_state.alt_cm_glitch_protected = rf_state.alt_cm;
+            rf_state.alt_cm_glitch_protected = rf_state.alt_cm; //MHEFNY:alt_cm_glitch_protected value used in PrecisionLanding "precland"
             rf_state.glitch_cleared_ms = AP_HAL::millis();
         }
 
@@ -97,7 +98,7 @@ void Copter::read_rangefinder(void)
 #if MODE_CIRCLE_ENABLED
                 circle_nav->set_rangefinder_alt(rangefinder_state.enabled && wp_nav->rangefinder_used(), rangefinder_state.alt_healthy, rangefinder_state.alt_cm_filt.get());
 #endif
-#if HAL_PROXIMITY_ENABLED
+#if HAL_PROXIMITY_ENABLED //MHEFNY: SET RANGE FINDER AS ALTITUDE
                 g2.proximity.set_rangefinder_alt(rangefinder_state.enabled, rangefinder_state.alt_healthy, rangefinder_state.alt_cm_filt.get());
 #endif
             }
@@ -117,6 +118,7 @@ void Copter::read_rangefinder(void)
 #endif
 }
 
+//MHEFNY:if True you can use rangefinder_state.alt_cm_glitch_protected safely.
 // return true if rangefinder_alt can be used
 bool Copter::rangefinder_alt_ok() const
 {
@@ -129,6 +131,7 @@ bool Copter::rangefinder_up_ok() const
     return (rangefinder_up_state.enabled && rangefinder_up_state.alt_healthy);
 }
 
+//MHEFNY::IMPORTANT::Gets estimated height mix between RNGFND & INS = (RNG + INS(now)-INS(at RNG READ))
 /*
   get inertially interpolated rangefinder height. Inertial height is
   recorded whenever we update the rangefinder height, then we use the

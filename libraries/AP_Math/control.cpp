@@ -93,7 +93,7 @@ void update_pos_vel_accel_xy(Vector2p& pos, Vector2f& vel, const Vector2f& accel
 
     pos += delta_pos.topostype();
 
-    update_vel_accel_xy(vel, accel, dt, limit, vel_error); // MHEFNY:commenting this function makes GUIDED mode goto pos does not work.
+    update_vel_accel_xy(vel, accel, dt, limit, vel_error); //MHEFNY:commenting this function makes GUIDED mode goto pos does not work.
 }
 
 /* shape_accel calculates a jerk limited path from the current acceleration to an input acceleration.
@@ -381,7 +381,9 @@ bool limit_accel_xy(const Vector2f& vel, Vector2f& accel, float accel_max)
 
 // sqrt_controller calculates the correction based on a proportional controller with piecewise sqrt sections to constrain second derivative.
 float sqrt_controller(float error, float p, float second_ord_lim, float dt)
-{
+{//MHEFNY:IMPORTANT:calculate "correction_rate"
+ //https://nrotella.github.io/journal/arducopter-flight-controllers.html#:~:text=Square%20Root%20Controller%20and%20Leash%20Length,-The%20purpose%20of&text=The%20square%20root%20controller%20achieves,by%20the%20maximum%20tolerable%20acceleration.
+
     float correction_rate;
     if (is_negative(second_ord_lim) || is_zero(second_ord_lim)) {
         // second order limit is zero or negative.
@@ -408,7 +410,9 @@ float sqrt_controller(float error, float p, float second_ord_lim, float dt)
     }
     if (!is_zero(dt)) {
         // this ensures we do not get small oscillations by over shooting the error correction in the last time step.
-        return constrain_float(correction_rate, -fabsf(error) / dt, fabsf(error) / dt);
+        //MHEFNY:BUG: Correction more efficient.
+        const float abs_error_dt = fabsf(error) / dt;
+        return constrain_float(correction_rate, -abs_error_dt, abs_error_dt);
     } else {
         return correction_rate;
     }
@@ -429,7 +433,8 @@ Vector2f sqrt_controller(const Vector2f& error, float p, float second_ord_lim, f
 // inv_sqrt_controller calculates the inverse of the sqrt controller.
 // This function calculates the input (aka error) to the sqrt_controller required to achieve a given output.
 float inv_sqrt_controller(float output, float p, float D_max)
-{
+{   //MHEFNY: D_max should be positive otherwise it is ignored.
+    
     if (is_positive(D_max) && is_zero(p)) {
         return (output * output) / (2.0 * D_max);
     }
@@ -529,7 +534,8 @@ void rc_input_to_roll_pitch(float roll_in_unit, float pitch_in_unit, float angle
 {
     angle_max_deg = MIN(angle_max_deg, 85.0);
     float rc_2_rad = radians(angle_max_deg);
-
+    
+    //MHEFNY: Thrust affected by ROLL & PITCH
     // fetch roll and pitch stick positions and convert them to normalised horizontal thrust
     Vector2f thrust;
     thrust.x = - tanf(rc_2_rad * pitch_in_unit);
@@ -544,7 +550,7 @@ void rc_input_to_roll_pitch(float roll_in_unit, float pitch_in_unit, float angle
 
     // Conversion from angular thrust vector to euler angles.
     float pitch_rad = - atanf(thrust.x);
-    float roll_rad = atanf(cosf(pitch_rad) * thrust.y);
+    float roll_rad = atanf(cosf(pitch_rad) * thrust.y); 
 
     // Convert to degrees
     roll_out_deg = degrees(roll_rad);

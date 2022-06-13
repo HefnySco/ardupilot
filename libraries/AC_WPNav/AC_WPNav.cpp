@@ -619,6 +619,7 @@ bool AC_WPNav::is_active() const
     return (AP_HAL::millis() - _wp_last_update) < 200;
 }
 
+//MHEFNY:IMPORTANT:read altitude from TERRAINDATABASE or from Rangefinder.
 // get terrain's altitude (in cm above the ekf origin) at the current position (+ve means terrain below vehicle is above ekf origin's altitude)
 bool AC_WPNav::get_terrain_offset(float& offset_cm)
 {
@@ -627,7 +628,7 @@ bool AC_WPNav::get_terrain_offset(float& offset_cm)
     case AC_WPNav::TerrainSource::TERRAIN_UNAVAILABLE:
         return false;
     case AC_WPNav::TerrainSource::TERRAIN_FROM_RANGEFINDER:
-        if (_rangefinder_healthy) {
+        if (_rangefinder_healthy) { //MHEFNY:ONLY place that range finder is used in navigation.
             offset_cm = _inav.get_position_z_up_cm() - _rangefinder_alt_cm;
             return true;
         }

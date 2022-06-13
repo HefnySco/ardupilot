@@ -12,7 +12,7 @@
    update internal state
 */
 void AP_InertialNav::update(bool high_vibes)
-{
+{//MHEFNY::IMPORTANT::Get X,Y,Z from Attitude
     // get the NE position relative to the local earth frame origin
     Vector2f posNE;
     if (_ahrs_ekf.get_relative_position_NE_origin(posNE)) {
@@ -76,7 +76,7 @@ const Vector2f &AP_InertialNav::get_position_xy_cm() const
  * @return
  */
 float AP_InertialNav::get_position_z_up_cm() const
-{
+{   //MHEFNY: Return Altitude
     return _relpos_cm.z;
 }
 

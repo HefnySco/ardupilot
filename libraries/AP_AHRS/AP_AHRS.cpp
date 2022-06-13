@@ -494,7 +494,7 @@ void AP_AHRS::update_EKF2(void)
         }
     }
     if (_ekf2_started) {
-        EKF2.UpdateFilter();
+        EKF2.UpdateFilter(); //MHEFNY::IMPORTANT::Call
         if (active_EKF_type() == EKFType::TWO) {
             Vector3f eulers;
             EKF2.getRotationBodyToNED(_dcm_matrix);
@@ -571,7 +571,7 @@ void AP_AHRS::update_EKF3(void)
         }
     }
     if (_ekf3_started) {
-        EKF3.UpdateFilter();
+        EKF3.UpdateFilter(); //MHEFNY::IMPORTANT::Call
         if (active_EKF_type() == EKFType::THREE) {
             Vector3f eulers;
             EKF3.getRotationBodyToNED(_dcm_matrix);
@@ -3011,6 +3011,7 @@ uint8_t AP_AHRS::get_primary_IMU_index() const
     return imu;
 }
 
+//MHEFNY::IMPORTANT:Get acceleration of QUAD in Earth Frame
 // get earth-frame accel vector for primary IMU
 const Vector3f &AP_AHRS::get_accel_ef() const
 {

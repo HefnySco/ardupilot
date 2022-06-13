@@ -31,14 +31,21 @@ void ModeSport::run()
     // apply SIMPLE mode transform
     update_simple_mode();
 
-    // get pilot's desired roll and pitch rates
+    //MHEFNY:DESC:SPORT MODE IS The pilot’s roll, pitch and yaw sticks control the rate of rotation of the vehicle so when the sticks are released the vehicle will remain in its current attitude.
+    // g2.acro_rp_rate: Acro mode maximum roll and pitch rate.  Higher values mean faster rate of rotation
 
+    // get pilot's desired roll and pitch rates
+    
     // calculate rate requests
     float target_roll_rate = channel_roll->get_control_in() * g2.acro_rp_rate * 100.0 / ROLL_PITCH_YAW_INPUT_MAX;
     float target_pitch_rate = channel_pitch->get_control_in() * g2.acro_rp_rate * 100.0 / ROLL_PITCH_YAW_INPUT_MAX;
 
     // get attitude targets
     const Vector3f att_target = attitude_control->get_att_target_euler_cd();
+
+    //MHEFNY::DESC::Applying rate then adding (-/+) factor that return quad to its target roll angle by multiply by g.acro_balance_roll.
+    // ROLL = ROLL_RATE_FROM_RC - (ROLL_ANGLE * g.acro_balance_roll)
+    // Like P in PID ... so this calculate rate of angle which is the correct unit.
 
     // Calculate trainer mode earth frame rate command for roll
     int32_t roll_angle = wrap_180_cd(att_target.x);
@@ -48,6 +55,10 @@ void ModeSport::run()
     int32_t pitch_angle = wrap_180_cd(att_target.y);
     target_pitch_rate -= constrain_int32(pitch_angle, -ACRO_LEVEL_MAX_ANGLE, ACRO_LEVEL_MAX_ANGLE) * g.acro_balance_pitch;
 
+    //MHEFNY::DESC::
+    // g2.acro_rp_rate -> Higher values mean faster rate of rotation
+    //I Think the following retun drone if exceeding max angle.
+    //I Think attitude_control->get_accel_roll_max_cdss() = 0 unless set in RC_Channel_Copter::do_aux_function
     const float angle_max = copter.aparm.angle_max;
     if (roll_angle > angle_max){
         target_roll_rate +=  sqrt_controller(angle_max - roll_angle, g2.acro_rp_rate * 100.0 / ACRO_LEVEL_MAX_OVERSHOOT, attitude_control->get_accel_roll_max_cdss(), G_Dt);

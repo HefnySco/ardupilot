@@ -39,6 +39,8 @@ AP_AHRS_View::AP_AHRS_View(AP_AHRS &_ahrs, enum Rotation _rotation, float pitch_
         AP_HAL::panic("Unsupported AHRS view %u\n", (unsigned)rotation);
     }
 
+    //MHEFNY::BUG::call set_pitch_trim instead of below.
+    //fix: set_pitch_trim(pitch_trim_deg)
     _pitch_trim_deg = pitch_trim_deg;
     // Add pitch trim
     rot_view.from_euler(0, radians(wrap_360(y_angle + pitch_trim_deg)), 0);
@@ -57,6 +59,7 @@ void AP_AHRS_View::set_pitch_trim(float trim_deg) {
     rot_view_T.transpose();
 };
 
+//MHEFNY::Called by AHRS::Update()
 // update state
 void AP_AHRS_View::update()
 {

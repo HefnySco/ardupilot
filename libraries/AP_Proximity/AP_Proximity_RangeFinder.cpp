@@ -58,7 +58,7 @@ void AP_Proximity_RangeFinder::update(void)
                     boundary.reset_face(face);
                 }
                 _last_update_ms = now;
-            }
+            } //MHEFNY:BUG:Add ELSE HERE
             // check upward facing range finder
             if (sensor->orientation() == ROTATION_PITCH_90) {
                 int16_t distance_upward = sensor->distance_cm();

@@ -253,6 +253,7 @@ public:
     /// set_pos_target_z_cm - set altitude target in cm above the EKF origin
     void set_pos_target_z_cm(float pos_target) { _pos_target.z = pos_target; }
 
+    //MHEFNY::IMPORTANT::Drone Target Altitude.
     /// get_pos_target_z_cm - get target altitude (in cm above the EKF origin)
     float get_pos_target_z_cm() const { return _pos_target.z; }
 
@@ -303,13 +304,14 @@ public:
 
 
     /// Offset
-
+    //MHEFNY:IMPORTANT:can be altitude from ground or distance from ceiling.... check void Copter::SurfaceTracking::update_surface_offset()
     /// set_pos_offset_target_z_cm - set altitude offset target in cm above the EKF origin
     void set_pos_offset_target_z_cm(float pos_offset_target_z) { _pos_offset_target_z = pos_offset_target_z; }
 
     /// set_pos_offset_z_cm - set altitude offset in cm above the EKF origin
     void set_pos_offset_z_cm(float pos_offset_z) { _pos_offset_z = pos_offset_z; }
 
+    //MHEFNY::IMPORTANT::current altitude in cm above the EKF origin
     /// get_pos_offset_z_cm - returns altitude offset in cm above the EKF origin
     float get_pos_offset_z_cm() const { return _pos_offset_z; }
 
@@ -393,7 +395,7 @@ protected:
 
     // get throttle using vibration-resistant calculation (uses feed forward with manually calculated gain)
     float get_throttle_with_vibration_override();
-
+    //MHEFNY:BUG:SHOULD WE USE GRAVITY_MSS ??? or calculate it to be zero at rest.
     // get earth-frame Z-axis acceleration with gravity removed in cm/s/s with +ve being up
     float get_z_accel_cmss() const { return -(_ahrs.get_accel_ef_blended().z + GRAVITY_MSS) * 100.0f; }
 
@@ -437,7 +439,7 @@ protected:
     uint64_t    _last_update_z_us;      // system time (in microseconds) since last update_z_controller call
     float       _vel_max_xy_cms;        // max horizontal speed in cm/s used for kinematic shaping
     float       _vel_max_up_cms;        // max climb rate in cm/s used for kinematic shaping
-    float       _vel_max_down_cms;      // max descent rate in cm/s used for kinematic shaping
+    float       _vel_max_down_cms;      // max descent rate in cm/s used for kinematic shaping //MHEFNY Negative
     float       _accel_max_xy_cmss;     // max horizontal acceleration in cm/s/s used for kinematic shaping
     float       _accel_max_z_cmss;      // max vertical acceleration in cm/s/s used for kinematic shaping
     float       _jerk_max_xy_cmsss;       // Jerk limit of the xy kinematic path generation in cm/s^3 used to determine how quickly the aircraft varies the acceleration target
@@ -458,8 +460,8 @@ protected:
     Vector3f    _accel_target;          // acceleration target in NEU cm/s/s
     Vector3f    _limit_vector;          // the direction that the position controller is limited, zero when not limited
 
-    float       _pos_offset_target_z;   // vertical position offset target, frame NEU in cm relative to the EKF origin
-    float       _pos_offset_z;          // vertical position offset, frame NEU in cm relative to the EKF origin
+    float       _pos_offset_target_z;   // vertical position offset target, frame NEU in cm relative to the EKF origin //MHEFNY: could be from ground or ceiling.
+    float       _pos_offset_z;          // vertical position offset, frame NEU in cm relative to the EKF origin     //MHEFNY::IMPORTANT::current altitude in cm above the EKF origin
     float       _vel_offset_z;          // vertical velocity offset in NEU cm/s calculated by pos_to_rate step
     float       _accel_offset_z;        // vertical acceleration offset in NEU cm/s/s
 

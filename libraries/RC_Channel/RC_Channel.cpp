@@ -147,7 +147,7 @@ bool RC_Channel::update(void)
     } else {
         return false;
     }
-
+    //MHEFNY:WHERE control_in gets its initial value.
     if (type_in == ControlType::RANGE) {
         control_in = pwm_to_range();
     } else {

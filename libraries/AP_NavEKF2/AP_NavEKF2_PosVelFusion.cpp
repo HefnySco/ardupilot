@@ -938,7 +938,7 @@ void NavEKF2_core::FuseVelPosNED()
 /********************************************************
 *                   MISC FUNCTIONS                      *
 ********************************************************/
-
+//MHEFNY::IMPORTANT::Select source for Height for Fusion
 // select the height measurement to be fused from the available baro, range finder and GPS sources
 void NavEKF2_core::selectHeightForFusion()
 {

@@ -263,6 +263,7 @@ void AP_MotorsMulticopter::output_boost_throttle(void)
     }
 }
 
+//MHEFNY::IMPORTANT::Input roll pitch yaw and thrust values.
 // output roll/pitch/yaw/thrust
 void AP_MotorsMulticopter::output_rpyt(void)
 {

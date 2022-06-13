@@ -343,6 +343,7 @@ bool Copter::set_mode(const uint8_t new_mode, const ModeReason reason)
     return copter.set_mode(static_cast<Mode::Number>(new_mode), reason);
 }
 
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION
 // update_flight_mode - calls the appropriate attitude controllers based on flight mode
 // called at 100hz or more
 void Copter::update_flight_mode()
@@ -405,36 +406,7 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_out_cd
         pitch_out_cd = 0.0;
         return;
     }
-<<<<<<< HEAD
-    // fetch roll and pitch stick positions
-    float thrust_angle_x_cd = - channel_pitch->get_control_in();
-    float thrust_angle_y_cd = channel_roll->get_control_in();
     //MHEFNY: calculate RC sticks as angles.
-    // limit max lean angle
-    angle_limit_cd = constrain_float(angle_limit_cd, 1000.0f, angle_max_cd);
-
-    // scale roll and pitch inputs to +- angle_max
-    float scaler = angle_max_cd/(float)ROLL_PITCH_YAW_INPUT_MAX; //MHEFNY: max_angle/4500 scale the TX Stick from -angle_max to angle_max
-    thrust_angle_x_cd *= scaler;
-    thrust_angle_y_cd *= scaler;
-
-    // convert square mapping to circular mapping with maximum magnitude of angle_limit
-    float total_in = norm(thrust_angle_x_cd, thrust_angle_y_cd);
-    if (total_in > angle_limit_cd) {
-        float ratio = angle_limit_cd / total_in;
-        thrust_angle_x_cd *= ratio;
-        thrust_angle_y_cd *= ratio;
-    }
-
-    // thrust_angle_x and thrust_angle_y represents a level body frame thrust vector in the
-    // direction of [thrust_angle_x, thrust_angle_y] and a magnitude
-    // tan(mag([thrust_angle_x, thrust_angle_y])) * 9.81 * aircraft mass.
-
-    // Conversion from angular thrust vector to euler angles.
-    roll_out_cd = (18000/M_PI) * atanf(cosf(thrust_angle_x_cd*(M_PI/18000))*tanf(thrust_angle_y_cd*(M_PI/18000)));
-    pitch_out_cd = - thrust_angle_x_cd;
-=======
-
     //transform pilot's normalised roll or pitch stick input into a roll and pitch euler angle command
     float roll_out_deg;
     float pitch_out_deg;
@@ -443,7 +415,6 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_out_cd
     // Convert to centi-degrees
     roll_out_cd = roll_out_deg * 100.0;
     pitch_out_cd = pitch_out_deg * 100.0;
->>>>>>> master
 }
 
 // transform pilot's roll or pitch input into a desired velocity
@@ -569,6 +540,7 @@ void Mode::make_safe_ground_handling(bool force_throttle_unlimited)
  */
 int32_t Mode::get_alt_above_ground_cm(void)
 {
+    //MHEFNY::DESC::Get ALT by Priority (RNG, then POS, then AHRS)
     int32_t alt_above_ground_cm;
     if (copter.get_rangefinder_height_interpolated_cm(alt_above_ground_cm)) {
         return alt_above_ground_cm;
@@ -590,6 +562,7 @@ void Mode::land_run_vertical_control(bool pause_descent)
     bool ignore_descent_limit = false;
     if (!pause_descent) {
 
+        //MHEFNY::DESC::get_alt_above_ground_cm() considers RNGFND
         // do not ignore limits until we have slowed down for landing
         ignore_descent_limit = (MAX(g2.land_alt_low,100) > get_alt_above_ground_cm()) || copter.ap.land_complete_maybe;
 
@@ -603,6 +576,8 @@ void Mode::land_run_vertical_control(bool pause_descent)
         // Don't speed up for landing.
         max_land_descent_velocity = MIN(max_land_descent_velocity, -abs(g.land_speed));
 
+        //MHEFNY::DESC::I believe the hover issue mention in the below comment because cmb_rate willreach 0
+        
         // Compute a vertical velocity demand such that the vehicle approaches g2.land_alt_low. Without the below constraint, this would cause the vehicle to hover at g2.land_alt_low.
         cmb_rate = sqrt_controller(MAX(g2.land_alt_low,100)-get_alt_above_ground_cm(), pos_control->get_pos_z_p().kP(), pos_control->get_max_accel_z_cmss(), G_Dt);
 
@@ -914,7 +889,7 @@ float Mode::get_pilot_desired_throttle() const
     float throttle_out = throttle_in*(1.0f-expo) + expo*throttle_in*throttle_in*throttle_in;
     return throttle_out;
 }
-
+//MHEFNY:IMPORTRANT: detemine max z velocity based on avoidance algorithm
 float Mode::get_avoidance_adjusted_climbrate(float target_rate)
 {
 #if AC_AVOID_ENABLED == ENABLED
@@ -932,7 +907,7 @@ void Mode::output_to_motors()
 }
 
 Mode::AltHoldModeState Mode::get_alt_hold_state(float target_climb_rate_cms)
-{
+{ //MHEFNY:IMPORTANT//Detemine ALT HOLD State
     // Alt Hold State Machine Determination
     if (!motors->armed()) {
         // the aircraft should moved to a shut down state

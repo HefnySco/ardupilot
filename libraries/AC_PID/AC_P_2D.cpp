@@ -42,7 +42,7 @@ Vector2f AC_P_2D::update_all(postype_t &target_x, postype_t &target_y, const Vec
 // set_limits - sets the maximum error to limit output and first and second derivative of output
 // when using for a position controller, lim_err will be position error, lim_out will be correction velocity, lim_D will be acceleration, lim_D2 will be jerk
 void AC_P_2D::set_limits(float output_max, float D_Out_max, float D2_Out_max)
-{
+{ //MHEFNY:IMPORTANT:Defines all limites of position, velocity,accel ...
     _D1_max = 0.0f;
     _error_max = 0.0f;
 

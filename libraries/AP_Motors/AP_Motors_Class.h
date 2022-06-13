@@ -122,6 +122,7 @@ public:
     // get motor interlock status.  true means motors run, false motors don't run
     bool                get_interlock() const { return _interlock; }
 
+    //MHEFNY::IMPORTANT::Set End Result Calculation HERE to Motors to be translated into PWM for different motors. (MIXING)
     // set_roll, set_pitch, set_yaw, set_throttle
     void                set_roll(float roll_in) { _roll_in = roll_in; };        // range -1 ~ +1
     void                set_roll_ff(float roll_in) { _roll_in_ff = roll_in; };    // range -1 ~ +1

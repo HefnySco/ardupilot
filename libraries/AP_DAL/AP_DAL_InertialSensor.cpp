@@ -19,7 +19,7 @@ void AP_DAL_InertialSensor::start_frame()
 
     _RISH.loop_rate_hz = ins.get_loop_rate_hz();
     _RISH.primary_gyro = ins.get_primary_gyro();
-    _RISH.loop_delta_t = ins.get_loop_delta_t();
+    _RISH.loop_delta_t = ins.get_loop_delta_t(); //MHEFNY::DESC:: fixed value 
     _RISH.primary_accel = ins.get_primary_accel();
     _RISH.accel_count = ins.get_accel_count();
     _RISH.gyro_count = ins.get_gyro_count();

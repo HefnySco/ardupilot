@@ -25,6 +25,7 @@ public:
     // set target and measured inputs to P controller and calculate outputs
     // measurement is provided as 3-axis vector but only x and y are used
     Vector2f update_all(postype_t &target_x, postype_t &target_y, const Vector3f &measurement) WARN_IF_UNUSED {
+        //MHEFNY::SAME function of float AC_P_1D::update_all
         return update_all(target_x, target_y, Vector2f{measurement.x, measurement.y});
     }
 
@@ -59,7 +60,7 @@ private:
 
     // internal variables
     float _dt;          // time step in seconds
-    Vector2f _error;    // time step in seconds
+    Vector2f _error;    // time step in seconds //MHEFNY:BUG:comment error
     float _error_max;   // error limit in positive direction
     float _D1_max;      // maximum first derivative of output
 };

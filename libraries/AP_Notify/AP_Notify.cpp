@@ -399,6 +399,7 @@ void AP_Notify::init(void)
     add_backends();
 }
 
+//MHEFNY:: ::Called to send notification..arm calls it 50 time to make sure it sent the notification.
 // main update function, called at 50Hz
 void AP_Notify::update(void)
 {

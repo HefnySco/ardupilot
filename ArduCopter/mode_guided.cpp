@@ -178,6 +178,7 @@ void ModeGuided::wp_control_start()
 // run guided mode's waypoint navigation controller
 void ModeGuided::wp_control_run()
 {
+    printf("wp_control_run\n");
     // process pilot's yaw input
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio && use_pilot_yaw()) {
@@ -455,6 +456,8 @@ bool ModeGuided::set_destination(const Location& dest_loc, bool use_yaw, float y
     if (!wp_nav->get_vector_NEU(dest_loc, pos_target_f, terrain_alt)) {
         return false;
     }
+    // MHEFNY::IMPORTANT::if you want to limit the height you can do it from here.
+    // pos_target_f.z = pos_target_f.z>4000?4000:pos_target_f.z;
 
     // initialise terrain following if needed
     if (terrain_alt) {
@@ -654,6 +657,7 @@ void ModeGuided::takeoff_run()
     }
 }
 
+//MHEFNY::DESC::This function is called when moving to position and also wait.
 // pos_control_run - runs the guided position controller
 // called from guided_run
 void ModeGuided::pos_control_run()
@@ -675,9 +679,9 @@ void ModeGuided::pos_control_run()
         make_safe_ground_handling(copter.is_tradheli() && motors->get_interlock());
         return;
     }
-
+    //MHEFNY::get_terrain_offset reads from Rangefinder or TerraDB
     // calculate terrain adjustments
-    float terr_offset = 0.0f;
+    float terr_offset = 0.0f; 
     if (guided_pos_terrain_alt && !wp_nav->get_terrain_offset(terr_offset)) {
         // failure to set destination can only be because of missing terrain data
         copter.failsafe_terrain_on_event();
@@ -706,6 +710,7 @@ void ModeGuided::pos_control_run()
     //MHEFNY input_pos_xyz needs to update xy & z that is why the following functions are called.
     // run position controllers
     pos_control->update_xy_controller();
+    ////MHEFNY::TEST::CONTINUE RISING IF MOVING::pos_control->set_pos_target_z_from_climb_rate_cm(24);
     pos_control->update_z_controller(); //MHEFNY: internally it called attitude_control.set_throttle_out
 
     // call attitude controller
@@ -785,10 +790,13 @@ void ModeGuided::accel_control_run()
     }
 }
 
+//MHEFNY::IMPORTANT:This function is called when takking of and wait.
 // velaccel_control_run - runs the guided velocity and acceleration controller
 // called from guided_run
 void ModeGuided::velaccel_control_run()
 {
+    // MHEFNY::called when switchd to Guided mode or in this mode.
+    
     // process pilot's yaw input
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio && use_pilot_yaw()) {
@@ -864,6 +872,7 @@ void ModeGuided::velaccel_control_run()
 // called from guided_run
 void ModeGuided::pause_control_run()
 {
+    
     // if not armed set throttle to zero and exit immediately
     if (is_disarmed_or_landed()) {
         // do not spool down tradheli when on the ground with motor interlock enabled
@@ -976,6 +985,7 @@ void ModeGuided::posvelaccel_control_run()
 // called from guided_run
 void ModeGuided::angle_control_run()
 {
+    
     float climb_rate_cms = 0.0f;
     if (!guided_angle_state.use_thrust) {
         // constrain climb rate

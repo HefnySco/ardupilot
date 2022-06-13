@@ -143,7 +143,7 @@ bool AP_Proximity_Backend::get_rangefinder_alt(float &alt_m) const
 
 // Check if Obstacle defined by body-frame yaw and pitch is near ground
 bool AP_Proximity_Backend::check_obstacle_near_ground(float pitch, float yaw, float distance) const
-{
+{   //MHEFNY: the only function I see get_rangefinder_alt is used. It is set here (SET RANGE FINDER AS ALTITUDE)
     if (!frontend._ign_gnd_enable) {
         return false;
     }

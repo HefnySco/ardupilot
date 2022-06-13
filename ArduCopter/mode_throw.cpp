@@ -264,7 +264,8 @@ bool ModeThrow::throw_detected()
     } else {
         changing_height = inertial_nav.get_velocity_z_up_cms() > THROW_VERTICAL_SPEED;
     }
-
+    //MHEFNY:QUESTION:What is the difference between  ahrs.get_accel_ef() & copter.ins.get_accel() ?
+    //ANS: copter.ins.get_accel() is raw but the other is after applying EKF... I GUESS
     // Check the vertical acceleraton is greater than 0.25g
     bool free_falling = ahrs.get_accel_ef().z > -0.25 * GRAVITY_MSS;
 

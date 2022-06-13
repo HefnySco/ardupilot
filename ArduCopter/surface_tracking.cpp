@@ -3,7 +3,7 @@
 // update_surface_offset - manages the vertical offset of the position controller to follow the measured ground or ceiling
 //   level measured using the range finder.
 void Copter::SurfaceTracking::update_surface_offset()
-{
+{ //MHEFNY:RANGEFINDER IMPORTANT
 #if RANGEFINDER_ENABLED == ENABLED
     // check for timeout
     const uint32_t now_ms = millis();
@@ -18,7 +18,8 @@ void Copter::SurfaceTracking::update_surface_offset()
         RangeFinderState &rf_state = (surface == Surface::GROUND) ? copter.rangefinder_state : copter.rangefinder_up_state;
         const float dir = (surface == Surface::GROUND) ? 1.0f : -1.0f;
         const float curr_surface_alt_above_origin_cm = copter.inertial_nav.get_position_z_up_cm() - dir * rf_state.alt_cm;
-
+        //MHEFNY:curr_surface_alt_above_origin_cm can be ground or ceiling based on Surface type.
+        
         // update position controller target offset to the surface's alt above the EKF origin
         copter.pos_control->set_pos_offset_target_z_cm(curr_surface_alt_above_origin_cm);
         last_update_ms = now_ms;
@@ -67,6 +68,7 @@ bool Copter::SurfaceTracking::get_target_alt_cm(float &target_alt_cm) const
     return true;
 }
 
+//MHEFNY::calls set_pos_offset_z_cm() inside.
 // set target altitude (in cm) above ground
 void Copter::SurfaceTracking::set_target_alt_cm(float _target_alt_cm)
 {
@@ -94,9 +96,10 @@ float Copter::SurfaceTracking::get_dist_for_logging() const
     return ((surface == Surface::CEILING) ? copter.rangefinder_up_state.alt_cm : copter.rangefinder_state.alt_cm) * 0.01f;
 }
 
+//MHEFNY: set_surface instruct copter to follow ceiling, ground or none.
 // set direction
 void Copter::SurfaceTracking::set_surface(Surface new_surface)
-{
+{ 
     if (surface == new_surface) {
         return;
     }

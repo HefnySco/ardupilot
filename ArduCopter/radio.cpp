@@ -77,7 +77,7 @@ void Copter::init_rc_out()
 #endif
 }
 
-
+//MHEFNY::IMPORTANT::START SPINNING
 // enable_motor_output() - enable and output lowest possible value to motors
 void Copter::enable_motor_output()
 {

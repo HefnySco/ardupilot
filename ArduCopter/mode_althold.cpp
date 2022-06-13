@@ -65,7 +65,7 @@ void ModeAltHold::run()
 
     case AltHold_Takeoff:
         // initiate take-off
-        if (!takeoff.running()) {
+        if (!takeoff.running()) { //MHEFNY:take of to AP_Param::pilot_takeoff_alt
             takeoff.start(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f));
         }
 
@@ -87,17 +87,18 @@ void ModeAltHold::run()
         // get avoidance adjusted climb rate
         target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
 
+        //MHEFNY: This is where altitude hold is done. copter.pos_control->set_pos_offset_target_z_cm is called here.
         // update the vertical offset based on the surface measurement
-        copter.surface_tracking.update_surface_offset();
+        copter.surface_tracking.update_surface_offset(); //MHEFNY: Determine height target
 
         // Send the commanded climb rate to the position controller
-        pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate);
+        pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate); //MHEFNY: Determine height speed
         break;
     }
 
-    // call attitude controller
+    // call attitude controller //MHEFNY: set angles of Drone Directly.
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 
     // run the vertical position controller and set output throttle
-    pos_control->update_z_controller();
+    pos_control->update_z_controller(); //MHEFNY: throttle z is called inside this function.
 }
