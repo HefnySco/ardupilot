@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 #include <AP_Math/AP_Math.h>
-
+//MHEFNY:Important status 
 union nav_filter_status {
     struct {
         bool attitude           : 1; // 0 - true if attitude estimate is valid

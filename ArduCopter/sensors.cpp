@@ -26,7 +26,7 @@ void Copter::init_rangefinder(void)
 
 // return rangefinder altitude in centimeters
 void Copter::read_rangefinder(void)
-{
+{ //MHEFNY:IMPORTANT RANGEFINDER LOGIC.
 #if RANGEFINDER_ENABLED == ENABLED
     rangefinder.update();
 
@@ -46,7 +46,7 @@ void Copter::read_rangefinder(void)
         // local variables to make accessing simpler
         RangeFinderState &rf_state = rngfnd[i].state;
         enum Rotation rf_orient = rngfnd[i].orientation;
-
+        //MHEFNY:Range finder is rreading valid data and we can rely on altitude reading from it.
         // update health
         rf_state.alt_healthy = ((rangefinder.status_orient(rf_orient) == RangeFinder::Status::Good) &&
                                 (rangefinder.range_valid_count_orient(rf_orient) >= RANGEFINDER_HEALTH_MAX));
@@ -61,7 +61,7 @@ void Copter::read_rangefinder(void)
         // are considered a glitch and glitch_count becomes non-zero
         // glitches clear after RANGEFINDER_GLITCH_NUM_SAMPLES samples in a row.
         // glitch_cleared_ms is set so surface tracking (or other consumers) can trigger a target reset
-        const int32_t glitch_cm = rf_state.alt_cm - rf_state.alt_cm_glitch_protected;
+        const int32_t glitch_cm = rf_state.alt_cm - rf_state.alt_cm_glitch_protected; //MHEFNY: current - last good readings  should be  < RANGEFINDER_GLITCH_ALT_CM
         if (glitch_cm >= RANGEFINDER_GLITCH_ALT_CM) {
             rf_state.glitch_count = MAX(rf_state.glitch_count+1, 1);
         } else if (glitch_cm <= -RANGEFINDER_GLITCH_ALT_CM) {
@@ -85,7 +85,7 @@ void Copter::read_rangefinder(void)
                 // reset filter if we haven't used it within the last second
                 rf_state.alt_cm_filt.reset(rf_state.alt_cm);
             } else {
-                rf_state.alt_cm_filt.apply(rf_state.alt_cm, 0.05f);
+                rf_state.alt_cm_filt.apply(rf_state.alt_cm, 0.05f);  //MHEFNY:BUG:WHY 0.05f is a constant ??
             }
             rf_state.last_healthy_ms = now;
         }
