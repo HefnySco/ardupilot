@@ -405,6 +405,7 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_out_cd
         pitch_out_cd = 0.0;
         return;
     }
+<<<<<<< HEAD
     // fetch roll and pitch stick positions
     float thrust_angle_x_cd = - channel_pitch->get_control_in();
     float thrust_angle_y_cd = channel_roll->get_control_in();
@@ -432,6 +433,17 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_out_cd
     // Conversion from angular thrust vector to euler angles.
     roll_out_cd = (18000/M_PI) * atanf(cosf(thrust_angle_x_cd*(M_PI/18000))*tanf(thrust_angle_y_cd*(M_PI/18000)));
     pitch_out_cd = - thrust_angle_x_cd;
+=======
+
+    //transform pilot's normalised roll or pitch stick input into a roll and pitch euler angle command
+    float roll_out_deg;
+    float pitch_out_deg;
+    rc_input_to_roll_pitch(channel_roll->get_control_in()*(1.0/ROLL_PITCH_YAW_INPUT_MAX), channel_pitch->get_control_in()*(1.0/ROLL_PITCH_YAW_INPUT_MAX), angle_max_cd * 0.01,  angle_limit_cd * 0.01, roll_out_deg, pitch_out_deg);
+
+    // Convert to centi-degrees
+    roll_out_cd = roll_out_deg * 100.0;
+    pitch_out_cd = pitch_out_deg * 100.0;
+>>>>>>> master
 }
 
 // transform pilot's roll or pitch input into a desired velocity
@@ -764,6 +776,7 @@ void Mode::land_run_normal_or_precland(bool pause_descent)
 // The passed in location is expected to be NED and in m
 void Mode::precland_retry_position(const Vector3f &retry_pos)
 {
+    float target_yaw_rate = 0;
     if (!copter.failsafe.radio) {
         if ((g.throttle_behavior & THR_BEHAVE_HIGH_THROTTLE_CANCELS_LAND) != 0 && copter.rc_throttle_control_in_filter.get() > LAND_CANCEL_TRIGGER_THR){
             AP::logger().Write_Event(LogEvent::LAND_CANCELLED_BY_PILOT);
@@ -790,6 +803,11 @@ void Mode::precland_retry_position(const Vector3f &retry_pos)
                 copter.ap.land_repo_active = true;
             }
         }
+
+        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
+        if (!is_zero(target_yaw_rate)) {
+            auto_yaw.set_mode(AUTO_YAW_HOLD);
+        }
     }
 
     Vector3p retry_pos_NEU{retry_pos.x, retry_pos.y, retry_pos.z * -1.0f};
@@ -803,8 +821,14 @@ void Mode::precland_retry_position(const Vector3f &retry_pos)
 
     const Vector3f thrust_vector{pos_control->get_thrust_vector()};
 
-    // roll, pitch from position controller, yaw heading from auto_heading()
-    attitude_control->input_thrust_vector_heading(thrust_vector, auto_yaw.yaw());
+    // call attitude controller
+    if (auto_yaw.mode() == AUTO_YAW_HOLD) {
+        // roll & pitch from waypoint controller, yaw rate from pilot
+        attitude_control->input_thrust_vector_rate_heading(thrust_vector, target_yaw_rate);
+    } else {
+        // roll, pitch from waypoint controller, yaw heading from auto_heading()
+        attitude_control->input_thrust_vector_heading(thrust_vector, auto_yaw.yaw());
+    }
 }
 
 // Run precland statemachine. This function should be called from any mode that wants to do precision landing.

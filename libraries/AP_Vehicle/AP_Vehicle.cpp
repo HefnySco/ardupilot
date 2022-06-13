@@ -80,6 +80,12 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     // @Path: ../AP_CustomRotations/AP_CustomRotations.cpp
     AP_SUBGROUPINFO(custom_rotations, "CUST_ROT", 11, AP_Vehicle, AP_CustomRotations),
 
+#if HAL_WITH_ESC_TELEM
+    // @Group: ESC_TLM
+    // @Path: ../AP_ESC_Telem/AP_ESC_Telem.cpp
+    AP_SUBGROUPINFO(esc_telem, "ESC_TLM", 12, AP_Vehicle, AP_ESC_Telem),
+#endif
+
     AP_GROUPEND
 };
 
@@ -304,6 +310,7 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if HAL_EFI_ENABLED
     SCHED_TASK_CLASS(AP_EFI,       &vehicle.efi,            update,                   10, 200, 250),
 #endif
+    SCHED_TASK(update_arming,          1,     50, 253),
 };
 
 void AP_Vehicle::get_common_scheduler_tasks(const AP_Scheduler::Task*& tasks, uint8_t& num_tasks)
@@ -591,6 +598,12 @@ void AP_Vehicle::accel_cal_update()
 #endif
 }
 #endif // HAL_INS_ACCELCAL_ENABLED
+
+// call the arming library's update function
+void AP_Vehicle::update_arming()
+{
+    AP::arming().update();
+}
 
 AP_Vehicle *AP_Vehicle::_singleton = nullptr;
 

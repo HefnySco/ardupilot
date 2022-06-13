@@ -79,7 +79,6 @@
   #if APM_BUILD_COPTER_OR_HELI || APM_BUILD_TYPE(APM_BUILD_ArduPlane) || APM_BUILD_TYPE(APM_BUILD_ArduSub)
     #include <AP_KDECAN/AP_KDECAN.h>
   #endif
-  #include <AP_ToshibaCAN/AP_ToshibaCAN.h>
   #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
   #include <AP_UAVCAN/AP_UAVCAN.h>
 #endif
@@ -811,7 +810,7 @@ void GCS_MAVLINK::handle_mission_item(const mavlink_message_t &msg)
             // add home alt if needed
             handle_change_alt_request(cmd);
 
-            // verify we recevied the command
+            // verify we received the command
             result = MAV_MISSION_ACCEPTED;
         }
         send_mission_ack(msg, MAV_MISSION_TYPE_MISSION, result);
@@ -892,7 +891,6 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
         { MAVLINK_MSG_ID_CAMERA_FEEDBACK,       MSG_CAMERA_FEEDBACK},
         { MAVLINK_MSG_ID_MOUNT_STATUS,          MSG_MOUNT_STATUS},
         { MAVLINK_MSG_ID_OPTICAL_FLOW,          MSG_OPTICAL_FLOW},
-        { MAVLINK_MSG_ID_GIMBAL_REPORT,         MSG_GIMBAL_REPORT},
         { MAVLINK_MSG_ID_MAG_CAL_PROGRESS,      MSG_MAG_CAL_PROGRESS},
         { MAVLINK_MSG_ID_MAG_CAL_REPORT,        MSG_MAG_CAL_REPORT},
         { MAVLINK_MSG_ID_EKF_STATUS_REPORT,     MSG_EKF_STATUS_REPORT},
@@ -2718,22 +2716,47 @@ bool GCS_MAVLINK::telemetry_delayed() const
  */
 void GCS_MAVLINK::send_servo_output_raw()
 {
-    uint16_t values[16] {};
-    hal.rcout->read(values, 16);
+    const uint32_t enabled_mask = ~SRV_Channels::get_output_channel_mask(SRV_Channel::k_GPIO);
+    if (enabled_mask == 0) {
+        return;
+    }
 
-    for (uint8_t i=0; i<16; i++) {
+#if NUM_SERVO_CHANNELS >= 17
+    static const uint8_t max_channels = 32;
+#else
+    static const uint8_t max_channels = 16;
+#endif
+
+    uint16_t values[max_channels] {};
+    hal.rcout->read(values, max_channels);
+    for (uint8_t i=0; i<max_channels; i++) {
         if (values[i] == 65535) {
             values[i] = 0;
         }
-    }    
-    mavlink_msg_servo_output_raw_send(
-            chan,
-            AP_HAL::micros(),
-            0,     // port
-            values[0],  values[1],  values[2],  values[3],
-            values[4],  values[5],  values[6],  values[7],
-            values[8],  values[9],  values[10], values[11],
-            values[12], values[13], values[14], values[15]);
+    }
+    if ((enabled_mask & 0xFFFF) != 0) {
+        mavlink_msg_servo_output_raw_send(
+                chan,
+                AP_HAL::micros(),
+                0,     // port
+                values[0],  values[1],  values[2],  values[3],
+                values[4],  values[5],  values[6],  values[7],
+                values[8],  values[9],  values[10], values[11],
+                values[12], values[13], values[14], values[15]);
+    }
+
+#if NUM_SERVO_CHANNELS >= 17
+    if ((enabled_mask & 0xFFFF0000) != 0) {
+        mavlink_msg_servo_output_raw_send(
+                chan,
+                AP_HAL::micros(),
+                1,     // port
+                values[16],  values[17],  values[18],  values[19],
+                values[20],  values[21],  values[22],  values[23],
+                values[24],  values[25],  values[26], values[27],
+                values[28], values[29], values[30], values[31]);
+    }
+#endif
 }
 
 
@@ -3331,9 +3354,12 @@ void GCS_MAVLINK::handle_vision_speed_estimate(const mavlink_message_t &msg)
 void GCS_MAVLINK::handle_command_ack(const mavlink_message_t &msg)
 {
 #if HAL_INS_ACCELCAL_ENABLED
+    mavlink_command_ack_t packet;
+    mavlink_msg_command_ack_decode(&msg, &packet);
+
     AP_AccelCal *accelcal = AP::ins().get_acal();
     if (accelcal != nullptr) {
-        accelcal->handleMessage(msg);
+        accelcal->handle_command_ack(packet);
     }
 #endif
 }
@@ -5012,17 +5038,6 @@ void GCS_MAVLINK::send_global_position_int()
         ahrs.yaw_sensor);                // compass heading in 1/100 degree
 }
 
-void GCS_MAVLINK::send_gimbal_report() const
-{
-#if HAL_MOUNT_ENABLED
-    AP_Mount *mount = AP::mount();
-    if (mount == nullptr) {
-        return;
-    }
-    mount->send_gimbal_report(chan);
-#endif
-}
-
 void GCS_MAVLINK::send_mount_status() const
 {
 #if HAL_MOUNT_ENABLED
@@ -5171,11 +5186,6 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     case MSG_NEXT_PARAM:
         CHECK_PAYLOAD_SIZE(PARAM_VALUE);
         queued_param_send();
-        break;
-
-    case MSG_GIMBAL_REPORT:
-        CHECK_PAYLOAD_SIZE(GIMBAL_REPORT);
-        send_gimbal_report();
         break;
 
     case MSG_HEARTBEAT:

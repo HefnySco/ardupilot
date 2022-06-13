@@ -561,6 +561,9 @@ void Copter::three_hz_loop()
     // check if we've lost terrain data
     failsafe_terrain_check();
 
+    // check for deadreckoning failsafe
+    failsafe_deadreckon_check();
+
 #if AC_FENCE == ENABLED
     // check if we have breached a fence
     fence_check();
@@ -581,12 +584,7 @@ void Copter::one_hz_loop()
         Log_Write_Data(LogDataID::AP_STATE, ap.value);
     }
 
-    arming.update();
-
     if (!motors->armed()) {
-        // make it possible to change ahrs orientation at runtime during initial config
-        ahrs.update_orientation();
-
         update_using_interlock();
 
         // check the user hasn't updated the frame class or type

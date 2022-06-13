@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 Fly Copter in SITL
 
@@ -2629,6 +2627,16 @@ class AutoTestCopter(AutoTest):
 
         self.do_RTL()
 
+    def hover_for_interval(self, hover_time):
+        '''hovers for an interval of hover_time seconds.  Returns the bookend
+        times for that interval
+        '''
+        self.progress("Hovering for %u seconds" % hover_time)
+        tstart = self.get_sim_time()
+        self.delay_sim_time(hover_time)
+        tend = self.get_sim_time()
+        return tstart, tend
+
     def fly_motor_vibration(self):
         """Test flight with motor vibration"""
         self.context_push()
@@ -2655,11 +2663,7 @@ class AutoTestCopter(AutoTest):
             self.takeoff(15, mode="ALT_HOLD")
 
             hover_time = 15
-            tstart = self.get_sim_time()
-            self.progress("Hovering for %u seconds" % hover_time)
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
-            tend = self.get_sim_time()
+            tstart, tend = self.hover_for_interval(hover_time)
 
             # if we don't reduce vibes here then the landing detector
             # may not trigger
@@ -2690,11 +2694,8 @@ class AutoTestCopter(AutoTest):
 
             self.takeoff(15, mode="ALT_HOLD")
 
-            tstart = self.get_sim_time()
-            self.progress("Hovering for %u seconds" % hover_time)
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
-            tend = self.get_sim_time()
+            tstart, tend = self.hover_for_interval(hover_time)
+
             self.set_parameter("SIM_VIB_MOT_MAX", 0)
             self.do_RTL()
             psd = self.mavfft_fttd(1, 0, tstart * 1.0e6, tend * 1.0e6)
@@ -5059,12 +5060,8 @@ class AutoTestCopter(AutoTest):
             self.takeoff(10, mode="ALT_HOLD")
 
         hover_time = 15
-        tstart = self.get_sim_time()
-        self.progress("Hovering for %u seconds" % hover_time)
-        while self.get_sim_time_cached() < tstart + hover_time:
-            self.mav.recv_match(type='ATTITUDE', blocking=True)
+        tstart, tend = self.hover_for_interval(hover_time)
         vfr_hud = self.mav.recv_match(type='VFR_HUD', blocking=True)
-        tend = self.get_sim_time()
 
         self.do_RTL()
         psd = self.mavfft_fttd(1, 0, tstart * 1.0e6, tend * 1.0e6)
@@ -5234,12 +5231,9 @@ class AutoTestCopter(AutoTest):
         self.takeoff(10, mode="ALT_HOLD")
 
         hover_time = 15
-        tstart = self.get_sim_time()
-        self.progress("Hovering for %u seconds" % hover_time)
-        while self.get_sim_time_cached() < tstart + hover_time:
-            self.mav.recv_match(type='ATTITUDE', blocking=True)
+        tstart, tend = self.hover_for_interval(hover_time)
+
         vfr_hud = self.mav.recv_match(type='VFR_HUD', blocking=True)
-        tend = self.get_sim_time()
 
         self.do_RTL()
         psd = self.mavfft_fttd(1, 0, tstart * 1.0e6, tend * 1.0e6)
@@ -5290,13 +5284,13 @@ class AutoTestCopter(AutoTest):
 
         return freq
 
-    def fly_gyro_fft_harmonic(self):
+    def test_gyro_fft_harmonic(self, averaging):
         """Use dynamic harmonic notch to control motor noise with harmonic matching of the first harmonic."""
         # basic gyro sample rate test
         self.progress("Flying with gyro FFT harmonic - Gyro sample rate")
         self.context_push()
         ex = None
-        # we are dealing with probabalistic scenarios involving threads, have two bites at the cherry
+        # we are dealing with probabalistic scenarios involving threads
         try:
             self.start_subtest("Hover to calculate approximate hover frequency")
             # magic tridge EKF type that dramatically speeds up the test
@@ -5315,6 +5309,7 @@ class AutoTestCopter(AutoTest):
                 "FFT_THR_REF": self.get_parameter("MOT_THST_HOVER"),
                 "SIM_GYR1_RND": 20,  # enable a noisy gyro
             })
+
             # motor peak enabling FFT will also enable the arming
             # check, self-testing the functionality
             self.set_parameters({
@@ -5323,6 +5318,8 @@ class AutoTestCopter(AutoTest):
                 "FFT_MAXHZ": 450,
                 "FFT_SNR_REF": 10,
             })
+            if averaging:
+                self.set_parameter("FFT_NUM_FRAMES", 8)
 
             # Step 1: inject actual motor noise and use the FFT to track it
             self.set_parameters({
@@ -5355,19 +5352,12 @@ class AutoTestCopter(AutoTest):
             self.takeoff(10, mode="ALT_HOLD")
 
             hover_time = 10
-            tstart = self.get_sim_time()
-            self.progress("Hovering for %u seconds" % hover_time)
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
-            vfr_hud = self.mav.recv_match(type='VFR_HUD', blocking=True)
+            tstart, tend_unused = self.hover_for_interval(hover_time)
 
+            self.progress("Switching motor vibration multiplier")
             self.set_parameter("SIM_VIB_MOT_MULT", 5.0)
 
-            self.progress("Hovering for %u seconds" % hover_time)
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
-            vfr_hud = self.mav.recv_match(type='VFR_HUD', blocking=True)
-            tend = self.get_sim_time()
+            tstart_unused, tend = self.hover_for_interval(hover_time)
 
             self.do_RTL()
 
@@ -5436,6 +5426,15 @@ class AutoTestCopter(AutoTest):
 
         if ex is not None:
             raise ex
+
+    def fly_gyro_fft_harmonic(self):
+        """Use dynamic harmonic notch to control motor noise with harmonic matching of the first harmonic."""
+        self.test_gyro_fft_harmonic(False)
+
+    def fly_gyro_fft_continuous_averaging(self):
+        """Use dynamic harmonic notch with FFT averaging to control motor noise
+           with harmonic matching of the first harmonic."""
+        self.test_gyro_fft_harmonic(True)
 
     def fly_gyro_fft(self):
         """Use dynamic harmonic notch to control motor noise."""
@@ -5529,11 +5528,7 @@ class AutoTestCopter(AutoTest):
 
             self.takeoff(10, mode="ALT_HOLD")
             hover_time = 15
-            self.progress("Hovering for %u seconds" % hover_time)
-            tstart = self.get_sim_time()
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
-            tend = self.get_sim_time()
+            tstart, tend = self.hover_for_interval(hover_time)
 
             # fly fast forrest!
             self.set_rc(3, 1900)
@@ -5571,11 +5566,7 @@ class AutoTestCopter(AutoTest):
 
             self.takeoff(10, mode="ALT_HOLD")
 
-            self.progress("Hovering for %u seconds" % hover_time)
-            tstart = self.get_sim_time()
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
-            tend = self.get_sim_time()
+            tstart, tend = self.hover_for_interval(hover_time)
 
             self.do_RTL()
             # prevent update parameters from messing with the settings when we pop the context
@@ -5639,16 +5630,13 @@ class AutoTestCopter(AutoTest):
             self.takeoff(10, mode="ALT_HOLD")
 
             hover_time = 60
-            tstart = self.get_sim_time()
-            self.progress("Hovering for %u seconds" % hover_time)
 
             # start the tune
             self.set_rc(7, 2000)
 
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
+            tstart, tend = self.hover_for_interval(hover_time)
+
             vfr_hud = self.mav.recv_match(type='VFR_HUD', blocking=True)
-            tend = self.get_sim_time()
 
             # finish the tune
             self.set_rc(7, 1000)
@@ -5692,16 +5680,13 @@ class AutoTestCopter(AutoTest):
             self.takeoff(10, mode="ALT_HOLD")
 
             hover_time = 60
-            tstart = self.get_sim_time()
-            self.progress("Hovering for %u seconds" % hover_time)
 
             # start the tune
             self.set_rc(7, 2000)
 
-            while self.get_sim_time_cached() < tstart + hover_time:
-                self.mav.recv_match(type='ATTITUDE', blocking=True)
+            self.hover_for_interval(hover_time)
+
             vfr_hud = self.mav.recv_match(type='VFR_HUD', blocking=True)
-            tend = self.get_sim_time()
 
             # finish the tune
             self.set_rc(7, 1000)
@@ -8590,7 +8575,7 @@ class AutoTestCopter(AutoTest):
 
     def FETtecESC_btw_mask_checks(self):
         '''ensure prearm checks work as expected'''
-        for bad_mask in [0b1000000000000, 0b10100000000000]:
+        for bad_mask in [0b1000000000000000, 0b10100000000000000]:
             self.fettec_assert_bad_mask(bad_mask)
         for good_mask in [0b00001, 0b00101, 0b110000000000]:
             self.fettec_assert_good_mask(good_mask)
@@ -8628,7 +8613,7 @@ class AutoTestCopter(AutoTest):
         if not lines[0].startswith("TasksV2"):
             raise NotAchievedException("Expected TasksV2 as first line first not (%s)" % lines[0])
         # last line is empty, so -2 here
-        if not lines[-2].startswith("AP_EFI::update"):
+        if not lines[-2].startswith("AP_Vehicle::update_arming"):
             raise NotAchievedException("Expected EFI last not (%s)" % lines[-2])
 
     def tests1a(self):
@@ -9082,6 +9067,11 @@ class AutoTestCopter(AutoTest):
                  "Fly Gyro FFT Averaging",
                  self.fly_gyro_fft_average,
                  attempts=1),
+
+            Test("GyroFFTContinuousAveraging",
+                 "Fly Gyro FFT Continuous averaging",
+                 self.fly_gyro_fft_continuous_averaging,
+                 attempts=8),
 
             Test("CompassReordering",
                  "Test Compass reordering when priorities are changed",

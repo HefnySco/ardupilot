@@ -79,9 +79,6 @@ public:
     // handle a PARAM_VALUE message
     virtual void handle_param_value(const mavlink_message_t &msg) {}
 
-    // send a GIMBAL_REPORT message to the GCS
-    virtual void send_gimbal_report(const mavlink_channel_t chan) {}
-
     // handle a GLOBAL_POSITION_INT message
     bool handle_global_position_int(uint8_t msg_sysid, const mavlink_global_position_int_t &packet);
 
@@ -94,7 +91,7 @@ protected:
     float angle_input_rad(const RC_Channel* rc, int16_t angle_min, int16_t angle_max);
 
     // calc_angle_to_location - calculates the earth-frame roll, tilt
-    // and pan angles (and radians) to point at the given target
+    // and pan angles (in radians) to point at the given target
     bool calc_angle_to_location(const struct Location &target,
                                 Vector3f& angles_to_target_rad,
                                 bool calc_tilt,
@@ -102,7 +99,7 @@ protected:
                                 bool relative_pan = true) const WARN_IF_UNUSED;
 
     // calc_angle_to_roi_target - calculates the earth-frame roll, tilt
-    // and pan angles (and radians) to point at the ROI-target (as set
+    // and pan angles (in radians) to point at the ROI-target (as set
     // by various mavlink messages)
     bool calc_angle_to_roi_target(Vector3f& angles_to_target_rad,
                                   bool calc_tilt,
@@ -110,7 +107,7 @@ protected:
                                   bool relative_pan = true) const WARN_IF_UNUSED;
 
     // calc_angle_to_sysid_target - calculates the earth-frame roll, tilt
-    // and pan angles (and radians) to point at the sysid-target (as set
+    // and pan angles (in radians) to point at the sysid-target (as set
     // by various mavlink messages)
     bool calc_angle_to_sysid_target(Vector3f& angles_to_target_rad,
                                     bool calc_tilt,

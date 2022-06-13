@@ -1111,6 +1111,20 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("SURFTRAK_MODE", 51, ParametersG2, surftrak_mode, (uint8_t)Copter::SurfaceTracking::Surface::GROUND),
 
+    // @Param: FS_DR_ENABLE
+    // @DisplayName: DeadReckon Failsafe Action
+    // @Description: Failsafe action taken immediately as deadreckoning starts. Deadreckoning starts when EKF loses position and velocity source and relies only on wind estimates
+    // @Values: 0:Disabled/NoAction,1:Land, 2:RTL, 3:SmartRTL or RTL, 4:SmartRTL or Land, 6:Auto DO_LAND_START or RTL
+    // @User: Standard
+    AP_GROUPINFO("FS_DR_ENABLE", 52, ParametersG2, failsafe_dr_enable, (uint8_t)Copter::FailsafeAction::RTL),
+
+    // @Param: FS_DR_TIMEOUT
+    // @DisplayName: DeadReckon Failsafe Timeout
+    // @Description: DeadReckoning is available for this many seconds after losing position and/or velocity source.  After this timeout elapses the EKF failsafe will trigger in modes requiring a position estimate
+    // @Range: 0 120
+    // @User: Standard
+    AP_GROUPINFO("FS_DR_TIMEOUT", 53, ParametersG2, failsafe_dr_timeout, 30),
+
     AP_GROUPEND
 };
 
@@ -1120,7 +1134,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 ParametersG2::ParametersG2(void)
     : temp_calibration() // this doesn't actually need constructing, but removing it here is problematic syntax-wise
 #if BEACON_ENABLED == ENABLED
-    , beacon(copter.serial_manager)
+    , beacon()
 #endif
 #if HAL_PROXIMITY_ENABLED
     , proximity()
@@ -1493,10 +1507,10 @@ void Copter::convert_lgr_parameters(void)
         // this shouldn't happen
         return;
     }
-    if (servo_min->configured_in_storage() ||
-        servo_max->configured_in_storage() ||
-        servo_trim->configured_in_storage() ||
-        servo_reversed->configured_in_storage()) {
+    if (servo_min->configured() ||
+        servo_max->configured() ||
+        servo_trim->configured() ||
+        servo_reversed->configured()) {
         // has been previously saved, don't upgrade
         return;
     }
@@ -1587,7 +1601,7 @@ void Copter::convert_tradheli_parameters(void) const
                 // make sure the pointer is valid
                 if (ap2 != nullptr) {
                     // see if we can load it from EEPROM
-                    if (!ap2->configured_in_storage()) {
+                    if (!ap2->configured()) {
                         // the new parameter is not in storage so set generic swash
                         AP_Param::set_and_save_by_name("H_SW_TYPE", SwashPlateType::SWASHPLATE_TYPE_H3);            
                     }
@@ -1645,7 +1659,7 @@ void Copter::convert_tradheli_parameters(void) const
             // make sure the pointer is valid
             if (ap2 != nullptr) {
                 // see if we can load it from EEPROM
-                if (!ap2->configured_in_storage()) {
+                if (!ap2->configured()) {
                     // the new parameter is not in storage so set generic swash
                     AP_Param::set_and_save_by_name("H_SW_TYPE", SwashPlateType::SWASHPLATE_TYPE_H3);            
                 }
@@ -1662,7 +1676,7 @@ void Copter::convert_tradheli_parameters(void) const
             // make sure the pointer is valid
             if (ap2 != nullptr) {
                 // see if we can load it from EEPROM
-                if (!ap2->configured_in_storage()) {
+                if (!ap2->configured()) {
                     // the new parameter is not in storage so set generic swash
                     AP_Param::set_and_save_by_name("H_SW2_TYPE", SwashPlateType::SWASHPLATE_TYPE_H3);            
                 }
@@ -1735,7 +1749,7 @@ void Copter::convert_fs_options_params(void) const
     enum ap_var_type ptype;
     AP_Int32 *fs_opt = (AP_Int32 *)AP_Param::find("FS_OPTIONS", &ptype);
 
-    if (fs_opt == nullptr || fs_opt->configured_in_storage() || ptype != AP_PARAM_INT32) {
+    if (fs_opt == nullptr || fs_opt->configured() || ptype != AP_PARAM_INT32) {
         return;
     }
 

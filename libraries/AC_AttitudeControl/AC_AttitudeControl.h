@@ -35,7 +35,6 @@
 
 #define AC_ATTITUDE_CONTROL_ANGLE_LIMIT_TC_DEFAULT      1.0f    // Time constant used to limit lean angle so that vehicle does not lose altitude
 #define AC_ATTITUDE_CONTROL_ANGLE_LIMIT_THROTTLE_MAX    0.8f    // Max throttle used to limit lean angle so that vehicle does not lose altitude
-#define AC_ATTITUDE_CONTROL_ANGLE_LIMIT_MIN             10.0f   // Min lean angle so that vehicle can maintain limited control
 
 #define AC_ATTITUDE_CONTROL_MIN_DEFAULT                 0.1f    // minimum throttle mix default
 #define AC_ATTITUDE_CONTROL_MAN_DEFAULT                 0.1f    // manual throttle mix default
@@ -445,12 +444,12 @@ protected:
     // velocity controller.
     Vector3f            _ang_vel_body;
 
-    // This is the the angular velocity in radians per second in the body frame, added to the output angular
+    // This is the angular velocity in radians per second in the body frame, added to the output angular
     // attitude controller by the System Identification Mode.
     // It is reset to zero immediately after it is used.
     Vector3f            _sysid_ang_vel_body;
 
-    // This is the the unitless value added to the output of the PID by the System Identification Mode.
+    // This is the unitless value added to the output of the PID by the System Identification Mode.
     // It is reset to zero immediately after it is used.
     Vector3f            _actuator_sysid;
 
