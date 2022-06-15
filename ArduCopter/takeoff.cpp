@@ -101,7 +101,7 @@ void Mode::_TakeOff::do_pilot_takeoff(float& pilot_climb_rate_cm)
 // auto_takeoff_run - controls the vertical position controller during the process of taking off in auto modes
 // auto_takeoff_complete set to true when target altitude is within 10% of the take off altitude and less than 50% max climb rate
 void Mode::auto_takeoff_run()
-{
+{//MHEFNY:IMPORTANT:auto_takeoff_run
     // if not armed set throttle to zero and exit immediately
     if (!motors->armed() || !copter.ap.auto_armed) {
         // do not spool down tradheli when on the ground with motor interlock enabled
