@@ -3,7 +3,7 @@
 // update_surface_offset - manages the vertical offset of the position controller to follow the measured ground or ceiling
 //   level measured using the range finder.
 void Copter::SurfaceTracking::update_surface_offset()
-{
+{ //MHEFNY:RANGEFINDER IMPORTANT
 #if RANGEFINDER_ENABLED == ENABLED
     // check for timeout
     const uint32_t now_ms = millis();

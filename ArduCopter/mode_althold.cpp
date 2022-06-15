@@ -95,9 +95,9 @@ void ModeAltHold::run()
         break;
     }
 
-    // call attitude controller
+    // call attitude controller //MHEFNY: set angles of Drone Directly.
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 
     // run the vertical position controller and set output throttle
-    pos_control->update_z_controller();
+    pos_control->update_z_controller(); //MHEFNY: throttle z is called inside this function.
 }

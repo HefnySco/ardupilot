@@ -958,8 +958,8 @@ void AC_PosControl::update_z_controller()
     }
     thr_out += _motors.get_throttle_hover();
 
-    // Actuator commands
     //MHEFNY: _attitude_control is called here to take action. This is not consistent with other code.
+    // Actuator commands
     // send throttle to attitude controller with angle boost
     _attitude_control.set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ);
 
@@ -1191,8 +1191,8 @@ void AC_PosControl::lean_angles_to_accel_xy(float& accel_x_cmss, float& accel_y_
 
 // calculate_yaw_and_rate_yaw - update the calculated the vehicle yaw and rate of yaw.
 bool AC_PosControl::calculate_yaw_and_rate_yaw()
-{
-    // Calculate the turn rate
+{ //MHEFNY: disable this function will make drone does not change yaw in guided mode/automode.
+    // // Calculate the turn rate
     float turn_rate = 0.0f;
     const float vel_desired_xy_len = _vel_desired.xy().length();
     if (is_positive(vel_desired_xy_len)) {
@@ -1216,15 +1216,16 @@ bool AC_PosControl::calculate_yaw_and_rate_yaw()
 
 // calculate_overspeed_gain - calculated increased maximum acceleration and jerk if over speed condition is detected
 float AC_PosControl::calculate_overspeed_gain()
-{ //MHEFNY: returns 1 if within limits otherwise POSCONTROL_OVERSPEED_GAIN_Z * (n )
-//MHEFNY:BUG: why n >1 & <1
+{ //MHEFNY: returns 1 if within limits otherwise POSCONTROL_OVERSPEED_GAIN_Z * (n ) ..... nomrmally returns 1
+//MHEFNY: _vel_max_down_cms is negative 
     if (_vel_desired.z < _vel_max_down_cms && !is_zero(_vel_max_down_cms)) {
         return POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_down_cms; // MHEFNY: n = _vel_desired.z / _vel_max_down_cms  < 1 
     }
     if (_vel_desired.z > _vel_max_up_cms && !is_zero(_vel_max_up_cms)) {
         return POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_up_cms; // MHEFNY: n = _vel_desired.z / _vel_max_up_cms  > 1
     }
-    return 1.0;
+
+    return 1.0;  ///MHEFNY: very small value makes the drone increase throttle for take off very slowwwwwwwly until it starts to climb and then climbs very sloooooowly.
 }
 
 /// initialise ekf xy position reset check
