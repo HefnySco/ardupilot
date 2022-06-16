@@ -65,7 +65,7 @@ void ModeAltHold::run()
 
     case AltHold_Takeoff:
         // initiate take-off
-        if (!takeoff.running()) {
+        if (!takeoff.running()) { //MHEFNY:take of to AP_Param::pilot_takeoff_alt
             takeoff.start(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f));
         }
 

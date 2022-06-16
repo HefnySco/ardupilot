@@ -884,7 +884,7 @@ float Mode::get_pilot_desired_throttle() const
     float throttle_out = throttle_in*(1.0f-expo) + expo*throttle_in*throttle_in*throttle_in;
     return throttle_out;
 }
-
+//MHEFNY:IMPORTRANT: detemine max z velocity based on avoidance algorithm
 float Mode::get_avoidance_adjusted_climbrate(float target_rate)
 {
 #if AC_AVOID_ENABLED == ENABLED
@@ -902,7 +902,7 @@ void Mode::output_to_motors()
 }
 
 Mode::AltHoldModeState Mode::get_alt_hold_state(float target_climb_rate_cms)
-{
+{ //MHEFNY:IMPORTANT//Detemine ALT HOLD State
     // Alt Hold State Machine Determination
     if (!motors->armed()) {
         // the aircraft should moved to a shut down state

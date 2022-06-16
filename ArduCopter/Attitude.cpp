@@ -42,6 +42,11 @@ void Copter::update_throttle_hover()
 // without any deadzone at the bottom
 float Copter::get_pilot_desired_climb_rate(float throttle_control)
 {
+    //MHEFNY: difference between this and get_pilot_desired_throttle is that 
+    // get_pilot_desired_throttle reads stick and maps it from 0 to 1 
+    // but this function gets mid stick and map it multiplied by get_pilot_speed_dn() & pilot_speed_up value.
+
+
     // throttle failsafe check
     if (failsafe.radio || !ap.rc_receiver_present) {
         return 0.0f;

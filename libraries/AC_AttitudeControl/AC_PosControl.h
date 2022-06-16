@@ -253,6 +253,7 @@ public:
     /// set_pos_target_z_cm - set altitude target in cm above the EKF origin
     void set_pos_target_z_cm(float pos_target) { _pos_target.z = pos_target; }
 
+    //MHEFNY::IMPORTANT::Drone Actual Altitude.
     /// get_pos_target_z_cm - get target altitude (in cm above the EKF origin)
     float get_pos_target_z_cm() const { return _pos_target.z; }
 

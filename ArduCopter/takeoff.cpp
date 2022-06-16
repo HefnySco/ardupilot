@@ -54,9 +54,10 @@ bool Mode::do_user_takeoff(float takeoff_alt_cm, bool must_navigate)
     return true;
 }
 
+//MHEFNY: Detemines start and end altitude. take_off_start_alt & take_off_complete_alt
 // start takeoff to specified altitude above home in centimeters
 void Mode::_TakeOff::start(float alt_cm)
-{
+{ 
     // indicate we are taking off
     copter.set_land_complete(false);
     // tell position controller to reset alt target and reset I terms
@@ -101,7 +102,7 @@ void Mode::_TakeOff::do_pilot_takeoff(float& pilot_climb_rate_cm)
 // auto_takeoff_run - controls the vertical position controller during the process of taking off in auto modes
 // auto_takeoff_complete set to true when target altitude is within 10% of the take off altitude and less than 50% max climb rate
 void Mode::auto_takeoff_run()
-{//MHEFNY:IMPORTANT:auto_takeoff_run
+{//MHEFNY:IMPORTANT:auto_takeoff_run Called when taking off and also when it stops waiting after it.
     // if not armed set throttle to zero and exit immediately
     if (!motors->armed() || !copter.ap.auto_armed) {
         // do not spool down tradheli when on the ground with motor interlock enabled
@@ -136,7 +137,7 @@ void Mode::auto_takeoff_run()
         // motors have not completed spool up yet so relax navigation and position controllers
         pos_control->relax_velocity_controller_xy();
         pos_control->update_xy_controller();
-        pos_control->relax_z_controller(0.0f);   // forces throttle output to decay to zero
+        pos_control->relax_z_controller(0.0f);   // forces throttle output to decay to zero //MHEFNY::DIDNOT notice any noticable change on SITL when commenting it.
         pos_control->update_z_controller();
         attitude_control->reset_yaw_target_and_rate();
         attitude_control->reset_rate_controller_I_terms();

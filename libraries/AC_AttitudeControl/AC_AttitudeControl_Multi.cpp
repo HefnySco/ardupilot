@@ -262,7 +262,7 @@ void AC_AttitudeControl_Multi::update_althold_lean_angle_max(float throttle_in)
 }
 
 void AC_AttitudeControl_Multi::set_throttle_out(float throttle_in, bool apply_angle_boost, float filter_cutoff)
-{
+{ //MHEFNY:IMPORTANT:Determine output throttle
     _throttle_in = throttle_in;
     update_althold_lean_angle_max(throttle_in);
     _motors.set_throttle_filter_cutoff(filter_cutoff);
