@@ -418,6 +418,7 @@ void AC_Avoid::adjust_velocity_z(float kP, float accel_cmss, float& climb_rate_c
 # endif
 }
 
+//MHEFNY:IMPORTANT:Determine roll & pith necessary to avoid.
 // adjust roll-pitch to push vehicle away from objects
 // roll and pitch value are in centi-degrees
 void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
