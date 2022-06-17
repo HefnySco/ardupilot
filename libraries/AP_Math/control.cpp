@@ -409,7 +409,9 @@ float sqrt_controller(float error, float p, float second_ord_lim, float dt)
     }
     if (!is_zero(dt)) {
         // this ensures we do not get small oscillations by over shooting the error correction in the last time step.
-        return constrain_float(correction_rate, -fabsf(error) / dt, fabsf(error) / dt);
+        //MHEFNY:BUG: Correction more efficient.
+        const float abs_error_dt = fabsf(error) / dt;
+        return constrain_float(correction_rate, -abs_error_dt, abs_error_dt);
     } else {
         return correction_rate;
     }
