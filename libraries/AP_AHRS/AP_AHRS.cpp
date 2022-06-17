@@ -3011,6 +3011,7 @@ uint8_t AP_AHRS::get_primary_IMU_index() const
     return imu;
 }
 
+//MHEFNY::IMPORTANT:Get acceleration of QUAD in Earth Frame
 // get earth-frame accel vector for primary IMU
 const Vector3f &AP_AHRS::get_accel_ef() const
 {

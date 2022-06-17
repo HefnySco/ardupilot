@@ -12,7 +12,7 @@ void Copter::init_precland()
 }
 
 void Copter::update_precland()
-{
+{   //MHEFNY:TODO:STUDY_THIS
     // alt will be unused if we pass false through as the second parameter:
     return precland.update(rangefinder_state.alt_cm_glitch_protected,
                            rangefinder_alt_ok());

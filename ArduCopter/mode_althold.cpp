@@ -87,11 +87,12 @@ void ModeAltHold::run()
         // get avoidance adjusted climb rate
         target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
 
+        //MHEFNY: This is where altitude hold is done. copter.pos_control->set_pos_offset_target_z_cm is called here.
         // update the vertical offset based on the surface measurement
-        copter.surface_tracking.update_surface_offset();
+        copter.surface_tracking.update_surface_offset(); //MHEFNY: Determine height target
 
         // Send the commanded climb rate to the position controller
-        pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate);
+        pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate); //MHEFNY: Determine height speed
         break;
     }
 

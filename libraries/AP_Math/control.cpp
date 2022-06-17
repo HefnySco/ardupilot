@@ -93,7 +93,7 @@ void update_pos_vel_accel_xy(Vector2p& pos, Vector2f& vel, const Vector2f& accel
 
     pos += delta_pos.topostype();
 
-    update_vel_accel_xy(vel, accel, dt, limit, vel_error); // MHEFNY:commenting this function makes GUIDED mode goto pos does not work.
+    update_vel_accel_xy(vel, accel, dt, limit, vel_error); //MHEFNY:commenting this function makes GUIDED mode goto pos does not work.
 }
 
 /* shape_accel calculates a jerk limited path from the current acceleration to an input acceleration.
@@ -381,7 +381,8 @@ bool limit_accel_xy(const Vector2f& vel, Vector2f& accel, float accel_max)
 
 // sqrt_controller calculates the correction based on a proportional controller with piecewise sqrt sections to constrain second derivative.
 float sqrt_controller(float error, float p, float second_ord_lim, float dt)
-{
+{//MHEFNY:IMPORTANT:calculate "correction_rate"
+    
     float correction_rate;
     if (is_negative(second_ord_lim) || is_zero(second_ord_lim)) {
         // second order limit is zero or negative.
@@ -429,7 +430,8 @@ Vector2f sqrt_controller(const Vector2f& error, float p, float second_ord_lim, f
 // inv_sqrt_controller calculates the inverse of the sqrt controller.
 // This function calculates the input (aka error) to the sqrt_controller required to achieve a given output.
 float inv_sqrt_controller(float output, float p, float D_max)
-{
+{   //MHEFNY: D_max should be positive otherwise it is ignored.
+    
     if (is_positive(D_max) && is_zero(p)) {
         return (output * output) / (2.0 * D_max);
     }

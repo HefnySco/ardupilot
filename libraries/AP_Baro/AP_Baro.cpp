@@ -909,7 +909,7 @@ bool AP_Baro::should_log() const
   call update on all drivers
  */
 void AP_Baro::update(void)
-{
+{//MHEFNY::MAIN::Read all barometers data.
     WITH_SEMAPHORE(_rsem);
 
     if (fabsf(_alt_offset - _alt_offset_active) > 0.01f) {

@@ -253,7 +253,7 @@ public:
     /// set_pos_target_z_cm - set altitude target in cm above the EKF origin
     void set_pos_target_z_cm(float pos_target) { _pos_target.z = pos_target; }
 
-    //MHEFNY::IMPORTANT::Drone Actual Altitude.
+    //MHEFNY::IMPORTANT::Drone Target Altitude.
     /// get_pos_target_z_cm - get target altitude (in cm above the EKF origin)
     float get_pos_target_z_cm() const { return _pos_target.z; }
 
@@ -304,7 +304,7 @@ public:
 
 
     /// Offset
-
+    //MHEFNY:IMPORTANT:can be altitude from ground or distance from ceiling.... check void Copter::SurfaceTracking::update_surface_offset()
     /// set_pos_offset_target_z_cm - set altitude offset target in cm above the EKF origin
     void set_pos_offset_target_z_cm(float pos_offset_target_z) { _pos_offset_target_z = pos_offset_target_z; }
 
@@ -394,7 +394,7 @@ protected:
 
     // get throttle using vibration-resistant calculation (uses feed forward with manually calculated gain)
     float get_throttle_with_vibration_override();
-
+    //MHEFNY:BUG:SHOULD WE USE GRAVITY_MSS ??? or calculate it to be zero at rest.
     // get earth-frame Z-axis acceleration with gravity removed in cm/s/s with +ve being up
     float get_z_accel_cmss() const { return -(_ahrs.get_accel_ef_blended().z + GRAVITY_MSS) * 100.0f; }
 
@@ -459,7 +459,7 @@ protected:
     Vector3f    _accel_target;          // acceleration target in NEU cm/s/s
     Vector3f    _limit_vector;          // the direction that the position controller is limited, zero when not limited
 
-    float       _pos_offset_target_z;   // vertical position offset target, frame NEU in cm relative to the EKF origin
+    float       _pos_offset_target_z;   // vertical position offset target, frame NEU in cm relative to the EKF origin //MHEFNY: could be from ground or ceiling.
     float       _pos_offset_z;          // vertical position offset, frame NEU in cm relative to the EKF origin
     float       _vel_offset_z;          // vertical velocity offset in NEU cm/s calculated by pos_to_rate step
     float       _accel_offset_z;        // vertical acceleration offset in NEU cm/s/s

@@ -26,6 +26,14 @@ AC_P_1D::AC_P_1D(float initial_p, float dt) :
 // target and measurement are filtered
 float AC_P_1D::update_all(float &target, float measurement)
 {
+    //MHEFNY:IMPORTANT:determine target and return "correction_rate"
+    // measure error by subtract target from measurement.
+    // based on error sign add or subtract delta_error.
+    // then return "derivative" or "correction_rate" calculated by func: sqrt_controller
+    // if target is distance then the return is speed. if target is speed then the return is acceleration....etc.
+
+    
+    
     // calculate distance _error
     _error = target - measurement;
 
@@ -52,7 +60,11 @@ void AC_P_1D::set_limits(float output_min, float output_max, float D_Out_max, fl
     if (is_positive(D_Out_max)) {
         _D1_max = D_Out_max;
     }
-
+    //MHEFNY: if !is_positive(_kp) then _error_min & _error_max will not be set.
+    //MHEFNY:QUESTION:What if output_min is positive or output_max is negative 
+    //and still output_min < output_max ... why the _error_* is set to zero?
+    //ANS: I guess it is because _error_sign correct when based on error sign not value.
+    
     if (is_positive(D2_Out_max) && is_positive(_kp)) {
         // limit the first derivative so as not to exceed the second derivative
         _D1_max = MIN(_D1_max, D2_Out_max / _kp);
@@ -70,7 +82,7 @@ void AC_P_1D::set_limits(float output_min, float output_max, float D_Out_max, fl
 // set_error_limits - reduce maximum error to error_max
 // to be called after setting limits
 void AC_P_1D::set_error_limits(float error_min, float error_max)
-{
+{ //MHEFNY:NOT USED
     if (is_negative(error_min)) {
         if (!is_zero(_error_min)) {
             _error_min = MAX(_error_min, error_min);

@@ -420,6 +420,7 @@ public:
     // add_trim - adjust the roll and pitch trim up to a total of 10 degrees
     void add_trim(float roll_in_radians, float pitch_in_radians, bool save_to_eeprom = true);
 
+    //MHEFNY:AUTOPILOT_TO_VEHICLE FRAME & VICE VERSA.
     // trim rotation matrices:
     const Matrix3f& get_rotation_autopilot_body_to_vehicle_body(void) const { return _rotation_autopilot_body_to_vehicle_body; }
     const Matrix3f& get_rotation_vehicle_body_to_autopilot_body(void) const { return _rotation_vehicle_body_to_autopilot_body; }

@@ -678,9 +678,9 @@ void ModeGuided::pos_control_run()
         make_safe_ground_handling(copter.is_tradheli() && motors->get_interlock());
         return;
     }
-
+    //MHEFNY::get_terrain_offset reads from Rangefinder or TerraDB
     // calculate terrain adjustments
-    float terr_offset = 0.0f;
+    float terr_offset = 0.0f; 
     if (guided_pos_terrain_alt && !wp_nav->get_terrain_offset(terr_offset)) {
         // failure to set destination can only be because of missing terrain data
         copter.failsafe_terrain_on_event();

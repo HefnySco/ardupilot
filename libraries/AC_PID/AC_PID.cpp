@@ -356,7 +356,7 @@ void AC_PID::set_integrator(float integrator)
 }
 
 void AC_PID::relax_integrator(float integrator, float time_constant)
-{
+{ //MHEFNY:reduce I value. Note: (_dt / (_dt + time_constant)) as dt increases 
     integrator = constrain_float(integrator, -_kimax, _kimax);
     _integrator = _integrator + (integrator - _integrator) * (_dt / (_dt + time_constant));
     _pid_info.I = _integrator;

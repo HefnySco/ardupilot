@@ -9,6 +9,7 @@
 // counter to verify landings
 static uint32_t land_detector_count = 0;
 
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION
 // run land and crash detectors
 // called at MAIN_LOOP_RATE
 void Copter::update_land_and_crash_detectors()

@@ -131,6 +131,7 @@ void Copter::auto_disarm_check()
     }
 }
 
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION::Send output to motors...high level...called by Scheduler.
 // motors_output - send output to motors library which will adjust and send to ESCs and servos
 void Copter::motors_output()
 {

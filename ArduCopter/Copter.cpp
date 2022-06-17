@@ -85,6 +85,7 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 #define SCHED_TASK(func, _interval_ticks, _max_time_micros, _prio) SCHED_TASK_CLASS(Copter, &copter, func, _interval_ticks, _max_time_micros, _prio)
 #define FAST_TASK(func) FAST_TASK_CLASS(Copter, &copter, func)
 
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION
 /*
   scheduler table - all tasks should be listed here.
 
@@ -426,7 +427,7 @@ bool Copter::has_ekf_failsafed() const
 
 #endif // AP_SCRIPTING_ENABLED
 
-
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION::Simply reads from RC Radio
 // rc_loops - reads user input from transmitter/receiver
 // called at 100hz
 void Copter::rc_loop()
@@ -654,6 +655,7 @@ void Copter::update_simple_mode(void)
     channel_pitch->set_control_in(-rollx*ahrs.sin_yaw() + pitchx*ahrs.cos_yaw());
 }
 
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION::called by scheduler indirectly.
 // update_super_simple_bearing - adjusts simple bearing based on location
 // should be called after home_bearing has been updated
 void Copter::update_super_simple_bearing(bool force_update)
@@ -686,6 +688,7 @@ void Copter::read_AHRS(void)
     ahrs.update(true);
 }
 
+//MHEFNY::MAIN-HIGHLEVEL-FUNCTION::Update Altitude from Barometer
 // read baro and log control tuning
 void Copter::update_altitude()
 {

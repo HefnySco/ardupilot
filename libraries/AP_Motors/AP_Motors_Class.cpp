@@ -94,6 +94,7 @@ void AP_Motors::set_radio_passthrough(float roll_input, float pitch_input, float
 /*
   write to an output channel
  */
+//MHEFNY::MAIN::Write PWM to Motor...calls SRV_Channels::set_output_pwm() & SRV_Channels::set_output_scaled()
 void AP_Motors::rc_write(uint8_t chan, uint16_t pwm)
 { //MHEFNY: actual motor writing
     SRV_Channel::Aux_servo_function_t function = SRV_Channels::get_motor_function(chan);

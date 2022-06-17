@@ -76,7 +76,7 @@ const Vector2f &AP_InertialNav::get_position_xy_cm() const
  * @return
  */
 float AP_InertialNav::get_position_z_up_cm() const
-{
+{   //MHEFNY: Return Altitude
     return _relpos_cm.z;
 }
 

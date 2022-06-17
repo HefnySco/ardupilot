@@ -739,7 +739,7 @@ void AC_PosControl::relax_z_controller(float throttle_setting)
 ///     This function is private and contains all the shared z axis initialisation functions
 void AC_PosControl::init_z_controller()
 {
-    _pos_target.z = _inav.get_position_z_up_cm();
+    _pos_target.z = _inav.get_position_z_up_cm(); //MHEFNY:Set Relative altitude using navigator as a source
 
     const float curr_vel_z = _inav.get_velocity_z_up_cms();
     _vel_desired.z = curr_vel_z;
