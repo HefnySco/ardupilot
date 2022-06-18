@@ -610,6 +610,7 @@ void Copter::one_hz_loop()
     AP_Notify::flags.flying = !ap.land_complete;
 }
 
+//MHEFNY::IMPORTANT::Safe initial bearing.... called by arm and RC heading reset.
 void Copter::init_simple_bearing()
 {
     // capture current cos_yaw and sin_yaw values

@@ -745,8 +745,9 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
 #endif
 
     // enable output to motors
-    copter.enable_motor_output();
+    copter.enable_motor_output(); 
 
+    //MHEFNY::IMPORTANT::WHERE MOTOR ARE ARMED.
     // finally actually arm the motors
     copter.motors->armed(true);
 
