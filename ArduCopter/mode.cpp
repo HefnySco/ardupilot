@@ -540,6 +540,7 @@ void Mode::make_safe_ground_handling(bool force_throttle_unlimited)
  */
 int32_t Mode::get_alt_above_ground_cm(void)
 {
+    //MHEFNY::DESC::Get ALT by Priority (RNG, then POS, then AHRS)
     int32_t alt_above_ground_cm;
     if (copter.get_rangefinder_height_interpolated_cm(alt_above_ground_cm)) {
         return alt_above_ground_cm;
@@ -561,6 +562,7 @@ void Mode::land_run_vertical_control(bool pause_descent)
     bool ignore_descent_limit = false;
     if (!pause_descent) {
 
+        //MHEFNY::DESC::get_alt_above_ground_cm() considers RNGFND
         // do not ignore limits until we have slowed down for landing
         ignore_descent_limit = (MAX(g2.land_alt_low,100) > get_alt_above_ground_cm()) || copter.ap.land_complete_maybe;
 
@@ -574,6 +576,8 @@ void Mode::land_run_vertical_control(bool pause_descent)
         // Don't speed up for landing.
         max_land_descent_velocity = MIN(max_land_descent_velocity, -abs(g.land_speed));
 
+        //MHEFNY::DESC::I believe the hover issue mention in the below comment because cmb_rate willreach 0
+        
         // Compute a vertical velocity demand such that the vehicle approaches g2.land_alt_low. Without the below constraint, this would cause the vehicle to hover at g2.land_alt_low.
         cmb_rate = sqrt_controller(MAX(g2.land_alt_low,100)-get_alt_above_ground_cm(), pos_control->get_pos_z_p().kP(), pos_control->get_max_accel_z_cmss(), G_Dt);
 

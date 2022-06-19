@@ -329,6 +329,8 @@ void AP_Motors6DOF::output_armed_stabilizing()
             limit.throttle_upper = true;
         }
 
+        //MHEFNY::IMPORTANT::Calculate EACH motor exact Value 
+        //MHEFNY::BUG::WHY MULTIPLE LOOPS? Unnecessary delays.
         // calculate roll, pitch and yaw for each motor
         for (i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
             if (motor_enabled[i]) {

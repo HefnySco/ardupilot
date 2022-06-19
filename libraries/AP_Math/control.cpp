@@ -382,7 +382,8 @@ bool limit_accel_xy(const Vector2f& vel, Vector2f& accel, float accel_max)
 // sqrt_controller calculates the correction based on a proportional controller with piecewise sqrt sections to constrain second derivative.
 float sqrt_controller(float error, float p, float second_ord_lim, float dt)
 {//MHEFNY:IMPORTANT:calculate "correction_rate"
-    
+ //https://nrotella.github.io/journal/arducopter-flight-controllers.html#:~:text=Square%20Root%20Controller%20and%20Leash%20Length,-The%20purpose%20of&text=The%20square%20root%20controller%20achieves,by%20the%20maximum%20tolerable%20acceleration.
+
     float correction_rate;
     if (is_negative(second_ord_lim) || is_zero(second_ord_lim)) {
         // second order limit is zero or negative.

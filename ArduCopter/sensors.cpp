@@ -131,6 +131,7 @@ bool Copter::rangefinder_up_ok() const
     return (rangefinder_up_state.enabled && rangefinder_up_state.alt_healthy);
 }
 
+//MHEFNY::IMPORTANT::Gets estimated height mix between RNGFND & INS = (RNG + INS(now)-INS(at RNG READ))
 /*
   get inertially interpolated rangefinder height. Inertial height is
   recorded whenever we update the rangefinder height, then we use the

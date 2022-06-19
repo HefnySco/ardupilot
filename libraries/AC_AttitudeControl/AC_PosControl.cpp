@@ -958,7 +958,8 @@ void AC_PosControl::update_z_controller()
     }
     thr_out += _motors.get_throttle_hover();
 
-    //MHEFNY: _attitude_control is called here to take action. This is not consistent with other code.
+    //MHEFNY::DESC:: _attitude_control is called here to take action. This is not consistent with other code.
+    
     // Actuator commands
     // send throttle to attitude controller with angle boost
     _attitude_control.set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ);
@@ -1205,6 +1206,10 @@ bool AC_PosControl::calculate_yaw_and_rate_yaw()
         }
     }
 
+    //MHEFNY::BUG::PERFORMANCE::if (vel_desired_xy_len > _vel_max_xy_cms * 0.05f) {
+    // Condition should be inverted and moved to start of the function with exit action.
+    // if (vel_desired_xy_len <= _vel_max_xy_cms * 0.05f) return false;
+
     // update the target yaw if velocity is greater than 5% _vel_max_xy_cms
     if (vel_desired_xy_len > _vel_max_xy_cms * 0.05f) {
         _yaw_target = degrees(_vel_desired.xy().angle()) * 100.0f;
@@ -1218,6 +1223,10 @@ bool AC_PosControl::calculate_yaw_and_rate_yaw()
 float AC_PosControl::calculate_overspeed_gain()
 { //MHEFNY: returns 1 if within limits otherwise POSCONTROL_OVERSPEED_GAIN_Z * (n ) ..... nomrmally returns 1
 //MHEFNY: _vel_max_down_cms is negative 
+
+    //MHEFNY::BUG::PERFORMANCE::
+    //if (is_zero(_vel_max_down_cms)) return 1.0; 
+
     if (_vel_desired.z < _vel_max_down_cms && !is_zero(_vel_max_down_cms)) {
         return POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_down_cms; // MHEFNY: n = _vel_desired.z / _vel_max_down_cms  < 1 
     }

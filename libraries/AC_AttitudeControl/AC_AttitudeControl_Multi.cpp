@@ -326,6 +326,7 @@ void AC_AttitudeControl_Multi::update_throttle_rpy_mix()
     _throttle_rpy_mix = constrain_float(_throttle_rpy_mix, 0.1f, AC_ATTITUDE_CONTROL_MAX);
 }
 
+//MHEFNY::IMPORTANT::Translates calculation to RPYT from (-1,1) to be used for mixing and generating pwm based on Vehicle motors.
 void AC_AttitudeControl_Multi::rate_controller_run()
 {
     // move throttle vs attitude mixing towards desired (called from here because this is conveniently called on every iteration)
