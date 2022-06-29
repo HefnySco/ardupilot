@@ -1324,7 +1324,7 @@ private:
     bool dragFusionEnabled;
 
     // height source selection logic
-    AP_NavEKF_Source::SourceZ activeHgtSource;  // active height source
+    AP_NavEKF_Source::SourceZ activeHgtSource;  // active height source //MHEFNY::DESC::ACTUAL CURRENT hight source and not the defined frontend->sources.getPosZSource()
     AP_NavEKF_Source::SourceZ prevHgtSource;    // previous height source used to detect changes in source
 
     // Movement detector

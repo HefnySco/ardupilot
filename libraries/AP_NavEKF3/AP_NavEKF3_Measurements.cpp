@@ -9,6 +9,7 @@
 /********************************************************
 *              OPT FLOW AND RANGE FINDER                *
 ********************************************************/
+//MHEFNY::IMPORTANT::READ RNGFINDER DATA HERE FOR EKF3
 
 // Read the range finder and take new measurements if available
 // Apply a median filter
@@ -740,6 +741,7 @@ bool NavEKF3_core::readDeltaAngle(uint8_t ins_index, Vector3F &dAng, ftype &dAng
 *                  Height Measurements                  *
 ********************************************************/
 
+//MHEFNY::IMPORTANT::READ BARO DATA HERE FOR EKF3
 // check for new pressure altitude measurement data and update stored measurement if available
 void NavEKF3_core::readBaroData()
 {

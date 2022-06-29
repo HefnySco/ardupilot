@@ -1047,7 +1047,7 @@ void NavEKF3_core::FuseVelPosNED()
 /********************************************************
 *                   MISC FUNCTIONS                      *
 ********************************************************/
-
+//MHEFNY::IMPORTANT::Select source for Height for Fusion
 // select the height measurement to be fused from the available baro, range finder and GPS sources
 void NavEKF3_core::selectHeightForFusion()
 {
@@ -1079,6 +1079,14 @@ void NavEKF3_core::selectHeightForFusion()
 #if EK3_FEATURE_EXTERNAL_NAV
     const bool extNavDataIsFresh = (imuSampleTime_ms - extNavMeasTime_ms < 500);
 #endif
+    //MHEFNY::DESC:: 
+    // case #1: 
+    // if source is  RANGEFINDER then keep ot RANGEFINDER
+    // case #2:
+    // else use RANGEFINDER if altitude less than aboveUpperSwHgt  
+    // if frontend->_useRngSwHgt is -1 or zero then no RANGE FINDER is used    
+    //printf("%f\n",(ftype)_rng->max_distance_cm_orient(ROTATION_PITCH_270));
+    
     // select height source
     if ((frontend->sources.getPosZSource() == AP_NavEKF_Source::SourceZ::RANGEFINDER) && _rng && rangeFinderDataIsFresh) {
         // user has specified the range finder as a primary height source
@@ -1086,7 +1094,9 @@ void NavEKF3_core::selectHeightForFusion()
     } else if ((frontend->_useRngSwHgt > 0) && ((frontend->sources.getPosZSource() == AP_NavEKF_Source::SourceZ::BARO) || (frontend->sources.getPosZSource() == AP_NavEKF_Source::SourceZ::GPS)) && _rng && rangeFinderDataIsFresh) {
         // determine if we are above or below the height switch region
         ftype rangeMaxUse = 1e-4 * (ftype)_rng->max_distance_cm_orient(ROTATION_PITCH_270) * (ftype)frontend->_useRngSwHgt;
+        //MHEFNY::DESC::aboveUpperSwHgt means higher than sensor switch then go to BARO or GPS by settings activeHgtSource
         bool aboveUpperSwHgt = (terrainState - stateStruct.position.z) > rangeMaxUse;
+        //MHEFNY::DESC::belowLowerSwHgt means low then switch back to RANGE FINDER by setting activeHgtSource
         bool belowLowerSwHgt = (terrainState - stateStruct.position.z) < 0.7f * rangeMaxUse;
 
         // If the terrain height is consistent and we are moving slowly, then it can be

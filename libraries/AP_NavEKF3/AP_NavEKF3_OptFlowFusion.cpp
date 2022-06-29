@@ -309,7 +309,7 @@ void NavEKF3_core::FuseOptFlow(const of_elements &ofDataDelayed, bool really_fus
 
         // calculate relative velocity in sensor frame including the relative motion due to rotation
         const Vector3F relVelSensor = (prevTnb * stateStruct.velocity) + (ofDataDelayed.bodyRadXYZ % posOffsetBody);
-
+        //MHEFNY::BUG::https://github.com/ArduPilot/ardupilot/issues/19825 range = 0 or -ve
         // divide velocity by range to get predicted angular LOS rates relative to X and Y axes
         losPred[0] =  relVelSensor.y/range;
         losPred[1] = -relVelSensor.x/range;

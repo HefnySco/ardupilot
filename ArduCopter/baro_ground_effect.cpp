@@ -76,6 +76,7 @@ void Copter::update_ground_effect_detector(void)
 // this is not related to terrain following
 void Copter::update_ekf_terrain_height_stable()
 {
+    //MHEFNY::IMPORTANT::This is where terrain stability is determined.
     // set to false if no position estimate
     if (!position_ok() && !ekf_has_relative_position()) {
         ahrs.set_terrain_hgt_stable(false);

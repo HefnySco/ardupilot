@@ -912,6 +912,7 @@ void AP_Baro::update(void)
 {//MHEFNY::MAIN::Read all barometers data.
     WITH_SEMAPHORE(_rsem);
 
+    //MHEFNY::DESC::_alt_offset_active is set here only. It is a way to LPF _alt_offset nothing more. and eventually the if is false unless you change BARO_ALT_OFFSET.
     if (fabsf(_alt_offset - _alt_offset_active) > 0.01f) {
         // If there's more than 1cm difference then slowly slew to it via LPF.
         // The EKF does not like step inputs so this keeps it happy.

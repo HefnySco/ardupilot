@@ -680,6 +680,7 @@ bool NavEKF2_core::readDeltaAngle(uint8_t ins_index, Vector3F &dAng, ftype &dAng
 *                  Height Measurements                  *
 ********************************************************/
 
+//MHEFNY::IMPORTANT::READ BARO DATA HERE FOR EKF2
 // check for new pressure altitude measurement data and update stored measurement if available
 void NavEKF2_core::readBaroData()
 {

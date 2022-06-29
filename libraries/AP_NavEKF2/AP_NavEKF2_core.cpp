@@ -515,6 +515,7 @@ void NavEKF2_core::CovarianceInit()
     Popt = 0.25f;
 }
 
+//MHEFNY::IMPORTANT::Call
 /********************************************************
 *                 UPDATE FUNCTIONS                      *
 ********************************************************/

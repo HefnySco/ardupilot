@@ -456,6 +456,8 @@ bool ModeGuided::set_destination(const Location& dest_loc, bool use_yaw, float y
     if (!wp_nav->get_vector_NEU(dest_loc, pos_target_f, terrain_alt)) {
         return false;
     }
+    // MHEFNY::IMPORTANT::if you want to limit the height you can do it from here.
+    // pos_target_f.z = pos_target_f.z>4000?4000:pos_target_f.z;
 
     // initialise terrain following if needed
     if (terrain_alt) {
@@ -655,7 +657,7 @@ void ModeGuided::takeoff_run()
     }
 }
 
-//MHEFNY:This function is called when moving to position and also wait.
+//MHEFNY::DESC::This function is called when moving to position and also wait.
 // pos_control_run - runs the guided position controller
 // called from guided_run
 void ModeGuided::pos_control_run()
@@ -789,13 +791,13 @@ void ModeGuided::accel_control_run()
     }
 }
 
-//MHEFNY:IMPORTANT:This function is called when takking of and wait.
+//MHEFNY::IMPORTANT:This function is called when takking of and wait.
 // velaccel_control_run - runs the guided velocity and acceleration controller
 // called from guided_run
 void ModeGuided::velaccel_control_run()
 {
-    // called when switchd to Guided mode or in this mode.
-    printf("velaccel_control_run\n");
+    // MHEFNY::called when switchd to Guided mode or in this mode.
+    
     // process pilot's yaw input
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio && use_pilot_yaw()) {
@@ -871,7 +873,7 @@ void ModeGuided::velaccel_control_run()
 // called from guided_run
 void ModeGuided::pause_control_run()
 {
-    printf("pause_control_run\n");
+    
     // if not armed set throttle to zero and exit immediately
     if (is_disarmed_or_landed()) {
         // do not spool down tradheli when on the ground with motor interlock enabled
@@ -984,7 +986,7 @@ void ModeGuided::posvelaccel_control_run()
 // called from guided_run
 void ModeGuided::angle_control_run()
 {
-    printf("angle_control_run\n");
+    
     float climb_rate_cms = 0.0f;
     if (!guided_angle_state.use_thrust) {
         // constrain climb rate

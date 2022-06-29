@@ -4,7 +4,11 @@
 void Copter::read_barometer(void)
 {
     barometer.update();
+<<<<<<< HEAD
     //MHEFNY:gets altitude from primary sensor.
+=======
+    //MHEFNY:gets altitude from primary sensor. ... This variable is not used in [armin check, log, crash check]
+>>>>>>> 630e02927212e4d2dce5690cb90bf19c3d9f383b
     baro_alt = barometer.get_altitude() * 100.0f;
 
     motors->set_air_density_ratio(barometer.get_air_density_ratio());

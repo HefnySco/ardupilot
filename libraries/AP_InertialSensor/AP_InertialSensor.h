@@ -239,6 +239,7 @@ public:
     // return the selected loop rate at which samples are made avilable
     uint16_t get_loop_rate_hz(void) const { return _loop_rate; }
 
+    //MHEFNY::DESC:: fixed value defined in AP_InertialSensor::init(uint16_t loop_rate) = 1.0f/loop_rate
     // return the main loop delta_t in seconds
     float get_loop_delta_t(void) const { return _loop_delta_t; }
 

@@ -446,7 +446,7 @@ bool Copter::should_disarm_on_failsafe() {
     }
 }
 
-
+//MHEFNY::IMPORTANT::Do the Faile Safe
 void Copter::do_failsafe_action(FailsafeAction action, ModeReason reason){
 
     // Execute the specified desired_action
