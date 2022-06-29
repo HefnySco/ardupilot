@@ -387,7 +387,7 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
 
     return true;
 }
-
+//MHEFNY::DESC::called by void GCS_MAVLINK_Copter::send_position_target_global_int()
 bool ModeGuided::get_wp(Location& destination) const
 {
     switch (guided_mode) {

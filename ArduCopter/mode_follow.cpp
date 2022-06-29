@@ -163,6 +163,7 @@ int32_t ModeFollow::wp_bearing() const
     return g2.follow.get_bearing_to_target() * 100;
 }
 
+//MHEFNY::DESC::called by void GCS_MAVLINK_Copter::send_position_target_global_int()
 /*
   get target position for mavlink reporting
  */

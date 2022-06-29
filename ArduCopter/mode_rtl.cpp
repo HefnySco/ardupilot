@@ -553,6 +553,7 @@ void ModeRTL::compute_return_target()
     rtl_path.return_target.alt = MAX(rtl_path.return_target.alt, curr_alt);
 }
 
+//MHEFNY::DESC::called by void GCS_MAVLINK_Copter::send_position_target_global_int()
 bool ModeRTL::get_wp(Location& destination) const
 {
     // provide target in states which use wp_nav

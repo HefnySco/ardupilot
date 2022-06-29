@@ -180,6 +180,7 @@ void ModeSmartRTL::save_position()
     copter.g2.smart_rtl.update(copter.position_ok(), should_save_position);
 }
 
+//MHEFNY::DESC::called by void GCS_MAVLINK_Copter::send_position_target_global_int()
 bool ModeSmartRTL::get_wp(Location& destination) const
 {
     // provide target in states which use wp_nav
