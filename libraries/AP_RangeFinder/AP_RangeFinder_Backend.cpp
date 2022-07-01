@@ -55,6 +55,8 @@ bool AP_RangeFinder_Backend::has_data() const {
 // update status based on distance measurement
 void AP_RangeFinder_Backend::update_status()
 {
+    //MHEFNY::DESC::determine RangeFinder reading validity based on max & min range
+
     // check distance
     if (state.distance_m > max_distance_cm() * 0.01f) {
         set_status(RangeFinder::Status::OutOfRangeHigh);
