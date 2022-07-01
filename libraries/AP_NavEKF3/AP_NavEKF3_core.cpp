@@ -632,10 +632,6 @@ void NavEKF3_core::CovarianceInit()
 }
 
 //MHEFNY::IMPORTANT::EKF Update
-<<<<<<< HEAD
-
-=======
->>>>>>> 630e02927212e4d2dce5690cb90bf19c3d9f383b
 /********************************************************
 *                 UPDATE FUNCTIONS                      *
 ********************************************************/

@@ -3535,7 +3535,7 @@ void GCS_MAVLINK::handle_heartbeat(const mavlink_message_t &msg) const
   handle messages which don't require vehicle specific data
  */
 void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
-{
+{//MHEFNY::IMPORTANT::Execute MAVlink commands received from GCS.
     switch (msg.msgid) {
 
     case MAVLINK_MSG_ID_HEARTBEAT: {
@@ -5168,7 +5168,7 @@ void GCS_MAVLINK::send_received_message_deprecation_warning(const char * message
 }
 
 bool GCS_MAVLINK::try_send_message(const enum ap_message id)
-{
+{//MHEFNY::IMPORTANT::Sending MAvlink to GCS
     bool ret = true;
 
     switch(id) {
