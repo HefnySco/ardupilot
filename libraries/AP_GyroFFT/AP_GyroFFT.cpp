@@ -620,8 +620,10 @@ bool AP_GyroFFT::prepare_for_arming()
 
 // update the hover frequency input filter. should be called at 100hz when in a stable hover
 // called from main thread
-void AP_GyroFFT::update_freq_hover(float dt, float throttle_out)
+void AP_GyroFFT::update_freq_hover(const float dt, const float throttle_out)
 {
+    //MHEFNY::PERFORMANCE BUG
+    const float ddt =  (dt / (10.0f + dt));
     if (!analysis_enabled()) {
         return;
     }
@@ -630,13 +632,13 @@ void AP_GyroFFT::update_freq_hover(float dt, float throttle_out)
     if (is_zero(_avg_throttle_out)) {
         _avg_throttle_out = throttle_out;
     } else {
-        _avg_throttle_out = constrain_float(_avg_throttle_out + (dt / (10.0f + dt)) * (throttle_out - _avg_throttle_out), 0.01f, 0.9f);
+        _avg_throttle_out = constrain_float(_avg_throttle_out + ddt * (throttle_out - _avg_throttle_out), 0.01f, 0.9f);
     }
 
     // we have chosen to constrain the hover frequency to be within the range reachable by the third order expo polynomial.
-    _freq_hover_hz = constrain_float(_freq_hover_hz + (dt / (10.0f + dt)) * (get_weighted_noise_center_freq_hz() - _freq_hover_hz), _fft_min_hz, _fft_max_hz);
-    _bandwidth_hover_hz = constrain_float(_bandwidth_hover_hz + (dt / (10.0f + dt)) * (get_weighted_noise_center_bandwidth_hz() - _bandwidth_hover_hz), 0, _fft_max_hz * 0.5f);
-    _throttle_ref = constrain_float(_throttle_ref + (dt / (10.0f + dt)) * (throttle_out * sq((float)_fft_min_hz.get() / _freq_hover_hz.get()) - _throttle_ref), 0.01f, 0.9f);
+    _freq_hover_hz = constrain_float(_freq_hover_hz + ddt * (get_weighted_noise_center_freq_hz() - _freq_hover_hz), _fft_min_hz, _fft_max_hz);
+    _bandwidth_hover_hz = constrain_float(_bandwidth_hover_hz + ddt * (get_weighted_noise_center_bandwidth_hz() - _bandwidth_hover_hz), 0, _fft_max_hz * 0.5f);
+    _throttle_ref = constrain_float(_throttle_ref + ddt * (throttle_out * sq((float)_fft_min_hz.get() / _freq_hover_hz.get()) - _throttle_ref), 0.01f, 0.9f);
 }
 
 // save parameters as part of disarming
