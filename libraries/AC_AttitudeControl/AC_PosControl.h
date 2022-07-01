@@ -461,11 +461,7 @@ protected:
     Vector3f    _limit_vector;          // the direction that the position controller is limited, zero when not limited
 
     float       _pos_offset_target_z;   // vertical position offset target, frame NEU in cm relative to the EKF origin //MHEFNY: could be from ground or ceiling.
-<<<<<<< HEAD
-    float       _pos_offset_z;          // vertical position offset, frame NEU in cm relative to the EKF origin
-=======
     float       _pos_offset_z;          // vertical position offset, frame NEU in cm relative to the EKF origin     //MHEFNY::IMPORTANT::current altitude in cm above the EKF origin
->>>>>>> 630e02927212e4d2dce5690cb90bf19c3d9f383b
     float       _vel_offset_z;          // vertical velocity offset in NEU cm/s calculated by pos_to_rate step
     float       _accel_offset_z;        // vertical acceleration offset in NEU cm/s/s
 
