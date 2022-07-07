@@ -1424,6 +1424,7 @@ void GCS_MAVLINK::send_message(enum ap_message id)
     pushed_ap_message_ids.set(id);
 }
 
+//MHEFNY::IMPORTANT::Main function to parse RECEIVED MAVLINK DATA
 void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
                                  const mavlink_message_t &msg)
 {
@@ -1458,6 +1459,7 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
     handleMessage(msg);
 }
 
+//MHEFNY::IMPORTANT::Start Mavlink Parsing
 void
 GCS_MAVLINK::update_receive(uint32_t max_time_us)
 {
@@ -1503,9 +1505,11 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
 
         bool parsed_packet = false;
 
+        //MHEFNY:DESC::mavlink_parse_char is the mavlink parser.
         // Try to get a new message
         if (mavlink_parse_char(chan, c, &msg, &status)) {
             hal.util->persistent_data.last_mavlink_msgid = msg.msgid;
+            //MHEFNY::DESC:: calls handle handleMessage if message is valid.
             packetReceived(status, msg);
             parsed_packet = true;
             gcs_alternative_active[chan] = false;

@@ -23,7 +23,8 @@ void AP_RangeFinder_MAVLink::handle_msg(const mavlink_message_t &msg)
 {
     mavlink_distance_sensor_t packet;
     mavlink_msg_distance_sensor_decode(&msg, &packet);
-
+    //MHEFNY::BUG::check pr_RangeFinder_handle_message for more efficient handling.... note: after measuring time difference it was insignificant.
+    
     // only accept distances for the configured orentation
     if (packet.orientation == orientation()) {
         state.last_reading_ms = AP_HAL::millis();
