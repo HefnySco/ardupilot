@@ -122,6 +122,7 @@ bool AP_Mission::start_command_camera(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_SET_CAM_TRIGG_DIST:
         camera->set_trigger_distance(cmd.content.cam_trigg_dist.meters);
         if (cmd.content.cam_trigg_dist.trigger == 1) {
+            //MHEFNY::DESC:: sends MAV_CMD_DO_DIGICAM_CONTROL message.
             camera->take_picture();
         }
         return true;

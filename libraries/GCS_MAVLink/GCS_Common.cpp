@@ -1498,6 +1498,7 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
         handle_mount_message(msg);
     }
     if (!accept_packet(status, msg)) {
+        //MHEFNY::DESC::Criteria based on which a message can be ignored.
         // e.g. enforce-sysid says we shouldn't look at this packet
         return;
     }
