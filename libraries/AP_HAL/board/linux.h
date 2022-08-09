@@ -325,7 +325,10 @@
         #define HAL_PROBE_EXTERNAL_I2C_COMPASSES
     #endif
 
-    
+    // #define ALLOW_ARM_NO_COMPASS
+    // #define HAL_DISABLE_I2C_MAGS_BY_DEFAULT
+    // #define HAL_BARO_ALLOW_INIT_NO_BARO
+
     #ifdef OBAL_NOTIFY_LED
         #define HAL_GPIO_A_LED_PIN        27 // You can choose between 27,22,4,12
         #define HAL_GPIO_C_LED_PIN        22 // You can choose between 27,22,4,12
