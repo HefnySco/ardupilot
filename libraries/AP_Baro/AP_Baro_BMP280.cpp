@@ -67,7 +67,7 @@ AP_Baro_Backend *AP_Baro_BMP280::probe(AP_Baro &baro,
 
 bool AP_Baro_BMP280::_init()
 {
-    if ((!_dev) || (_backend_exists(_dev->get_bus_id()))) {
+    if (!_dev) {
         return false;
     }
     WITH_SEMAPHORE(_dev->get_semaphore());

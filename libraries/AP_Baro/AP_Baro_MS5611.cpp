@@ -78,7 +78,7 @@ AP_Baro_Backend *AP_Baro_MS56XX::probe(AP_Baro &baro,
 
 bool AP_Baro_MS56XX::_init()
 {
-    if ((!_dev) || (_backend_exists(_dev->get_bus_id()))) {
+    if (!_dev) {
         return false;
     }
 

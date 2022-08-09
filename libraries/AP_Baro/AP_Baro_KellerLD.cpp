@@ -175,10 +175,10 @@ bool AP_Baro_KellerLD::read_mode_type()
 // We read out the measurement range to be used in raw value conversions
 bool AP_Baro_KellerLD::_init()
 {
-    if ((!_dev) || (_backend_exists(_dev->get_bus_id()))) {
+    if (!_dev) {
         return false;
     }
-    
+
     WITH_SEMAPHORE(_dev->get_semaphore());
 
     // high retries for init

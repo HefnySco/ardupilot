@@ -74,18 +74,4 @@ protected:
     void set_bus_id(uint8_t instance, uint32_t id) {
         _frontend.sensors[instance].bus_id.set(int32_t(id));
     }
-
-    bool _backend_exists(const uint32_t backend) {
-        if (_frontend._num_drivers==0) {
-            return false;
-        }
-
-        for (int i=0; i<_frontend._num_drivers; ++i) {
-            if ((_frontend.sensors[i].bus_id.get() & 0xfff0) == (backend & 0xfff0)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 };
