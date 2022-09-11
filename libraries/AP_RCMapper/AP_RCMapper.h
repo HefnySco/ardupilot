@@ -19,22 +19,22 @@ public:
     }
 
     /// roll - return input channel number for roll / aileron input
-    uint8_t roll() const { return _ch_roll; }
+    inline uint8_t roll() const { return _ch_roll; }
 
     /// pitch - return input channel number for pitch / elevator input
-    uint8_t pitch() const { return _ch_pitch; }
+    inline uint8_t pitch() const { return _ch_pitch; }
 
     /// throttle - return input channel number for throttle input
-    uint8_t throttle() const { return _ch_throttle; }
+    inline uint8_t throttle() const { return _ch_throttle; }
 
     /// yaw - return input channel number for yaw / rudder input
-    uint8_t yaw() const { return _ch_yaw; }
+    inline uint8_t yaw() const { return _ch_yaw; }
 
     /// forward - return input channel number for forward input
-    uint8_t forward() const { return _ch_forward; }
+    inline uint8_t forward() const { return _ch_forward; }
 
     /// lateral - return input channel number for lateral input
-    uint8_t lateral() const { return _ch_lateral; }
+    inline uint8_t lateral() const { return _ch_lateral; }
 
     static const struct AP_Param::GroupInfo var_info[];
 
