@@ -302,9 +302,9 @@
 
     // GY-91 SPI Connection
     #ifdef HAL_BOARD_SUBTYPE_LINUX_OBAL_V1_MPU_9250_SPI
-        #define HAL_BOARD_LOG_DIRECTORY "/home/pi/ardupilot/logs"
-        #define HAL_BOARD_TERRAIN_DIRECTORY "/home/pi/ardupilot/terrain"
-        #define HAL_BOARD_STORAGE_DIRECTORY "/home/pi/ardupilot"
+        #define HAL_BOARD_LOG_DIRECTORY "/home/pi/ardupilot.gy91/logs"
+        #define HAL_BOARD_TERRAIN_DIRECTORY "/home/pi/ardupilot.gy91/terrain"
+        #define HAL_BOARD_STORAGE_DIRECTORY "/home/pi/ardupilot.gy91"
         #define HAL_PARAM_DEFAULTS_PATH "/home/pi/ardupilot.parm"
 
         #define HAL_INS_PROBE_LIST PROBE_IMU_SPI(Invensense, "mpu9250", ROTATION_NONE)
