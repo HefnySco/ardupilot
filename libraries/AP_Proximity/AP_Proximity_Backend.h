@@ -22,7 +22,7 @@
 #include <AP_Common/Location.h>
 #include "AP_Proximity_Boundary_3D.h"
 
-#define PROXIMITY_GND_DETECT_THRESHOLD 1.0f // set ground detection threshold to be 1 meters
+#define PROXIMITY_GND_DETECT_THRESHOLD 0.10f // set ground detection threshold to be 1 meters
 #define PROXIMITY_ALT_DETECT_TIMEOUT_MS 500 // alt readings should arrive within this much time
 #define PROXIMITY_BOUNDARY_3D_TIMEOUT_MS 750 // we should check the 3D boundary faces after every this many ms
 
