@@ -209,6 +209,7 @@ public:
         DISABLE_AIRSPEED_USE = 106, // equivalent to AIRSPEED_USE 0
         FW_AUTOTUNE =          107, // fixed wing auto tune
         QRTL =               108, // QRTL mode
+        CUSTOM_CONTROLLER =  109,
         // if you add something here, make sure to update the documentation of the parameter in RC_Channel.cpp!
         // also, if you add an option >255, you will need to fix duplicate_options_exist
 
@@ -228,6 +229,7 @@ public:
         FFT_NOTCH_TUNE =     162, // FFT notch tuning function
         MOUNT_LOCK =         163, // Mount yaw lock vs follow
         LOG_PAUSE =          164, // Pauses logging if under logging rate control
+        ARM_EMERGENCY_STOP = 165, // ARM on high, MOTOR_ESTOP on low
 
         // inputs from 200 will eventually used to replace RCMAP
         ROLL =               201, // roll input
@@ -239,6 +241,12 @@ public:
         FWD_THR =            209, // VTOL manual forward throttle
         AIRBRAKE =           210, // manual airbrake control
         WALKING_HEIGHT =     211, // walking robot height input
+        MOUNT1_ROLL =        212, // mount1 roll input
+        MOUNT1_PITCH =       213, // mount1 pitch input
+        MOUNT1_YAW =         214, // mount1 yaw input
+        MOUNT2_ROLL =        215, // mount2 roll input
+        MOUNT2_PITCH =       216, // mount3 pitch input
+        MOUNT2_YAW =         217, // mount4 yaw input
 
         // inputs 248-249 are reserved for the Skybrush fork at
         // https://github.com/skybrush-io/ardupilot

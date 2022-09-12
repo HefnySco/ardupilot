@@ -486,7 +486,7 @@ void GCS_MAVLINK::send_proximity()
 
     // send horizontal distances
     if (proximity->get_status() == AP_Proximity::Status::Good) {
-        AP_Proximity::Proximity_Distance_Array dist_array;
+        Proximity_Distance_Array dist_array;
         if (proximity->get_horizontal_distances(dist_array)) {
             for (uint8_t i = 0; i < PROXIMITY_MAX_DIRECTION; i++) {
                 if (!HAVE_PAYLOAD_SPACE(chan, DISTANCE_SENSOR)) {
@@ -1497,7 +1497,6 @@ void GCS_MAVLINK::send_message(enum ap_message id)
     pushed_ap_message_ids.set(id);
 }
 
-//MHEFNY::IMPORTANT::Main function to parse RECEIVED MAVLINK DATA
 void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
                                  const mavlink_message_t &msg)
 {
@@ -1524,23 +1523,18 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
         return;
     }
     if (msg.msgid == MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
-<<<<<<< HEAD
-=======
 #if HAL_MOUNT_ENABLED
->>>>>>> master
         // allow mounts to see the location of other vehicles
         handle_mount_message(msg);
 #endif
     }
     if (!accept_packet(status, msg)) {
-        //MHEFNY::DESC::Criteria based on which a message can be ignored.
         // e.g. enforce-sysid says we shouldn't look at this packet
         return;
     }
     handleMessage(msg);
 }
 
-//MHEFNY::IMPORTANT::Start Mavlink Parsing
 void
 GCS_MAVLINK::update_receive(uint32_t max_time_us)
 {
@@ -1586,11 +1580,9 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
 
         bool parsed_packet = false;
 
-        //MHEFNY:DESC::mavlink_parse_char is the mavlink parser.
         // Try to get a new message
         if (mavlink_parse_char(chan, c, &msg, &status)) {
             hal.util->persistent_data.last_mavlink_msgid = msg.msgid;
-            //MHEFNY::DESC:: calls handle handleMessage if message is valid.
             packetReceived(status, msg);
             parsed_packet = true;
             gcs_alternative_active[chan] = false;
@@ -2972,6 +2964,18 @@ MAV_RESULT GCS_MAVLINK::handle_preflight_reboot(const mavlink_command_long_t &pa
             INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
             return MAV_RESULT_ACCEPTED;
         }
+#if HAL_ENABLE_DFU_BOOT
+        if (is_equal(packet.param4, 99.0f)) {
+#if AP_SIGNED_FIRMWARE
+            send_text(MAV_SEVERITY_ERROR, "Refusing DFU for secure firmware");
+            return MAV_RESULT_FAILED;
+#else
+            send_text(MAV_SEVERITY_WARNING, "Entering DFU mode");
+            hal.util->boot_to_dfu();
+            return MAV_RESULT_ACCEPTED;
+#endif
+        }
+#endif
     }
 
     if (hal.util->get_soft_armed()) {
@@ -3633,7 +3637,7 @@ void GCS_MAVLINK::handle_heartbeat(const mavlink_message_t &msg) const
   handle messages which don't require vehicle specific data
  */
 void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
-{//MHEFNY::IMPORTANT::Execute MAVlink commands received from GCS.
+{
     switch (msg.msgid) {
 
     case MAVLINK_MSG_ID_HEARTBEAT: {
@@ -3728,7 +3732,13 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
 
 #if HAL_MOUNT_ENABLED
     case MAVLINK_MSG_ID_MOUNT_CONFIGURE: // deprecated. Use MAV_CMD_DO_MOUNT_CONFIGURE
+        send_received_message_deprecation_warning("MOUNT_CONFIGURE");
+        handle_mount_message(msg);
+        break;
     case MAVLINK_MSG_ID_MOUNT_CONTROL: // deprecated. Use MAV_CMD_DO_MOUNT_CONTROL
+        send_received_message_deprecation_warning("MOUNT_CONTROL");
+        handle_mount_message(msg);
+        break;
     case MAVLINK_MSG_ID_GIMBAL_REPORT:
     case MAVLINK_MSG_ID_GIMBAL_DEVICE_INFORMATION:
     case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
@@ -3879,6 +3889,13 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         AP::opendroneid().handle_msg(chan, msg);
         break;
 #endif
+
+#if AP_SIGNED_FIRMWARE
+    case MAVLINK_MSG_ID_SECURE_COMMAND:
+    case MAVLINK_MSG_ID_SECURE_COMMAND_REPLY:
+        AP_CheckFirmware::handle_msg(chan, msg);
+        break;
+#endif
     }
 
 }
@@ -4019,6 +4036,11 @@ MAV_RESULT GCS_MAVLINK::handle_command_flash_bootloader(const mavlink_command_lo
     case AP_HAL::Util::FlashBootloader::NO_CHANGE:
         // consider NO_CHANGE as success (so as not to display error to user)
         return MAV_RESULT_ACCEPTED;
+#if AP_SIGNED_FIRMWARE
+    case AP_HAL::Util::FlashBootloader::NOT_SIGNED:
+        gcs().send_text(MAV_SEVERITY_ERROR, "Bootloader not signed");
+        break;
+#endif
     default:
         break;
     }
@@ -4108,21 +4130,35 @@ MAV_RESULT GCS_MAVLINK::_handle_command_preflight_calibration(const mavlink_comm
 #endif
 
 #if HAL_INS_ENABLED
+    const uint32_t now = AP_HAL::millis();
     if (is_equal(packet.param5,2.0f)) {
+        // reject any time we've done a calibration recently
+        if ((now - last_accel_cal_ms) < 5000) {
+            return MAV_RESULT_TEMPORARILY_REJECTED;
+        }
+
         if (!calibrate_gyros()) {
+            last_accel_cal_ms = AP_HAL::millis();
             return MAV_RESULT_FAILED;
         }
         Vector3f trim_rad = AP::ahrs().get_trim();
         if (!AP::ins().calibrate_trim(trim_rad)) {
+            last_accel_cal_ms = AP_HAL::millis();
             return MAV_RESULT_FAILED;
         }
         // reset ahrs's trim to suggested values from calibration routine
         AP::ahrs().set_trim(trim_rad);
+        last_accel_cal_ms = AP_HAL::millis();
         return MAV_RESULT_ACCEPTED;
     }
 
     if (is_equal(packet.param5,4.0f)) {
+        if ((now - last_accel_cal_ms) < 5000) {
+            return MAV_RESULT_TEMPORARILY_REJECTED;
+        }
+
         // simple accel calibration
+        last_accel_cal_ms = AP_HAL::millis();
         return AP::ins().simple_accel_cal();
     }
 
@@ -5304,52 +5340,6 @@ void GCS_MAVLINK::send_autopilot_state_for_gimbal_device() const
         0);     // landed_state (see MAV_LANDED_STATE)
 }
 
-void GCS_MAVLINK::send_autopilot_state_for_gimbal_device() const
-{
-    // get attitude
-    const AP_AHRS &ahrs = AP::ahrs();
-    Quaternion quat;
-    if (!ahrs.get_quaternion(quat)) {
-        return;
-    }
-    const float repr_offseq_q[] = {quat.q1, quat.q2, quat.q3, quat.q4};
-
-    // get velocity
-    Vector3f vel;
-    if (!ahrs.get_velocity_NED(vel)) {
-        vel.zero();
-    }
-
-    // get vehicle body-frame rotation rate targets
-    Vector3f rate_bf_targets;
-    const AP_Vehicle *vehicle = AP::vehicle();
-    if (vehicle != nullptr) {
-        vehicle->get_rate_bf_targets(rate_bf_targets);
-    }
-
-    // get estimator flags
-    uint16_t est_status_flags = 0;
-    nav_filter_status nav_filt_status;
-    if (ahrs.get_filter_status(nav_filt_status)) {
-        est_status_flags = (uint16_t)(nav_filt_status.value & 0xFFFF);
-    }
-
-    mavlink_msg_autopilot_state_for_gimbal_device_send(
-        chan,
-        mavlink_system.sysid,   // target system (this autopilot's gimbal)
-        0,                  // target component (anything)
-        AP_HAL::micros(),   // time boot us
-        repr_offseq_q,  // attitude as quaternion
-        0,      // attitude estimated delay in micros
-        vel.x,  // x speed in NED (m/s)
-        vel.y,  // y speed in NED (m/s)
-        vel.z,  // z speed in NED (m/s)
-        0,      // velocity estimated delay in micros
-        rate_bf_targets.z,// feed forward angular velocity z
-        est_status_flags,   // estimator status
-        0);     // landed_state (see MAV_LANDED_STATE)
-}
-
 void GCS_MAVLINK::send_received_message_deprecation_warning(const char * message)
 {
     // we're not expecting very many of these ever, so a tiny bit of
@@ -5369,7 +5359,7 @@ void GCS_MAVLINK::send_received_message_deprecation_warning(const char * message
 }
 
 bool GCS_MAVLINK::try_send_message(const enum ap_message id)
-{//MHEFNY::IMPORTANT::Sending MAvlink to GCS
+{
     bool ret = true;
 
     switch(id) {
@@ -5725,11 +5715,6 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         CHECK_PAYLOAD_SIZE(UAVIONIX_ADSB_OUT_STATUS);
         send_uavionix_adsb_out_status();
 #endif
-        break;
-
-    case MSG_AUTOPILOT_STATE_FOR_GIMBAL_DEVICE:
-        CHECK_PAYLOAD_SIZE(AUTOPILOT_STATE_FOR_GIMBAL_DEVICE);
-        send_autopilot_state_for_gimbal_device();
         break;
 
     default:

@@ -75,6 +75,12 @@ void gcs_out_of_space_to_send(mavlink_channel_t chan);
 // scope.
 #define CHECK_PAYLOAD_SIZE2(id) if (!HAVE_PAYLOAD_SPACE(chan, id)) return false
 
+// CHECK_PAYLOAD_SIZE2_VOID - macro which inserts code which will
+// immediately return from the current (void) function if there is no
+// room to fit the mavlink message with id id on the mavlink output
+// channel "chan".
+#define CHECK_PAYLOAD_SIZE2_VOID(chan, id) if (!HAVE_PAYLOAD_SPACE(chan, id)) return
+
 // convenience macros for defining which ap_message ids are in which streams:
 #define MAV_STREAM_ENTRY(stream_name)           \
     {                                           \
@@ -170,6 +176,7 @@ public:
     void send_mission_ack(const mavlink_message_t &msg,
                           MAV_MISSION_TYPE mission_type,
                           MAV_MISSION_RESULT result) const {
+        CHECK_PAYLOAD_SIZE2_VOID(chan, MISSION_ACK);
         mavlink_msg_mission_ack_send(chan,
                                      msg.sysid,
                                      msg.compid,
@@ -375,6 +382,12 @@ public:
       returns if a matching component is found
      */
     static bool find_by_mavtype(uint8_t mav_type, uint8_t &sysid, uint8_t &compid, mavlink_channel_t &channel) { return routing.find_by_mavtype(mav_type, sysid, compid, channel); }
+
+    /*
+      search for the first vehicle or component in the routing table with given mav_type and component id and retrieve its sysid and channel
+      returns true if a match is found
+     */
+    static bool find_by_mavtype_and_compid(uint8_t mav_type, uint8_t compid, uint8_t &sysid, mavlink_channel_t &channel) { return routing.find_by_mavtype_and_compid(mav_type, compid, sysid, channel); }
 
     // update signing timestamp on GPS lock
     static void update_signing_timestamp(uint64_t timestamp_usec);
@@ -651,6 +664,8 @@ private:
     } last_radio_status;
 
     void log_mavlink_stats();
+
+    uint32_t last_accel_cal_ms; // used to rate limit accel cals for bad links
 
     MAV_RESULT _set_mode_common(const MAV_MODE base_mode, const uint32_t custom_mode);
 

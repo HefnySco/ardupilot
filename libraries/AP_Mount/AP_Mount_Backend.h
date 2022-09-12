@@ -28,9 +28,9 @@ class AP_Mount_Backend
 {
 public:
     // Constructor
-    AP_Mount_Backend(AP_Mount &frontend, AP_Mount::mount_state& state, uint8_t instance) :
+    AP_Mount_Backend(AP_Mount &frontend, AP_Mount_Params &params, uint8_t instance) :
         _frontend(frontend),
-        _state(state),
+        _params(params),
         _instance(instance)
     {}
 
@@ -46,7 +46,7 @@ public:
     // return true if healthy
     virtual bool healthy() const { return true; }
 
-    // has_pan_control - returns true if this mount can control it's pan (required for multicopters)
+    // returns true if this mount can control its pan (required for multicopters)
     virtual bool has_pan_control() const = 0;
 
     // get mount's mode
@@ -73,8 +73,8 @@ public:
     // set_sys_target - sets system that mount should attempt to point towards
     void set_target_sysid(uint8_t sysid);
 
-    // control - control the mount
-    virtual void control(int32_t pitch_or_lat, int32_t roll_or_lon, int32_t yaw_or_alt, MAV_MOUNT_MODE mount_mode);
+    // handle do_mount_control command.  Returns MAV_RESULT_ACCEPTED on success
+    MAV_RESULT handle_command_do_mount_control(const mavlink_command_long_t &packet);
     
     // process MOUNT_CONFIGURE messages received from GCS. deprecated.
     void handle_mount_configure(const mavlink_mount_configure_t &msg);
@@ -114,6 +114,10 @@ protected:
         float yaw;
         bool yaw_is_ef;
     };
+
+    // returns true if user has configured a valid yaw angle range
+    // allows user to disable yaw even on 3-axis gimbal
+    bool yaw_range_valid() const { return (_params.yaw_angle_min < _params.yaw_angle_max); }
 
     // returns true if mavlink heartbeat should be suppressed for this gimbal (only used by Solo gimbal)
     virtual bool suppress_heartbeat() const { return false; }
@@ -162,8 +166,11 @@ protected:
     // helper function to provide GIMBAL_DEVICE_FLAGS for use in GIMBAL_DEVICE_ATTITUDE_STATUS message
     uint16_t get_gimbal_device_flags() const;
 
+    // sent warning to GCS
+    void send_warning_to_GCS(const char* warning_str);
+
     AP_Mount    &_frontend; // reference to the front end which holds parameters
-    AP_Mount::mount_state &_state;    // references to the parameters and state for this backend
+    AP_Mount_Params &_params; // parameters for this backend
     uint8_t     _instance;  // this instance's number
 
     MAV_MOUNT_MODE  _mode;          // current mode (see MAV_MOUNT_MODE enum)
@@ -182,6 +189,8 @@ protected:
     uint8_t _target_sysid;          // sysid to track
     Location _target_sysid_location;// sysid target location
     bool _target_sysid_location_set;// true if _target_sysid has been set
+
+    uint32_t _last_warning_ms;      // system time of last warning sent to GCS
 };
 
 #endif // HAL_MOUNT_ENABLED

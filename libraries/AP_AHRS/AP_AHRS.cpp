@@ -2981,10 +2981,10 @@ uint8_t AP_AHRS::get_primary_IMU_index() const
 
 //MHEFNY::IMPORTANT:Get acceleration of QUAD in Earth Frame
 // get earth-frame accel vector for primary IMU
-const Vector3f &AP_AHRS::get_accel_ef() const
-{
-    return get_accel_ef(get_primary_accel_index());
-}
+// const Vector3f &AP_AHRS::get_accel_ef() const
+// {
+//     return get_accel_ef(get_primary_accel_index());
+// }
 
 
 // return the index of the primary core or -1 if no primary core selected

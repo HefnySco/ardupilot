@@ -4272,8 +4272,6 @@ void QuadPlane::disable_yaw_rate_time_constant()
     attitude_control->set_yaw_rate_tc(0.0);
 }
 
-<<<<<<< HEAD
-=======
 // Check if servo auto trim is allowed, only if countrol surfaces are fully in use
 bool QuadPlane::allow_servo_auto_trim()
 {
@@ -4307,5 +4305,4 @@ bool QuadPlane::landing_with_fixed_wing_spiral_approach(void) const
              cmd.p1 == NAV_VTOL_LAND_OPTIONS_FW_SPIRAL_APPROACH));
 }
 
->>>>>>> master
 #endif  // HAL_QUADPLANE_ENABLED

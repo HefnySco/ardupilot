@@ -189,7 +189,11 @@ void SIM_Precland::update(const Location &loc, const Vector3d &position)
         case PRECLAND_TYPE_CYLINDER: {
             if (lateral_distance > _dist_limit) {
                 _healthy = false;
+                return;
+            }
+            break;
         }
+    }
     _target_pos = position_wrt_device;
     _healthy = true;
 }

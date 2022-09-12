@@ -200,7 +200,6 @@ void MAVLink_routing::send_to_components(uint32_t msgid, const char *pkt, uint8_
     send_to_components(pkt, entry, pkt_len);
 }
 
-//MHEFNY::IMPORTANT::Actual funcion that sends a message to a component
 void MAVLink_routing::send_to_components(const char *pkt, const mavlink_msg_entry_t *entry, const uint8_t pkt_len)
 {
     bool sent_to_chan[MAVLINK_COMM_NUM_BUFFERS] {};
@@ -263,9 +262,21 @@ bool MAVLink_routing::find_by_mavtype(uint8_t mavtype, uint8_t &sysid, uint8_t &
     return false;
 }
 
-
-//MHEFNY::IMPORTANT::Suppose you are sending ComponentID of a camera using same SYS_ID of the vehicles.
-// This is where the system learns the source so that it can redirect messages to it if needed.
+/*
+  search for the first vehicle or component in the routing table with given mav_type and component id and retrieve its sysid and channel
+  returns true if a match is found
+ */
+bool MAVLink_routing::find_by_mavtype_and_compid(uint8_t mavtype, uint8_t compid, uint8_t &sysid, mavlink_channel_t &channel) const
+{
+    for (uint8_t i=0; i<num_routes; i++) {
+        if ((routes[i].mavtype == mavtype) && (routes[i].compid == compid)) {
+            sysid = routes[i].sysid;
+            channel = routes[i].channel;
+            return true;
+        }
+    }
+    return false;
+}
 
 /*
   see if the message is for a new route and learn it
