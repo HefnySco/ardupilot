@@ -53,7 +53,7 @@ public:
         AP_Float B;
     };
 
-    Variometer(const AP_Vehicle::FixedWing &parms, PolarParams &polarParams);
+    Variometer(const AP_Vehicle::FixedWing &parms, const PolarParams &polarParams);
 
     float alt;
     float reading;
@@ -78,9 +78,9 @@ public:
 
     float get_exp_thermalling_sink(void) const {return _expected_thermalling_sink;};
 
-    float calculate_circling_time_constant(const float thermal_bank);
+    float calculate_circling_time_constant(const float thermal_bank) const;
 
 private:
-    PolarParams &_polarParams;
+    const PolarParams &_polarParams;
 };
 

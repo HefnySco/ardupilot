@@ -20,9 +20,13 @@ void Plane::Log_Write_Attitude(void)
         quadplane.attitude_control->get_attitude_target_quat().to_euler(targets.x, targets.y, targets.z);
         targets *= degrees(100.0f);
         quadplane.ahrs_view->Write_AttitudeView(targets);
-    } else {
+    } else
+#endif
+            {
         ahrs.Write_Attitude(targets);
     }
+
+#if HAL_QUADPLANE_ENABLED
     if (AP_HAL::millis() - quadplane.last_att_control_ms < 100) {
         // log quadplane PIDs separately from fixed wing PIDs
         logger.Write_PID(LOG_PIQR_MSG, quadplane.attitude_control->get_rate_roll_pid().get_pid_info());
@@ -45,17 +49,11 @@ void Plane::Log_Write_Attitude(void)
 }
 
 // do fast logging for plane
-void Plane::Log_Write_Fast(void)
+void Plane::Log_Write_FullRate(void)
 {
-    if (!should_log(MASK_LOG_ATTITUDE_FULLRATE)) {
-        uint32_t now = AP_HAL::millis();
-        if (now - last_log_fast_ms < 40) {
-            // default to 25Hz
-            return;
-        }
-        last_log_fast_ms = now;
-    }
-    if (should_log(MASK_LOG_ATTITUDE_FAST | MASK_LOG_ATTITUDE_FULLRATE)) {
+    // MASK_LOG_ATTITUDE_FULLRATE logs at 400Hz, MASK_LOG_ATTITUDE_FAST at 25Hz, MASK_LOG_ATTIUDE_MED logs at 10Hz
+    // highest rate selected wins
+    if (should_log(MASK_LOG_ATTITUDE_FULLRATE)) {
         Log_Write_Attitude();
     }
 }

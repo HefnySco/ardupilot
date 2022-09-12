@@ -20,16 +20,12 @@
 //  UBlox Lea6H protocol: http://www.u-blox.com/images/downloads/Product_Docs/u-blox6_ReceiverDescriptionProtocolSpec_%28GPS.G6-SW-10018%29.pdf
 #pragma once
 
-#include <AP_HAL/AP_HAL.h>
-
-#ifndef AP_GPS_UBLOX_ENABLED
-  #define AP_GPS_UBLOX_ENABLED 1
-#endif
+#include "AP_GPS.h"
+#include "GPS_Backend.h"
 
 #if AP_GPS_UBLOX_ENABLED
 
-#include "AP_GPS.h"
-#include "GPS_Backend.h"
+#include <AP_HAL/AP_HAL.h>
 
 /*
  *  try to put a UBlox into binary mode. This is in two parts. 
@@ -42,6 +38,12 @@
  * The reason we need the NAV_SOL rate message at all is some uBlox
  * modules are configured with all ubx binary messages off, which
  * would mean we would never detect it.
+
+ * running a uBlox at less than 38400 will lead to packet
+ * corruption, as we can't receive the packets in the 200ms
+ * window for 5Hz fixes. The NMEA startup message should force
+ * the uBlox into 230400 no matter what rate it is configured
+ * for.
  */
 #define UBLOX_SET_BINARY_115200 "\265\142\006\001\003\000\001\006\001\022\117$PUBX,41,1,0023,0001,115200,0*1C\r\n"
 

@@ -350,7 +350,7 @@ public:
         k_param_gcs4,          // stream rates
         k_param_gcs5,          // stream rates
         k_param_gcs6,          // stream rates
-        k_param_fence,         // vehicle fence
+        k_param_fence,         // vehicle fence - unused
         k_param_acro_yaw_rate,
     };
 
@@ -485,8 +485,10 @@ public:
     AP_Stats stats;
 #endif
 
+#if AP_ICENGINE_ENABLED
     // internal combustion engine control
     AP_ICEngine ice_control;
+#endif
 
     // RC input channels
     RC_Channels_Plane rc_channels;
@@ -559,6 +561,9 @@ public:
     AP_Int8         man_expo_rudder;
 
     AP_Int32        oneshot_mask;
+
+    // just to make compilation easier when all things are compiled out...
+    uint8_t unused_integer;
 };
 
 extern const AP_Param::Info var_info[];

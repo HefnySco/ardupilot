@@ -60,9 +60,37 @@ void AP_Mount_Backend::set_target_sysid(uint8_t sysid)
 void AP_Mount_Backend::handle_mount_configure(const mavlink_mount_configure_t &packet)
 {
     set_mode((MAV_MOUNT_MODE)packet.mount_mode);
-    _state._stab_roll = packet.stab_roll;
-    _state._stab_tilt = packet.stab_pitch;
-    _state._stab_pan = packet.stab_yaw;
+    _state._stab_roll.set(packet.stab_roll);
+    _state._stab_tilt.set(packet.stab_pitch);
+    _state._stab_pan.set(packet.stab_yaw);
+}
+
+// send a GIMBAL_DEVICE_ATTITUDE_STATUS message to GCS
+void AP_Mount_Backend::send_gimbal_device_attitude_status(mavlink_channel_t chan)
+{
+    if (suppress_heartbeat()) {
+        // block heartbeat from transmitting to the GCS
+        GCS_MAVLINK::disable_channel_routing(chan);
+    }
+
+    Quaternion att_quat;
+    if (!get_attitude_quaternion(att_quat)) {
+        return;
+    }
+
+    // construct quaternion array
+    const float quat_array[4] = {att_quat.q1, att_quat.q2, att_quat.q3, att_quat.q4};
+
+    mavlink_msg_gimbal_device_attitude_status_send(chan,
+                                                   0,   // target system
+                                                   0,   // target component
+                                                   AP_HAL::millis(),    // autopilot system time
+                                                   get_gimbal_device_flags(),
+                                                   quat_array,    // attitude expressed as quaternion
+                                                   std::numeric_limits<double>::quiet_NaN(),    // roll axis angular velocity (NaN for unknown)
+                                                   std::numeric_limits<double>::quiet_NaN(),    // pitch axis angular velocity (NaN for unknown)
+                                                   std::numeric_limits<double>::quiet_NaN(),    // yaw axis angular velocity (NaN for unknown)
+                                                   0);  // failure flags (not supported)
 }
 
 // process MOUNT_CONTROL messages received from GCS. deprecated.
@@ -308,6 +336,16 @@ void AP_Mount_Backend::update_angle_target_from_rate(const MountTarget& rate_rad
         // if body-frame constrain yaw to body-frame limits
         angle_rad.yaw = constrain_float(angle_rad.yaw, radians(_state._pan_angle_min * 0.01), radians(_state._pan_angle_max * 0.01));
     }
+}
+
+// helper function to provide GIMBAL_DEVICE_FLAGS for use in GIMBAL_DEVICE_ATTITUDE_STATUS message
+uint16_t AP_Mount_Backend::get_gimbal_device_flags() const
+{
+    const uint16_t flags = (get_mode() == MAV_MOUNT_MODE_RETRACT ? GIMBAL_DEVICE_FLAGS_RETRACT : 0) |
+                           (get_mode() == MAV_MOUNT_MODE_NEUTRAL ? GIMBAL_DEVICE_FLAGS_NEUTRAL : 0) |
+                           GIMBAL_DEVICE_FLAGS_ROLL_LOCK | // roll angle is always earth-frame
+                           GIMBAL_DEVICE_FLAGS_PITCH_LOCK; // pitch angle is always earth-frame, yaw_angle is always body-frame
+    return flags;
 }
 
 // get angle targets (in radians) to home location

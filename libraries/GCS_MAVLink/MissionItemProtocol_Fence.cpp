@@ -4,6 +4,8 @@
 #include <AP_InternalError/AP_InternalError.h>
 #include <GCS_MAVLink/GCS.h>
 
+#if AP_FENCE_ENABLED
+
 /*
   public function to format mission item as mavlink_mission_item_int_t
  */
@@ -241,3 +243,5 @@ MAV_MISSION_RESULT MissionItemProtocol_Fence::allocate_update_resources()
     _new_items_count = _item_count;
     return MAV_MISSION_ACCEPTED;
 }
+
+#endif // AP_FENCE_ENABLED

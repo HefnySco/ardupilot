@@ -343,7 +343,8 @@ float AP_YawController::get_rate_out(float desired_rate, float scaler, bool disa
 
 void AP_YawController::reset_I()
 {
-    _integrator = 0;
+    _integrator = 0.0;
+    _pid_info.I = 0.0;
 }
 
 /*
@@ -353,7 +354,7 @@ void AP_YawController::autotune_start(void)
 {
     if (autotune == nullptr && rate_control_enabled()) {
         // the autotuner needs a time constant. Use an assumed tconst of 0.5
-        gains.tau = 0.5;
+        gains.tau.set(0.5);
         gains.rmax_pos.set(90);
 
         autotune = new AP_AutoTune(gains, AP_AutoTune::AUTOTUNE_YAW, aparm, rate_pid);

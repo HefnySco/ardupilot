@@ -18,7 +18,12 @@
  */
 #pragma once
 
+#include "AP_ICEngine_config.h"
+
+#if AP_ICENGINE_ENABLED
+
 #include <AP_Param/AP_Param.h>
+#include <Filter/LowPassFilter.h>
 
 class AP_ICEngine {
 public:
@@ -31,7 +36,7 @@ public:
     void update(void);
 
     // check for throttle override
-    bool throttle_override(float &percent);
+    bool throttle_override(float &percent, const float base_throttle);
 
     enum ICE_State {
         ICE_OFF=0,
@@ -126,6 +131,7 @@ private:
     enum class Options : uint16_t {
         DISABLE_IGNITION_RC_FAILSAFE=(1U<<0),
         DISABLE_REDLINE_GOVERNOR = (1U << 1),
+        THROTTLE_WHILE_DISARMED = (1U << 2),
     };
     AP_Int16 options;
 
@@ -150,3 +156,5 @@ private:
 namespace AP {
     AP_ICEngine *ice();
 };
+
+#endif  // AP_ICENGINE_ENABLED

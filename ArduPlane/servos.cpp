@@ -388,13 +388,15 @@ void Plane::set_servos_manual_passthrough(void)
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle);
 
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.available() && (quadplane.options & QuadPlane::OPTION_IDLE_GOV_MANUAL)) {
+    if (quadplane.available() && quadplane.option_is_set(QuadPlane::OPTION::IDLE_GOV_MANUAL)) {
         // for quadplanes it can be useful to run the idle governor in MANUAL mode
         // as it prevents the VTOL motors from running
         int8_t min_throttle = aparm.throttle_min.get();
 
         // apply idle governor
+#if AP_ICENGINE_ENABLED
         g2.ice_control.update_idle_governor(min_throttle);
+#endif
         throttle = MAX(throttle, min_throttle);
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle);
     }
@@ -499,9 +501,11 @@ void Plane::set_servos_controlled(void)
     int8_t min_throttle = aparm.throttle_min.get();
     int8_t max_throttle = aparm.throttle_max.get();
 
+#if AP_ICENGINE_ENABLED
     // apply idle governor
     g2.ice_control.update_idle_governor(min_throttle);
-    
+#endif
+
     if (min_throttle < 0 && !allow_reverse_thrust()) {
         // reverse thrust is available but inhibited.
         min_throttle = 0;
@@ -886,6 +890,10 @@ void Plane::set_servos(void)
     // slew rate limit throttle
     throttle_slew_limit(SRV_Channel::k_throttle);
 
+#if AP_ICENGINE_ENABLED
+    const float base_throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
+#endif
+
     if (!arming.is_armed()) {
         //Some ESCs get noisy (beep error msgs) if PWM == 0.
         //This little segment aims to avoid this.
@@ -911,14 +919,16 @@ void Plane::set_servos(void)
         }
     }
 
+#if AP_ICENGINE_ENABLED
     float override_pct = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
-    if (g2.ice_control.throttle_override(override_pct)) {
+    if (g2.ice_control.throttle_override(override_pct, base_throttle)) {
         // the ICE controller wants to override the throttle for starting, idle, or redline
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, override_pct);
 #if HAL_QUADPLANE_ENABLED
         quadplane.vel_forward.integrator = 0;
 #endif
     }
+#endif  // AP_ICENGINE_ENABLED
 
     // run output mixer and send values to the hal for output
     servos_output();
@@ -1027,7 +1037,7 @@ void Plane::servos_auto_trim(void)
         return;
     }
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.in_assisted_flight() || quadplane.in_vtol_mode()) {
+    if (!quadplane.allow_servo_auto_trim()) {
         // can't auto-trim with quadplane motors running
         return;
     }

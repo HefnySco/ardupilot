@@ -7,6 +7,44 @@ function calc_lowpass_alpha_dt(dt, cutoff_freq)
     return dt/(dt+rc);
 }
 
+function PID(sample_rate,kP,kI,kD,filtE,filtD) {
+
+    this._kP = kP;
+    this._kI = kI;
+    this._kD = kD;
+
+    this._dt = 1.0/sample_rate;
+    this.E_alpha = calc_lowpass_alpha_dt(this._dt,filtE)
+    this.D_alpha = calc_lowpass_alpha_dt(this._dt,filtD)
+
+    this._error = 0.0;
+    this._derivative = 0.0;
+    this._integrator = 0.0;
+
+    this.reset = function(sample) {
+        this._error = 0.0;
+        this._derivative = 0.0;
+        this._integrator = 0.0;
+    }
+
+    this.apply = function(error) {
+
+        var error_last = this._error;
+        this._error += this.E_alpha * (error - this._error);
+
+        var derivative = (this._error - error_last) / this._dt;
+        this._derivative += this.D_alpha * (derivative - this._derivative)
+
+        this._integrator += this._error * this._kI * this._dt;
+
+        var P_out = this._error * this._kP;
+        var D_out = this._derivative * this._kD;
+
+        return P_out + this._integrator + D_out;
+    }
+    return this;
+}
+
 function LPF_1P(sample_rate,cutoff) {
     this.reset = function(sample) {
         this.value = sample;
@@ -258,55 +296,76 @@ function get_form(vname) {
     return v;
 }
 
-function run_filters(filters,freq,sample_rate,samples) {
-    var integral_in = 0.0;
-    var integral_out = 0.0;
-    var crossing_in_i = 0;
-    var crossing_sum = 0;
-    var crossing_count = 0;
-    var last_in = 0.0;
-    var last_out = 0.0;
+function run_filters(filters,freq,sample_rate,samples,fast_filters = null,fast_sample_rate = null) {
 
     for (var j=0;j<filters.length; j++) {
         filters[j].reset(0.0);
     }
 
-    for (var i=0;i<samples;i++) {
+    var num_best_fit_points = 100;
+    var best_fit_offset = samples - num_best_fit_points;
+
+    // Best fit to sin to get amplitude, phase and DC offset
+    // https://math.stackexchange.com/questions/3926007/least-squares-regression-of-sine-wave
+    // Expecting output to be of same frequency at input
+    // Z = a*sin(t*kt + p) + O
+    // A = a*cos(p)
+    // B = a*sin(p)
+    // S = sin(t*kt)
+    // C = cos(t*kt)
+
+    var X = ML.MatrixLib.Matrix.ones(num_best_fit_points, 3);
+    var y = ML.MatrixLib.Matrix.zeros(num_best_fit_points, 1);
+
+    var kt =  Math.PI * 2.0 * freq;
+    var fast_filter_t = 0;
+    var fast_dt = 1.0 / fast_sample_rate;
+    for (var i=-0;i<samples;i++) {
         var t = i / sample_rate;
-        var sample = Math.sin(t * Math.PI * 2.0 * freq);
-        if (i > samples/10) {
-            integral_in += Math.abs(sample);
+
+        // advance faster filters if any
+        if (fast_filters && fast_sample_rate) {
+            do {
+                // run filters upto current time
+                var output = Math.sin(fast_filter_t * kt);
+                for (var j=0;j<fast_filters.length; j++) {
+                    output = fast_filters[j].apply(output);
+                }
+                fast_filter_t += fast_dt;
+            } while ((fast_filter_t + fast_dt) <= t)
+            var input = output
+        } else {
+            var input = Math.sin(t * kt);
         }
-        if (sample >= 0 && last_in < 0) {
-            crossing_in_i = i;
-        }
-        last_in = sample;
+
+        var output = input;
         for (var j=0;j<filters.length; j++) {
-            sample = filters[j].apply(sample);
+            output = filters[j].apply(output);
         }
-        if (i > samples/10) {
-            integral_out += Math.abs(sample);
+        if (i >= best_fit_offset) {
+            var index = i - best_fit_offset;
+            X.data[index][0] = Math.sin(t * kt);
+            X.data[index][1] = Math.cos(t * kt);
+            y.data[index][0] = output;
         }
-        if (sample >= 0 && last_out < 0) {
-            crossing_sum += (i-crossing_in_i);
-            crossing_count ++;
-        }
-        last_out = sample;
     }
-    var ratio = integral_out/integral_in;
-    var avg_lag = crossing_sum / crossing_count;
-    var lag = (360.0 * avg_lag * freq) / sample_rate;
-    return [ratio,lag];
+
+    // Z = a*sin(t*kt + p) + O
+    var ABO = ML.MatrixLib.solve(X, y);
+
+    var amplitude = Math.sqrt(ABO.get(0,0)*ABO.get(0,0) + ABO.get(1,0)*ABO.get(1,0));
+    var phase = Math.atan2(ABO.get(1,0),ABO.get(0,0)) * (-180.0 / Math.PI);
+    // var DC_offset = ABO.get(2,0);
+
+    return [amplitude,phase];
 }
 
-var chart;
+var chart_attenuation;
+var chart_phase;
+var freq_log_scale;
 
-function calculate_filter() {
-    var sample_rate = get_form("GyroSampleRate");
+function get_filters(sample_rate) {
     var filters = []
-    var freq_max = get_form("MaxFreq");
-    var samples = 100000;
-    var freq_step = 1;
     filters.push(new HarmonicNotchFilter(sample_rate,
                                          get_form("INS_HNTCH_ENABLE"),
                                          get_form("INS_HNTCH_MODE"),
@@ -328,84 +387,187 @@ function calculate_filter() {
                                          get_form("INS_HNTC2_HMNCS"),
                                          get_form("INS_HNTC2_OPTS")));
     filters.push(new DigitalBiquadFilter(sample_rate,get_form("INS_GYRO_FILTER")));
-    filters.push(new LPF_1P(sample_rate,get_form("FLTD")));
 
-    var num_notches = 0;
-    for (const f in filters) {
-        if ('notches' in filters[f]) {
-            num_notches += filters[f].notches.length;
-        }
-    }
-    samples /= (num_notches+1);
-    samples /= Math.max(1, freq_max/150.0);
-    // console.log("samples: " + samples)
+    return filters;
+}
 
-    var scale = document.getElementById("ScaleLog");
-    var use_dB = scale.checked;
+function calculate_filter() {
+    var sample_rate = get_form("GyroSampleRate");
+    var freq_max = get_form("MaxFreq");
+    var samples = 1000;
+    var freq_step = 0.1;
+    var filters = get_filters(sample_rate);
+
+    var use_dB = document.getElementById("ScaleLog").checked;
+    setCookie("Scale", use_dB ? "Log" : "Linear");
+    var use_RPM = document.getElementById("freq_Scale_RPM").checked;
+    setCookie("feq_unit", use_RPM ? "RPM" : "Hz");
+    var unwrap_pahse = document.getElementById("ScaleUnWrap").checked;
+    setCookie("PhaseScale", unwrap_pahse ? "unwrap" : "wrap");
     var attenuation = []
     var phase_lag = []
+    var min_phase_lag = 0.0;
     var max_phase_lag = 0.0;
     var phase_wrap = 0.0;
     var min_atten = 0.0;
     var max_atten = 1.0;
-    var atten_string = "Attenuation";
+    var last_phase = 0.0;
+    var atten_string = "Magnitude";
     if (use_dB) {
         max_atten = 0;
         min_atten = -10;
-        atten_string = "Attenuation (dB)";
+        atten_string = "Magnitude (dB)";
     }
-    for (freq=1; freq<=freq_max; freq++) {
+    var freq_string = "Frequency (Hz)";
+    if (use_RPM) {
+        freq_string = "Frequency (RPM)";
+    }
+
+    // start at zero
+    attenuation.push({x:0, y:1});
+    phase_lag.push({x:0, y:0});
+
+    for (freq=freq_step; freq<=freq_max; freq+=freq_step) {
         var v = run_filters(filters, freq, sample_rate, samples);
         var aten = v[0];
+        var phase = v[1] + phase_wrap;
         if (use_dB) {
             // show power in decibels
             aten = 20 * Math.log10(aten);
         }
+        var freq_value = freq;
+        if (use_RPM) {
+            freq_value *= 60;
+        }
+        if (unwrap_pahse) {
+            var phase_diff = phase - last_phase;
+            if (phase_diff > 180) {
+                phase_wrap -= 360.0;
+                phase -= 360.0;
+            } else if (phase_diff < -180) {
+                phase_wrap += 360.0;
+                phase += 360.0;
+            }
+        }
+        attenuation.push({x:freq_value, y:aten});
+        phase_lag.push({x:freq_value, y:-phase});
+
         min_atten = Math.min(min_atten, aten);
         max_atten = Math.max(max_atten, aten);
-        attenuation.push({x:freq, y:aten});
-        var phase = v[1] + phase_wrap;
-        if (phase < max_phase_lag-100) {
-            // we have wrapped
-            phase_wrap += 360.0;
-            phase += 360.0;
-        }
-        phase_lag.push({x:freq, y:-phase});
-        if (phase > max_phase_lag) {
-            max_phase_lag = phase;
-        }
+        min_phase_lag = Math.min(min_phase_lag, phase)
+        max_phase_lag = Math.max(max_phase_lag, phase)
+        last_phase = phase;
     }
-    max_phase_lag = Math.ceil((max_phase_lag+10)/10)*10;
-    max_phase_lag = Math.min(get_form("MaxPhaseLag"), max_phase_lag);
-    if (chart) {
-        chart.data.datasets[0].data = attenuation;
-        chart.data.datasets[1].data = phase_lag;
-        chart.options.scales.xAxes[0].ticks.max = freq_max;
-        chart.options.scales.yAxes[0].ticks.min = min_atten
-        chart.options.scales.yAxes[0].ticks.max = max_atten;
-        chart.options.scales.yAxes[0].scaleLabel.labelString = atten_string;
-        chart.options.scales.yAxes[1].ticks.min = -max_phase_lag;
-        chart.options.scales.yAxes[1].ticks.max = 0;
-        chart.update();
+
+    if (unwrap_pahse) {
+        min_phase_lag = Math.floor((min_phase_lag-10)/10)*10;
+        min_phase_lag = Math.min(Math.max(-get_form("MaxPhaseLag"), min_phase_lag), 0);
+        max_phase_lag = Math.ceil((max_phase_lag+10)/10)*10;
+        max_phase_lag = Math.min(get_form("MaxPhaseLag"), max_phase_lag);
     } else {
-        chart = new Chart("Attenuation", {
+        min_phase_lag = -180;
+        max_phase_lag = 180; 
+    }
+
+    if (use_RPM) {
+        freq_max *= 60.0;
+    }
+
+    var freq_log = document.getElementById("freq_ScaleLog").checked;
+    setCookie("feq_scale", freq_log ? "Log" : "Linear");
+    if ((freq_log_scale != null) && (freq_log_scale != freq_log)) {
+        // Scale changed, no easy way to update, delete chart and re-draw
+        chart_attenuation.clear();
+        chart_attenuation.destroy();
+        chart_attenuation = null;
+        chart_phase.clear();
+        chart_phase.destroy();
+        chart_phase = null;
+    }
+    freq_log_scale = freq_log;
+
+    if (chart_attenuation) {
+        chart_attenuation.data.datasets[0].data = attenuation;
+        chart_attenuation.options.scales.xAxes[0].ticks.max = freq_max;
+        chart_attenuation.options.scales.xAxes[0].scaleLabel.labelString = freq_string
+        chart_attenuation.options.scales.yAxes[0].ticks.min = min_atten
+        chart_attenuation.options.scales.yAxes[0].ticks.max = max_atten;
+        chart_attenuation.options.scales.yAxes[0].scaleLabel.labelString = atten_string;
+        chart_attenuation.update();
+    } else {
+        chart_attenuation = new Chart("Attenuation", {
             type : "scatter",
             data: {
                 datasets: [
                     {
-                        label: 'Attenuation',
-                        yAxisID: 'Attenuation',
-                        pointRadius: 4,
+                        label: 'Magnitude',
+                        yAxisID: 'Magnitude',
+                        pointRadius: 0,
+                        hitRadius: 8,
                         borderColor: "rgba(0,0,255,1.0)",
                         pointBackgroundColor: "rgba(0,0,255,1.0)",
                         data: attenuation,
                         showLine: true,
                         fill: false
                     },
+                ]
+            },
+            options: {
+                aspectRatio: 3,
+                legend: {display: false},
+                scales: {
+                    yAxes: [
+                        {
+                            scaleLabel: { display: true, labelString: atten_string },
+                            id: 'Magnitude',
+                            ticks: {min:min_atten, max:max_atten}
+                        },
+                    ],
+                    xAxes: [
+                        {
+                            type: (freq_log ? "logarithmic" : "linear"),
+                            scaleLabel: { display: true, labelString: freq_string },
+                            ticks:
+                            {
+                                min:0.0,
+                                max:freq_max,
+                                callback: function(value, index, ticks) {
+                                    return value;
+                                },
+                            }
+                        }
+                    ],
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            // round tooltip to two decimal places
+                            return tooltipItem.xLabel.toFixed(2) + ', ' + tooltipItem.yLabel.toFixed(2);
+                        }
+                    }
+                 }
+            }
+        });
+    }
+
+
+    if (chart_phase) {
+        chart_phase.data.datasets[0].data = phase_lag;
+        chart_phase.options.scales.xAxes[0].ticks.max = freq_max;
+        chart_phase.options.scales.xAxes[0].scaleLabel.labelString = freq_string
+        chart_phase.options.scales.yAxes[0].ticks.min = -max_phase_lag;
+        chart_phase.options.scales.yAxes[0].ticks.max = -min_phase_lag;
+        chart_phase.update();
+    } else {
+        chart_phase = new Chart("Phase", {
+            type : "scatter",
+            data: {
+                datasets: [
                     {
-                        label: 'PhaseLag',
-                        yAxisID: 'PhaseLag',
-                        pointRadius: 4,
+                        label: 'Phase',
+                        yAxisID: 'Phase',
+                        pointRadius: 0,
+                        hitRadius: 8,
                         borderColor: "rgba(255,0,0,1.0)",
                         pointBackgroundColor: "rgba(255,0,0,1.0)",
                         data: phase_lag,
@@ -415,35 +577,364 @@ function calculate_filter() {
                 ]
             },
             options: {
-                legend: {display: true},
+                aspectRatio: 3,
+                legend: {display: false},
                 scales: {
                     yAxes: [
                         {
-                            scaleLabel: { display: true, labelString: atten_string },
-                            id: 'Attenuation',
-                            position: 'left',
-                            ticks: {min:min_atten, max:max_atten, stepSize:0.1}
-                        },
-                        {
-                            scaleLabel: { display: true, labelString: "Phase Lag(deg)" },
-                            id: 'PhaseLag',
-                            position: 'right',
-                            ticks: {min:-max_phase_lag, max:0, stepSize:10}
+                            scaleLabel: { display: true, labelString: "Phase (deg)" },
+                            id: 'Phase',
+                            ticks: {min:-max_phase_lag, max:-min_phase_lag}
                         }
                     ],
                     xAxes: [
                         {
-                            scaleLabel: { display: true, labelString: "Frequency(Hz)" },
-                            ticks: {min:0, max:freq_max, stepSize:10}
+                            type: (freq_log ? "logarithmic" : "linear"),
+                            scaleLabel: { display: true, labelString: freq_string },
+                            ticks:
+                            {
+                                min:0.0,
+                                max:freq_max,
+                                callback: function(value, index, ticks) {
+                                    return value;
+                                },
+                            }
                         }
                     ],
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            // round tooltip to two decimal places
+                            return tooltipItem.xLabel.toFixed(2) + ', ' + tooltipItem.yLabel.toFixed(2);
+                        }
+                    }
+                 }
+            }
+        });
+    }
+}
+
+var PID_attenuation;
+var PID_phase;
+var PID_freq_log_scale;
+
+function calculate_pid(axis_id) {
+    //var sample_rate = get_form("GyroSampleRate");
+    var PID_rate = get_form("SCHED_LOOP_RATE")
+    var filters = []
+    var freq_max = get_form("PID_MaxFreq");
+    var samples = 1000;
+    var freq_step = 0.1;
+
+    // default to roll axis
+    var axis_prefix = "ATC_RAT_RLL_";
+    if (axis_id ==  "CalculatePitch") {
+        var axis_prefix = "ATC_RAT_PIT_";
+        document.getElementById("PID_title").innerHTML = "Pitch axis";
+    } else if (axis_id ==  "CalculateYaw") {
+        var axis_prefix = "ATC_RAT_YAW_";
+        document.getElementById("PID_title").innerHTML = "Yaw axis";
+    } else {
+        document.getElementById("PID_title").innerHTML = "Roll axis";
+    }
+
+    filters.push(new PID(PID_rate,
+                        get_form(axis_prefix + "P"),
+                        get_form(axis_prefix + "I"),
+                        get_form(axis_prefix + "D"),
+                        get_form(axis_prefix + "FLTE"),
+                        get_form(axis_prefix + "FLTD")));
+
+    var use_dB = document.getElementById("PID_ScaleLog").checked;
+    setCookie("PID_Scale", use_dB ? "Log" : "Linear");
+    var use_RPM =  document.getElementById("PID_freq_Scale_RPM").checked;
+    setCookie("PID_feq_unit", use_RPM ? "RPM" : "Hz");
+    var unwrap_pahse = document.getElementById("PID_ScaleUnWrap").checked;
+    setCookie("PID_PhaseScale", unwrap_pahse ? "unwrap" : "wrap");
+    var attenuation = []
+    var phase_lag = []
+    var min_phase_lag = 0.0;
+    var max_phase_lag = 0.0;
+    var phase_wrap = 0.0;
+    var min_atten = Infinity;
+    var max_atten = -Infinity;
+    var last_phase = 0.0;
+    var atten_string = "Gain";
+    if (use_dB) {
+        max_atten = 0;
+        min_atten = -10;
+        atten_string = "Gain (dB)";
+    }
+    var freq_string = "Frequency (Hz)";
+    if (use_RPM) {
+        freq_string = "Frequency (RPM)";
+    }
+
+    var fast_filters = null;
+    var fast_sample_rate = null;
+    if (document.getElementById("PID_filtering_Post").checked) {
+        fast_sample_rate = get_form("GyroSampleRate");
+        fast_filters = get_filters(fast_sample_rate);
+    }
+    setCookie("filtering", fast_filters == null ? "Pre" : "Post");
+
+
+    for (freq=freq_step; freq<=freq_max; freq+=freq_step) {
+        var v = run_filters(filters, freq, PID_rate, samples, fast_filters, fast_sample_rate);
+        var aten = v[0];
+        var phase = v[1] + phase_wrap;
+        if (use_dB) {
+            // show power in decibels
+            aten = 20 * Math.log10(aten);
+        }
+        var freq_value = freq;
+        if (use_RPM) {
+            freq_value *= 60;
+        }
+        if (unwrap_pahse) {
+            var phase_diff = phase - last_phase;
+            if (phase_diff > 180) {
+                phase_wrap -= 360.0;
+                phase -= 360.0;
+            } else if (phase_diff < -180) {
+                phase_wrap += 360.0;
+                phase += 360.0;
+            }
+        }
+        attenuation.push({x:freq_value, y:aten});
+        phase_lag.push({x:freq_value, y:-phase});
+
+        min_atten = Math.min(min_atten, aten);
+        max_atten = Math.max(max_atten, aten);
+        min_phase_lag = Math.min(min_phase_lag, phase)
+        max_phase_lag = Math.max(max_phase_lag, phase)
+        last_phase = phase;
+    }
+
+    if (use_RPM) {
+        freq_max *= 60.0;
+    }
+
+    var mean_atten = (min_atten + max_atten) * 0.5;
+    var atten_range = Math.max((max_atten - min_atten) * 0.5 * 1.1, 1.0);
+    min_atten = mean_atten - atten_range;
+    max_atten = mean_atten + atten_range;
+
+    if (unwrap_pahse) {
+        min_phase_lag = Math.floor((min_phase_lag-10)/10)*10;
+        min_phase_lag = Math.min(Math.max(-get_form("PID_MaxPhaseLag"), min_phase_lag), 0);
+        max_phase_lag = Math.ceil((max_phase_lag+10)/10)*10;
+        max_phase_lag = Math.min(get_form("PID_MaxPhaseLag"), max_phase_lag);
+    } else {
+        min_phase_lag = -180;
+        max_phase_lag = 180; 
+    }
+
+    var freq_log = document.getElementById("PID_freq_ScaleLog").checked;
+    setCookie("PID_feq_scale", use_dB ? "Log" : "Linear");
+    if ((PID_freq_log_scale != null) && (PID_freq_log_scale != freq_log)) {
+        // Scale changed, no easy way to update, delete chart and re-draw
+        PID_attenuation.clear();
+        PID_attenuation.destroy();
+        PID_attenuation = null;
+        PID_phase.clear();
+        PID_phase.destroy();
+        PID_phase = null;
+    }
+    PID_freq_log_scale = freq_log;
+
+    if (PID_attenuation) {
+        PID_attenuation.data.datasets[0].data = attenuation;
+        PID_attenuation.options.scales.xAxes[0].ticks.max = freq_max;
+        PID_attenuation.options.scales.xAxes[0].scaleLabel.labelString = freq_string
+        PID_attenuation.options.scales.yAxes[0].ticks.min = min_atten
+        PID_attenuation.options.scales.yAxes[0].ticks.max = max_atten;
+        PID_attenuation.options.scales.yAxes[0].scaleLabel.labelString = atten_string;
+        PID_attenuation.update();
+    } else {
+        PID_attenuation = new Chart("PID_Attenuation", {
+            type : "scatter",
+            data: {
+                datasets: [
+                    {
+                        label: 'Gain',
+                        yAxisID: 'Gain',
+                        pointRadius: 0,
+                        hitRadius: 8,
+                        borderColor: "rgba(0,0,255,1.0)",
+                        pointBackgroundColor: "rgba(0,0,255,1.0)",
+                        data: attenuation,
+                        showLine: true,
+                        fill: false
+                    },
+                ]
+            },
+            options: {
+                aspectRatio: 3,
+                legend: {display: false},
+                scales: {
+                    yAxes: [
+                        {
+                            scaleLabel: { display: true, labelString: atten_string },
+                            id: 'Gain',
+                            position: 'left',
+                            ticks: {min:min_atten, max:max_atten}
+                        },
+                    ],
+                    xAxes: [
+                        {
+                            type: (freq_log ? "logarithmic" : "linear"),
+                            scaleLabel: { display: true, labelString: freq_string },
+                            ticks:
+                            {
+                                min:0.0,
+                                max:freq_max,
+                                callback: function(value, index, ticks) {
+                                    return value;
+                                },
+                            }
+                        }
+                    ],
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            // round tooltip to two decimal places
+                            return tooltipItem.xLabel.toFixed(2) + ', ' + tooltipItem.yLabel.toFixed(2);
+                        }
+                    }
                 }
             }
         });
     }
-        //console.log("At 15Hz: " + attenuation[14].y + " " + phase_lag[14].y);
-        //console.log("At 30Hz: " + attenuation[29].y + " " + phase_lag[29].y);
+
+    
+    if (PID_phase) {
+        PID_phase.data.datasets[0].data = phase_lag;
+        PID_phase.options.scales.xAxes[0].ticks.max = freq_max;
+        PID_phase.options.scales.xAxes[0].scaleLabel.labelString = freq_string
+        PID_phase.options.scales.yAxes[0].ticks.min = -max_phase_lag;
+        PID_phase.options.scales.yAxes[0].ticks.max = -min_phase_lag;
+        PID_phase.update();
+    } else {
+        PID_phase = new Chart("PID_Phase", {
+            type : "scatter",
+            data: {
+                datasets: [
+                    {
+                        label: 'PhaseLag',
+                        yAxisID: 'PhaseLag',
+                        pointRadius: 0,
+                        hitRadius: 8,
+                        borderColor: "rgba(255,0,0,1.0)",
+                        pointBackgroundColor: "rgba(255,0,0,1.0)",
+                        data: phase_lag,
+                        showLine: true,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                aspectRatio: 3,
+                legend: {display: false},
+                scales: {
+                    yAxes: [
+                        {
+                            scaleLabel: { display: true, labelString: "Phase (deg)" },
+                            id: 'PhaseLag',
+                            ticks: {min:-max_phase_lag, max:-min_phase_lag}
+                        }
+                    ],
+                    xAxes: [
+                        {
+                            type: (freq_log ? "logarithmic" : "linear"),
+                            scaleLabel: { display: true, labelString: freq_string },
+                            ticks:
+                            {
+                                min:0.0,
+                                max:freq_max,
+                                callback: function(value, index, ticks) {
+                                    return value;
+                                },
+                            }
+                        }
+                    ],
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            // round tooltip to two decimal places
+                            return tooltipItem.xLabel.toFixed(2) + ', ' + tooltipItem.yLabel.toFixed(2);
+                        }
+                    }
+                }
+            }
+        });
+    }
 }
+
+function load() {
+    var url_string = (window.location.href).toLowerCase();
+    if (url_string.indexOf('?') == -1) {
+        // no query params, load from cookies
+        load_cookies();
+        return;
+    }
+
+    // populate from query's
+    var params = new URL(url_string).searchParams;
+    var sections = ["params", "PID_params"];
+    for (var j = 0; j<sections.length; j++) {
+        var items = document.forms[sections[j]].getElementsByTagName("input");
+        for (var i=-0;i<items.length;i++) {
+            var name = items[i].name.toLowerCase();
+            if (params.has(name)) {
+                if (items[i].type == "radio") {
+                    // only checked buttons are included
+                    if (items[i].value.toLowerCase() == params.get(name)) {
+                        items[i].checked = true;
+                    }
+                    continue;
+                }
+                var value = parseFloat(params.get(name));
+                if (!isNaN(value)) {
+                    items[i].value = value;
+                }
+            }
+        }
+    }
+}
+
+// build url and query string for current view and copy to clipboard
+function get_link() {
+
+    if (!(navigator && navigator.clipboard && navigator.clipboard.writeText)) {
+        // copy not available
+        return
+    }
+
+    // get base url
+    var url =  new URL((window.location.href).split('?')[0]);
+
+    // Add all query strings
+    var sections = ["params", "PID_params"];
+    for (var j = 0; j<sections.length; j++) {
+        var items = document.forms[sections[j]].getElementsByTagName("input");
+        for (var i=-0;i<items.length;i++) {
+            if (items[i].type == "radio" && !items[i].checked) {
+                // Only add checked radio buttons
+                continue;
+            }
+            url.searchParams.append(items[i].name, items[i].value);
+        }
+    }
+
+    // copy to clipboard
+    navigator.clipboard.writeText(url.toString());
+
+}
+
 
 function setCookie(c_name, value) {
     var exdate = new Date();
@@ -470,10 +961,20 @@ function getCookie(c_name, def_value) {
 }
 
 function load_cookies() {
-    var inputs = document.forms["params"].getElementsByTagName("input");
-    for (const v in inputs) {
-        var name = inputs[v].name;
-        inputs[v].value = parseFloat(getCookie(name,inputs[v].value));
+    var sections = ["params", "PID_params"];
+    for (var i = 0; i < sections.length; i++) {
+        var inputs = document.forms[sections[i]].getElementsByTagName("input");
+        for (const v in inputs) {
+            var name = inputs[v].name;
+            if (inputs[v].type == "radio") {
+                // only checked buttons are included
+                if (inputs[v].value == getCookie(name)) {
+                    inputs[v].checked = true;
+                }
+                continue;
+            }
+            inputs[v].value = parseFloat(getCookie(name,inputs[v].value));
+        }
     }
 }
 
@@ -494,7 +995,7 @@ function save_parameters() {
         var name = "" + inputs[v].name;
         if (name.startsWith("INS_")) {
             var value = inputs[v].value;
-            params += name + "=" + value + "\n";
+            params += name + "," + value + "\n";
         }
     }
     var blob = new Blob([params], { type: "text/plain;charset=utf-8" });
@@ -506,33 +1007,20 @@ async function load_parameters(file) {
     var lines = text.split('\n');
     for (i in lines) {
         var line = lines[i];
-        if (line.startsWith("INS_")) {
-            v = line.split(/[\s,=\t]+/);
-            if (v.length >= 2) {
-                var vname = v[0];
-                var value = v[1];
-                var fvar = document.getElementById(vname);
-                if (fvar) {
-                    fvar.value = value;
-                    console.log("set " + vname + "=" + value);
-                }
-            }
-        }
-        if (line.startsWith("ATC_RAT_RLL_FLTD") ||
-            line.startsWith("Q_A_RAT_RLL_FLTD")) {
-            var fvar = document.getElementById("FLTD");
+        line = line.replace("Q_A_RAT_","ATC_RAT_");
+        v = line.split(/[\s,=\t]+/);
+        if (v.length >= 2) {
+            var vname = v[0];
+            var value = v[1];
+            var fvar = document.getElementById(vname);
             if (fvar) {
-                v = line.split(/[\s,=\t]+/);
-                if (v.length >= 2) {
-                    var vname = v[0];
-                    var value = v[1];
-                    fvar.value = value;
-                    console.log("set FLTD=" + value);
-                }
+                fvar.value = value;
+                console.log("set " + vname + "=" + value);
             }
         }
     }
     fill_docs();
+    update_all_hidden();
     calculate_filter();
 }
 
@@ -545,7 +1033,9 @@ function fill_docs()
         if (!doc) {
             continue;
         }
-        inputs[v].onchange = fill_docs;
+        if (inputs[v].onchange == null) {
+            inputs[v].onchange = fill_docs;
+        }
         var value = parseFloat(inputs[v].value);
         if (name.endsWith("_ENABLE")) {
             if (value >= 1) {
@@ -623,5 +1113,84 @@ function fill_docs()
             doc.innerHTML = bits.join(", ");
         }
 
+    }
+}
+
+// update all hidden params, to be called at init
+function update_all_hidden()
+{
+    var enable_params = ["INS_HNTCH_ENABLE", "INS_HNTC2_ENABLE"];
+    for (var i=-0;i<enable_params.length;i++) {
+        update_hidden(enable_params[i])
+    }
+}
+
+// update hidden inputs based on param value
+function update_hidden(enable_param)
+{
+    var enabled = parseFloat(document.getElementById(enable_param).value) > 0;
+    var prefix = enable_param.split("_ENABLE")[0];
+
+    // find all elements with same prefix
+    var inputs = document.forms["params"].getElementsByTagName("*");
+    for (var i=-0;i<inputs.length;i++) {
+        var key = inputs[i].id;
+        if (key.length == 0) {
+            // no id, but bound to a valid one
+            if (inputs[i].htmlFor == null) {
+                continue;
+            }
+            key = inputs[i].htmlFor
+        }
+        if (key.startsWith(enable_param)) {
+            // found original param, don't change
+            continue;
+        }
+        if (key.startsWith(prefix)) {
+            inputs[i].hidden = !enabled;
+        }
+    }
+
+    update_hidden_mode();
+}
+
+function update_hidden_mode()
+{
+    var mode_params = ["INS_HNTCH_MODE", "INS_HNTC2_MODE"];
+    var mode_options = [[[1], "Throttle_input"], [[3], "ESC_input"], [[2,5], "RPM_input"]];
+
+    for (var i =0; i < mode_options.length; i++) {
+        var hide = true;
+        for (var j =0; j < mode_params.length; j++) {
+            // check enable param
+            if (!(parseFloat(document.getElementById(mode_params[j].replace("MODE","ENABLE")).value) > 0)) {
+                continue;
+            }
+
+            var mode = Math.floor(get_form(mode_params[j]))
+            for (var k =0; k < mode_options[i][0].length; k++) {
+                if (mode == mode_options[i][0][k]) {
+                    hide = false;
+                }
+            }
+        }
+        document.getElementById(mode_options[i][1]).hidden = hide;
+    }
+}
+
+function check_nyquist()
+{
+    var checks = [["GyroSampleRate", "MaxFreq", "MaxFreq_warning"],
+                  ["SCHED_LOOP_RATE", "PID_MaxFreq", "PID_MaxFreq_warning"]];
+
+    for (var i = 0; i < checks.length; i++) {
+        var freq_limit = get_form(checks[i][0]) * 0.5;
+        var sample_rate = document.getElementById(checks[i][1]);
+        if (parseFloat(sample_rate.value) > freq_limit) {
+            sample_rate.value = freq_limit;
+            document.getElementById(checks[i][2]).innerHTML = "Nyquist limit of half sample rate";
+        } else {
+            document.getElementById(checks[i][2]).innerHTML = "";
+        }
     }
 }

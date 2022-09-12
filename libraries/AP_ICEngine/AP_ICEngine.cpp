@@ -13,6 +13,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "AP_ICEngine.h"
+
+#if AP_ICENGINE_ENABLED
 
 #include <SRV_Channel/SRV_Channel.h>
 #include <GCS_MAVLink/GCS.h>
@@ -20,8 +23,6 @@
 #include <AP_Scheduler/AP_Scheduler.h>
 #include <AP_Notify/AP_Notify.h>
 #include <RC_Channel/RC_Channel.h>
-#include <Filter/LowPassFilter.h>
-#include "AP_ICEngine.h"
 #include <AP_RPM/AP_RPM.h>
 
 extern const AP_HAL::HAL& hal;
@@ -134,8 +135,8 @@ const AP_Param::GroupInfo AP_ICEngine::var_info[] = {
 
     // @Param: OPTIONS
     // @DisplayName: ICE options
-    // @Description: Options for ICE control. The DisableIgnitionRCFailsafe option will cause the ignition to be set off on any R/C failsafe.
-    // @Bitmask: 0:DisableIgnitionRCFailsafe,1:DisableRedineGovernor
+    // @Description: Options for ICE control. The DisableIgnitionRCFailsafe option will cause the ignition to be set off on any R/C failsafe. If ThrottleWhileDisarmed is set then throttle control will be allowed while disarmed for planes when in MANUAL mode.
+    // @Bitmask: 0:DisableIgnitionRCFailsafe,1:DisableRedineGovernor,2:ThrottleWhileDisarmed
     AP_GROUPINFO("OPTIONS", 15, AP_ICEngine, options, 0),
 
     // @Param: STARTCHN_MIN
@@ -168,7 +169,8 @@ AP_ICEngine::AP_ICEngine(const AP_RPM &_rpm) :
     }
     _singleton = this;
 
-    _rpm_filter.set_cutoff_frequency(1 / AP::scheduler().get_loop_period_s(), 0.5f);
+    // ICEngine runs at 10Hz
+    _rpm_filter.set_cutoff_frequency(10, 0.5f);
 }
 
 /*
@@ -297,7 +299,7 @@ void AP_ICEngine::update(void)
                 // reset initial height while disarmed
                 initial_height = -pos.z;
             }
-        } else if (idle_percent <= 0) { // check if we should idle
+        } else if (idle_percent <= 0 && !option_set(Options::THROTTLE_WHILE_DISARMED)) {
             // force ignition off when disarmed
             state = ICE_OFF;
         }
@@ -357,8 +359,11 @@ void AP_ICEngine::update(void)
 /*
   check for throttle override. This allows the ICE controller to force
   the correct starting throttle when starting the engine and maintain idle when disarmed
+
+  base_throttle is the throttle before the disarmed override
+  check. This allows for throttle control while disarmed
  */
-bool AP_ICEngine::throttle_override(float &percentage)
+bool AP_ICEngine::throttle_override(float &percentage, const float base_throttle)
 {
     if (!enable) {
         return false;
@@ -370,6 +375,9 @@ bool AP_ICEngine::throttle_override(float &percentage)
         idle_percent > percentage)
     {
         percentage = idle_percent;
+        if (option_set(Options::THROTTLE_WHILE_DISARMED) && !hal.util->get_soft_armed()) {
+            percentage = MAX(percentage, base_throttle);
+        }
         return true;
     }
 
@@ -402,6 +410,13 @@ bool AP_ICEngine::throttle_override(float &percentage)
             redline.governor_integrator += redline_setpoint_step;
         }
         percentage = redline.throttle_percentage - redline.governor_integrator;
+        return true;
+    }
+
+    // if THROTTLE_WHILE_DISARMED is set then we use the base_throttle, allowing the pilot to control throttle while disarmed
+    if (option_set(Options::THROTTLE_WHILE_DISARMED) && !hal.util->get_soft_armed() &&
+        base_throttle > percentage) {
+        percentage = base_throttle;
         return true;
     }
 
@@ -519,3 +534,5 @@ AP_ICEngine *ice() {
         return AP_ICEngine::get_singleton();
     }
 }
+
+#endif  // AP_ICENGINE_ENABLED

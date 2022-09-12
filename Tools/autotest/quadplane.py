@@ -282,7 +282,7 @@ class AutoTestQuadPlane(AutoTest):
             self.disarm_vehicle()
             self.wait_ready_to_arm()
 
-    def fly_mission(self, filename, fence=None, height_accuracy=-1):
+    def fly_mission(self, filename, fence=None, height_accuracy=-1, include_terrain_timeout=False):
         """Fly a mission from a file."""
         self.progress("Flying mission %s" % filename)
         self.load_mission(filename)
@@ -290,6 +290,7 @@ class AutoTestQuadPlane(AutoTest):
             self.load_fence(fence)
         if self.mavproxy is not None:
             self.mavproxy.send('wp list\n')
+        self.install_terrain_handlers_context()
         self.wait_ready_to_arm()
         self.arm_vehicle()
         self.change_mode('AUTO')
@@ -332,10 +333,10 @@ class AutoTestQuadPlane(AutoTest):
                              (self.landed_state_name(landed_state),
                               self.landed_state_name(m.landed_state)))
 
-    def wait_extended_sys_state(self, vtol_state, landed_state):
+    def wait_extended_sys_state(self, vtol_state, landed_state, timeout=10):
         tstart = self.get_sim_time()
         while True:
-            if self.get_sim_time() - tstart > 10:
+            if self.get_sim_time() - tstart > timeout:
                 raise NotAchievedException("Did not achieve vol/landed states")
             self.progress("Waiting for MAV_VTOL_STATE=%s MAV_LANDED_STATE=%s" %
                           (self.vtol_state_name(vtol_state),
@@ -699,6 +700,28 @@ class AutoTestQuadPlane(AutoTest):
             "ConfigErrorLoop": "failing because RC values not settable",
         }
 
+    def BootInAUTO(self):
+        self.load_mission("mission.txt")
+        self.set_parameters({
+        })
+        self.set_rc(5, 1000)
+        self.wait_mode('AUTO')
+        self.reboot_sitl()
+        self.wait_ready_to_arm()
+        self.delay_sim_time(20)
+        self.assert_current_waypoint(1)
+        self.arm_vehicle()
+        self.wait_altitude(9, 11, relative=True)  # value from mission file is 10
+        distance = self.distance_to_home()
+        # this distance check is very, very loose.  At time of writing
+        # the vehicle actually pitches ~6 degrees on trakeoff,
+        # wandering over 1m.
+        if distance > 2:
+            raise NotAchievedException("wandered from home (distance=%f)" %
+                                       (distance,))
+        self.change_mode('QLAND')
+        self.wait_disarmed(timeout=60)
+
     def test_pilot_yaw(self):
         self.takeoff(10, mode="QLOITER")
         self.set_parameter("STICK_MIXING", 0)
@@ -842,7 +865,9 @@ class AutoTestQuadPlane(AutoTest):
         self.progress("Setting engine-start RC switch to LOW")
         self.set_rc(rc_engine_start_chan, 1000)
         self.wait_rpm(1, 0, 0, minimum_duration=1)
-        self.disarm_vehicle()
+        # ICE provides forward thrust, which can make us think we're flying:
+        self.disarm_vehicle(force=True)
+        self.reboot_sitl()
 
     def ICEngineMission(self):
         rc_engine_start_chan = 11
@@ -860,6 +885,57 @@ class AutoTestQuadPlane(AutoTest):
         self.arm_vehicle()
         self.change_mode('AUTO')
         self.wait_disarmed(timeout=300)
+
+    def MidAirDisarmDisallowed(self):
+        self.start_subtest("Basic arm in qloiter")
+        self.set_parameter("FLIGHT_OPTIONS", 0)
+        self.change_mode('QLOITER')
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+        self.disarm_vehicle()
+
+        self.context_push()
+        self.start_subtest("Ensure disarming in q-modes on ground works")
+        self.set_parameter("FLIGHT_OPTIONS", 1 << 11)
+        self.arm_vehicle()
+        self.disarm_vehicle()  # should be OK as we're not flying yet
+        self.context_pop()
+
+        self.start_subtest("Ensure no disarming mid-air")
+        self.arm_vehicle()
+        self.set_rc(3, 2000)
+        self.wait_altitude(5, 50, relative=True)
+        self.set_rc(3, 1000)
+        disarmed = False
+        try:
+            self.disarm_vehicle()
+            disarmed = True
+        except ValueError as e:
+            self.progress("Got %s" % repr(e))
+            if "Expected MAV_RESULT_ACCEPTED got MAV_RESULT_FAILED" not in str(e):
+                raise e
+        if disarmed:
+            raise NotAchievedException("Disarmed when we shouldn't have")
+
+        self.change_mode('QLAND')
+        self.wait_disarmed()
+
+        self.start_subtest("Check we can disarm after a short period on the ground")
+        self.takeoff(5, 'QHOVER')
+        self.change_mode('QLAND')
+        try:
+            self.set_message_rate_hz(mavutil.mavlink.MAVLINK_MSG_ID_EXTENDED_SYS_STATE, 10)
+            self.wait_extended_sys_state(
+                landed_state=mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+                vtol_state=mavutil.mavlink.MAV_VTOL_STATE_MC,
+                timeout=60
+            )
+        except Exception:
+            self.set_message_rate_hz(mavutil.mavlink.MAVLINK_MSG_ID_EXTENDED_SYS_STATE, 0)
+            raise
+
+        self.set_message_rate_hz(mavutil.mavlink.MAVLINK_MSG_ID_EXTENDED_SYS_STATE, -1)
+        self.disarm_vehicle()
 
     def tests(self):
         '''return list of all tests'''
@@ -887,7 +963,12 @@ class AutoTestQuadPlane(AutoTest):
              self.EXTENDED_SYS_STATE),
 
             ("Mission", "Dalby Mission",
-             lambda: self.fly_mission("Dalby-OBC2016.txt", "Dalby-OBC2016-fence.txt")),
+             lambda: self.fly_mission(
+                 "Dalby-OBC2016.txt",
+                 "Dalby-OBC2016-fence.txt",
+                 include_terrain_timeout=True
+             )
+             ),
 
             ("Weathervane",
              "Test Weathervane Functionality",
@@ -911,6 +992,14 @@ class AutoTestQuadPlane(AutoTest):
             ("ICEngineMission",
              "Test ICE Engine Mission support",
              self.ICEngineMission),
+
+            ("MidAirDisarmDisallowed",
+             "Check disarm behaviour in Q-mode",
+             self.MidAirDisarmDisallowed),
+
+            ("BootInAUTO",
+             "Test behaviour when booting in auto",
+             self.BootInAUTO),
 
             ("LogUpload",
              "Log upload",

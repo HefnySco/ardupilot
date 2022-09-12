@@ -719,7 +719,24 @@ const AP_Param::GroupInfo NavEKF3::var_info2[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("PRIMARY", 8, NavEKF3, _primary_core, EK3_PRIMARY_DEFAULT),
+
+    // @Param: LOG_LEVEL
+    // @DisplayName: Logging Level
+    // @Description: Determines how verbose the EKF3 streaming logging is. A value of 0 provides full logging(default), a value of 1 only XKF4 scaled innovations are logged, a value of 2 both XKF4 and GSF are logged, and a value of 3 disables all streaming logging of EKF3.
+    // @Range: 0 3
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("LOG_LEVEL", 9, NavEKF3, _log_level, 0),
     
+    // @Param: GPS_VACC_MAX
+    // @DisplayName: GPS vertical accuracy threshold
+    // @Description: Vertical accuracy threshold for GPS as the altitude source. The GPS will not be used as an altitude source if the reported vertical accuracy of the GPS is larger than this threshold, falling back to baro instead. Set to zero to deactivate the threshold check.
+    // @Range: 0.0 10.0
+    // @Increment: 0.1
+    // @User: Advanced
+    // @Units: m
+    AP_GROUPINFO("GPS_VACC_MAX", 10, NavEKF3, _gpsVAccThreshold, 0.0f),
+
     AP_GROUPEND
 };
 
@@ -1220,6 +1237,12 @@ void NavEKF3::getAccelBias(int8_t instance, Vector3f &accelBias) const
     if (core) {
         core[instance].getAccelBias(accelBias);
     }
+}
+
+// returns active source set used by EKF3
+uint8_t NavEKF3::get_active_source_set() const
+{
+    return sources.get_active_source_set();
 }
 
 // reset body axis gyro bias estimates
@@ -1759,10 +1782,10 @@ void NavEKF3::getFilterStatus(nav_filter_status &status) const
 }
 
 // send an EKF_STATUS_REPORT message to GCS
-void NavEKF3::send_status_report(mavlink_channel_t chan) const
+void NavEKF3::send_status_report(GCS_MAVLINK &link) const
 {
     if (core) {
-        core[primary].send_status_report(chan);
+        core[primary].send_status_report(link);
     }
 }
 

@@ -17,6 +17,18 @@ const AP_Param::GroupInfo AP_Arming_Plane::var_info[] = {
     AP_GROUPEND
 };
 
+// expected to return true if the terrain database is required to have
+// all data loaded
+bool AP_Arming_Plane::terrain_database_required() const
+{
+#if AP_TERRAIN_AVAILABLE
+    if (plane.g.terrain_follow) {
+        return true;
+    }
+#endif
+    return AP_Arming::terrain_database_required();
+}
+
 /*
   additional arming checks for plane
 
@@ -173,7 +185,7 @@ bool AP_Arming_Plane::quadplane_checks(bool display_failure)
         ret = false;
     }
 
-    if ((plane.quadplane.options & QuadPlane::OPTION_ONLY_ARM_IN_QMODE_OR_AUTO) != 0) {
+    if (plane.quadplane.option_is_set(QuadPlane::OPTION::ONLY_ARM_IN_QMODE_OR_AUTO)) {
         if (!plane.control_mode->is_vtol_mode() && (plane.control_mode != &plane.mode_auto) && (plane.control_mode != &plane.mode_guided)) {
             check_failed(display_failure,"not in Q mode");
             ret = false;
@@ -392,5 +404,29 @@ bool AP_Arming_Plane::mission_checks(bool report)
         ret = false;
         check_failed(ARMING_CHECK_MISSION, report, "DO_LAND_START set and RTL_AUTOLAND disabled");
     }
+#if HAL_QUADPLANE_ENABLED
+    if (plane.quadplane.available()) {
+        const uint16_t num_commands = plane.mission.num_commands();
+        AP_Mission::Mission_Command prev_cmd {};
+        for (uint16_t i=1; i<num_commands; i++) {
+            AP_Mission::Mission_Command cmd;
+            if (!plane.mission.read_cmd_from_storage(i, cmd)) {
+                break;
+            }
+            if ((cmd.id == MAV_CMD_NAV_VTOL_LAND || cmd.id == MAV_CMD_NAV_LAND) &&
+                prev_cmd.id == MAV_CMD_NAV_WAYPOINT) {
+                const float dist = cmd.content.location.get_distance(prev_cmd.content.location);
+                const float tecs_land_speed = plane.TECS_controller.get_land_airspeed();
+                const float landing_speed = is_positive(tecs_land_speed)?tecs_land_speed:plane.aparm.airspeed_cruise_cm*0.01;
+                const float min_dist = 0.75 * plane.quadplane.stopping_distance(sq(landing_speed));
+                if (dist < min_dist) {
+                    ret = false;
+                    check_failed(ARMING_CHECK_MISSION, report, "VTOL land too short, min %.0fm", min_dist);
+                }
+            }
+            prev_cmd = cmd;
+        }
+    }
+#endif
     return ret;
 }

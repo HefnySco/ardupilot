@@ -22,7 +22,10 @@ class TestBuildOptions(object):
                  do_step_disable_none=False,
                  do_step_disable_defaults=True,
                  do_step_disable_in_turn=True,
-                 build_targets=None):
+                 build_targets=None,
+                 board="DevEBoxH7v2",
+                 extra_hwdef=None):
+        self.extra_hwdef = extra_hwdef
         self.sizes_nothing_disabled = None
         self.match_glob = match_glob
         self.do_step_disable_all = do_step_disable_all
@@ -32,6 +35,7 @@ class TestBuildOptions(object):
         self.build_targets = build_targets
         if self.build_targets is None:
             self.build_targets = self.all_targets()
+        self._board = board
 
     @staticmethod
     def all_targets():
@@ -87,11 +91,15 @@ class TestBuildOptions(object):
 
     def board(self):
         '''returns board to build for'''
-        return "BeastH7v2"
+        return self._board
 
     def test_compile_with_defines(self, defines):
         extra_hwdef_filepath = "/tmp/extra.hwdef"
         self.write_defines_to_file(defines, extra_hwdef_filepath)
+        if self.extra_hwdef is not None:
+            content = open(self.extra_hwdef, "r").read()
+            with open(extra_hwdef_filepath, "a") as f:
+                f.write(content)
         util.waf_configure(
             self.board(),
             extra_hwdef=extra_hwdef_filepath,
@@ -202,6 +210,14 @@ if __name__ == '__main__':
                       choices=TestBuildOptions.all_targets(),
                       action='append',
                       help='vehicle targets to build')
+    parser.add_option("--extra-hwdef",
+                      type='string',
+                      default=None,
+                      help="file containing extra hwdef information")
+    parser.add_option("--board",
+                      type='string',
+                      default="DevEBoxH7v2",
+                      help='board to build for')
 
     opts, args = parser.parse_args()
 
@@ -212,5 +228,7 @@ if __name__ == '__main__':
         do_step_disable_defaults=not opts.no_run_with_defaults,
         do_step_disable_in_turn=not opts.no_disable_in_turn,
         build_targets=opts.build_targets,
+        board=opts.board,
+        extra_hwdef=opts.extra_hwdef,
     )
     tbo.run()

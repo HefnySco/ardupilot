@@ -58,13 +58,13 @@ AC_PID_Basic::AC_PID_Basic(float initial_p, float initial_i, float initial_d, fl
     // load parameter values from eeprom
     AP_Param::setup_object_defaults(this, var_info);
 
-    _kp = initial_p;
-    _ki = initial_i;
-    _kd = initial_d;
-    _kff = initial_ff;
-    _kimax = fabsf(initial_imax);
-    filt_E_hz(initial_filt_E_hz);
-    filt_D_hz(initial_filt_D_hz);
+    _kp.set_and_default(initial_p);
+    _ki.set_and_default(initial_i);
+    _kd.set_and_default(initial_d);
+    _kff.set_and_default(initial_ff);
+    _kimax.set_and_default(initial_imax);
+    _filt_E_hz.set_and_default(initial_filt_E_hz);
+    _filt_D_hz.set_and_default(initial_filt_D_hz);
 
     // reset input filter to first value received
     _reset_filter = true;
@@ -139,6 +139,12 @@ void AC_PID_Basic::update_i(bool limit_neg, bool limit_pos)
     }
 }
 
+void AC_PID_Basic::reset_I()
+{
+    _integrator = 0.0; 
+    _pid_info.I = 0.0;
+}
+
 // save_gains - save gains to eeprom
 void AC_PID_Basic::save_gains()
 {
@@ -176,4 +182,5 @@ void AC_PID_Basic::set_integrator(float error, float i)
 void AC_PID_Basic::set_integrator(float i)
 {
     _integrator = constrain_float(i, -_kimax, _kimax);
+    _pid_info.I = _integrator;
 }

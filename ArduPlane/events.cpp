@@ -57,9 +57,9 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, ModeReason reaso
     case Mode::Number::QAUTOTUNE:
 #endif
     case Mode::Number::QACRO:
-        if (quadplane.options & QuadPlane::OPTION_FS_RTL) {
+        if (quadplane.option_is_set(QuadPlane::OPTION::FS_RTL)) {
             set_mode(mode_rtl, reason);
-        } else if (quadplane.options & QuadPlane::OPTION_FS_QRTL) {
+        } else if (quadplane.option_is_set(QuadPlane::OPTION::FS_QRTL)) {
             set_mode(mode_qrtl, reason);
         } else {
             set_mode(mode_qland, reason);
@@ -152,9 +152,9 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype, ModeReason reason
 #if QAUTOTUNE_ENABLED
     case Mode::Number::QAUTOTUNE:
 #endif
-        if (quadplane.options & QuadPlane::OPTION_FS_RTL) {
+        if (quadplane.option_is_set(QuadPlane::OPTION::FS_RTL)) {
             set_mode(mode_rtl, reason);
-        } else if (quadplane.options & QuadPlane::OPTION_FS_QRTL) {
+        } else if (quadplane.option_is_set(QuadPlane::OPTION::FS_QRTL)) {
             set_mode(mode_qrtl, reason);
         } else {
             set_mode(mode_qland, reason);
@@ -200,11 +200,11 @@ void Plane::failsafe_short_off_event(ModeReason reason)
     // We're back in radio contact
     gcs().send_text(MAV_SEVERITY_WARNING, "Short Failsafe Cleared");
     failsafe.state = FAILSAFE_NONE;
-    //restore entry mode if desired but check that our current mode is still due to failsafe
-    if ( _last_reason == ModeReason::RADIO_FAILSAFE) { 
+    // restore entry mode if desired but check that our current mode is still due to failsafe
+    if (control_mode_reason == ModeReason::RADIO_FAILSAFE) { 
        set_mode_by_number(failsafe.saved_mode_number, ModeReason::RADIO_FAILSAFE_RECOVERY);
        gcs().send_text(MAV_SEVERITY_INFO,"Flight mode %s restored",control_mode->name());
-     }
+    }
 }
 
 void Plane::failsafe_long_off_event(ModeReason reason)

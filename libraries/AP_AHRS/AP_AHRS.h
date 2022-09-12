@@ -193,14 +193,12 @@ public:
     // return ground speed estimate in meters/second. Used by ground vehicles.
     float groundspeed(void);
 
-    const Vector3f &get_accel_ef(uint8_t i) const;
-    const Vector3f &get_accel_ef() const;
+    const Vector3f &get_accel_ef() const {
+        return _accel_ef;
+    }
 
     // Retrieves the corrected NED delta velocity in use by the inertial navigation
     void getCorrectedDeltaVelocityNED(Vector3f& ret, float& dt) const;
-
-    // blended accelerometer values in the earth frame in m/s/s
-    const Vector3f &get_accel_ef_blended() const;
 
     // set the EKF's origin location in 10e7 degrees.  This should only
     // be called when the EKF has no absolute position reference (i.e. GPS)
@@ -277,9 +275,6 @@ public:
     // true if offsets are valid
     bool getMagOffsets(uint8_t mag_idx, Vector3f &magOffsets) const;
 
-    // check all cores providing consistent attitudes for prearm checks
-    bool attitudes_consistent(char *failure_msg, const uint8_t failure_msg_len) const;
-
     // return the amount of yaw angle change due to the last yaw angle reset in radians
     // returns the time of the last yaw angle reset or 0 if no reset has ever occurred
     uint32_t getLastYawResetAngle(float &yawAng);
@@ -304,7 +299,7 @@ public:
     bool resetHeightDatum();
 
     // send a EKF_STATUS_REPORT for current EKF
-    void send_ekf_status_report(mavlink_channel_t chan) const;
+    void send_ekf_status_report(class GCS_MAVLINK &link) const;
 
     // get_hgt_ctrl_limit - get maximum height to be observed by the control loops in meters and a validity flag
     // this is used to limit height during optical flow navigation
@@ -363,6 +358,9 @@ public:
     // set position, velocity and yaw sources to either 0=primary, 1=secondary, 2=tertiary
     void set_posvelyaw_source_set(uint8_t source_set_idx);
 
+    //returns index of active source set used, 0=primary, 1=secondary, 2=tertiary
+    uint8_t get_posvelyaw_source_set() const;
+
     void Log_Write();
 
     // check if non-compass sensor is providing yaw.  Allows compass pre-arm checks to be bypassed
@@ -373,11 +371,6 @@ public:
 
     // set and save the ALT_M_NSE parameter value
     void set_alt_measurement_noise(float noise);
-
-    // active EKF type for logging
-    uint8_t get_active_AHRS_type(void) const {
-        return uint8_t(active_EKF_type());
-    }
 
     // get the selected ekf type, for allocation decisions
     int8_t get_ekf_type(void) const {
@@ -536,7 +529,7 @@ public:
 
     // convert a vector from body to earth frame
     Vector3f body_to_earth(const Vector3f &v) const {
-        return v * get_rotation_body_to_ned();
+        return get_rotation_body_to_ned() * v;
     }
 
     // convert a vector from earth to body frame
@@ -676,6 +669,9 @@ private:
         return _ekf_flags & FLAG_ALWAYS_USE_EKF;
     }
 
+    // check all cores providing consistent attitudes for prearm checks
+    bool attitudes_consistent(char *failure_msg, const uint8_t failure_msg_len) const;
+
     /*
      * Attitude-related private methods and attributes:
      */
@@ -713,8 +709,7 @@ private:
 
     Vector3f _gyro_drift;
     Vector3f _gyro_estimate;
-    Vector3f _accel_ef_ekf[INS_MAX_INSTANCES];
-    Vector3f _accel_ef_ekf_blended;
+    Vector3f _accel_ef;
     Vector3f _accel_bias;
 
     const uint16_t startup_delay_ms = 1000;

@@ -78,14 +78,12 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_BattMonitor, &plane.battery, read,   10, 300,  66),
     SCHED_TASK_CLASS(AP_Baro, &plane.barometer, accumulate,  50, 150,  69),
     SCHED_TASK_CLASS(AP_Notify,      &plane.notify,  update, 50, 300,  72),
-#if AC_FENCE == ENABLED
-    SCHED_TASK_CLASS(AC_Fence,       &plane.fence,   update, 10, 100, 75),
-#endif
     SCHED_TASK(read_rangefinder,       50,    100, 78),
+#if AP_ICENGINE_ENABLED
     SCHED_TASK_CLASS(AP_ICEngine,      &plane.g2.ice_control, update,     10, 100,  81),
-    SCHED_TASK_CLASS(Compass,          &plane.compass,        cal_update, 50,  50,  84),
+#endif
 #if AP_OPTICALFLOW_ENABLED
-    SCHED_TASK_CLASS(OpticalFlow, &plane.optflow, update,    50,    50,  87),
+    SCHED_TASK_CLASS(AP_OpticalFlow, &plane.optflow, update,    50,    50,  87),
 #endif
     SCHED_TASK(one_second_loop,         1,    400,  90),
     SCHED_TASK(three_hz_loop,           3,     75,  93),
@@ -102,9 +100,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #endif // CAMERA == ENABLED
     SCHED_TASK_CLASS(AP_Scheduler, &plane.scheduler, update_logging,         0.2,    100, 111),
     SCHED_TASK(compass_save,          0.1,    200, 114),
-    SCHED_TASK(Log_Write_Fast,        400,    300, 117),
-    SCHED_TASK(update_logging1,        25,    300, 120),
-    SCHED_TASK(update_logging2,        25,    300, 123),
+    SCHED_TASK(Log_Write_FullRate,        400,    300, 117),
+    SCHED_TASK(update_logging10,        10,    300, 120),
+    SCHED_TASK(update_logging25,        25,    300, 123),
 #if HAL_SOARING_ENABLED
     SCHED_TASK(update_soaring,         50,    400, 126),
 #endif
@@ -227,24 +225,29 @@ void Plane::update_compass(void)
 /*
   do 10Hz logging
  */
-void Plane::update_logging1(void)
+void Plane::update_logging10(void)
 {
-    if (should_log(MASK_LOG_ATTITUDE_MED) && !should_log(MASK_LOG_ATTITUDE_FAST)) {
+    bool log_faster = (should_log(MASK_LOG_ATTITUDE_FULLRATE) || should_log(MASK_LOG_ATTITUDE_FAST));
+    if (should_log(MASK_LOG_ATTITUDE_MED) && !log_faster) {
         Log_Write_Attitude();
-    }
-
-    if (should_log(MASK_LOG_ATTITUDE_MED) && !should_log(MASK_LOG_IMU))
-        AP::ins().Write_IMU();
-
-    if (should_log(MASK_LOG_ATTITUDE_MED))
         ahrs.Write_AOA_SSA();
+    } else if (log_faster) {
+        ahrs.Write_AOA_SSA();
+    } 
 }
 
 /*
-  do 10Hz logging - part2
+  do 25Hz logging
  */
-void Plane::update_logging2(void)
+void Plane::update_logging25(void)
 {
+    // MASK_LOG_ATTITUDE_FULLRATE logs at 400Hz, MASK_LOG_ATTITUDE_FAST at 25Hz, MASK_LOG_ATTIUDE_MED logs at 10Hz
+    // highest rate selected wins
+    bool log_faster = should_log(MASK_LOG_ATTITUDE_FULLRATE);
+    if (should_log(MASK_LOG_ATTITUDE_FAST) && !log_faster) {
+        Log_Write_Attitude();
+    }
+
     if (should_log(MASK_LOG_CTUN)) {
         Log_Write_Control_Tuning();
         AP::ins().write_notch_log_messages();
@@ -273,7 +276,7 @@ void Plane::update_logging2(void)
 void Plane::afs_fs_check(void)
 {
     // perform AFS failsafe checks
-#if AC_FENCE == ENABLED
+#if AP_FENCE_ENABLED
     const bool fence_breached = fence.get_breaches() != 0;
 #else
     const bool fence_breached = false;
@@ -334,11 +337,18 @@ void Plane::one_second_loop()
             // reset the landing altitude correction
             landing.alt_offset = 0;
     }
+
+    // this ensures G_Dt is correct, catching startup issues with constructors
+    // calling the scheduler methods
+    if (!is_equal(1.0f/scheduler.get_loop_rate_hz(), scheduler.get_loop_period_s()) ||
+        !is_equal(G_Dt, scheduler.get_loop_period_s())) {
+        INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
+    }
 }
 
 void Plane::three_hz_loop()
 {
-#if AC_FENCE == ENABLED
+#if AP_FENCE_ENABLED
     fence_check();
 #endif
 }

@@ -227,6 +227,7 @@ public:
         TURBINE_START =      161, // initialize turbine start sequence
         FFT_NOTCH_TUNE =     162, // FFT notch tuning function
         MOUNT_LOCK =         163, // Mount yaw lock vs follow
+        LOG_PAUSE =          164, // Pauses logging if under logging rate control
 
         // inputs from 200 will eventually used to replace RCMAP
         ROLL =               201, // roll input
@@ -238,6 +239,9 @@ public:
         FWD_THR =            209, // VTOL manual forward throttle
         AIRBRAKE =           210, // manual airbrake control
         WALKING_HEIGHT =     211, // walking robot height input
+
+        // inputs 248-249 are reserved for the Skybrush fork at
+        // https://github.com/skybrush-io/ardupilot
 
         // inputs for the use of onboard lua scripting
         SCRIPTING_1 =        300,

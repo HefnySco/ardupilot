@@ -12,6 +12,7 @@
 #include <AP_InternalError/AP_InternalError.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
+#include <AP_Rally/AP_Rally.h>
 
 AP_Logger *AP_Logger::_singleton;
 
@@ -136,6 +137,7 @@ const AP_Param::GroupInfo AP_Logger::var_info[] = {
     // @Description: This sets the maximum rate that streaming log messages will be logged to the file backend. A value of zero means that rate limiting is disabled.
     // @Units: Hz
     // @Range: 0 1000
+    // @Increment: 0.1
     // @User: Standard
     AP_GROUPINFO("_FILE_RATEMAX",  8, AP_Logger, _params.file_ratemax, 0),
 
@@ -145,6 +147,7 @@ const AP_Param::GroupInfo AP_Logger::var_info[] = {
     // @Description: This sets the maximum rate that streaming log messages will be logged to the mavlink backend. A value of zero means that rate limiting is disabled.
     // @Units: Hz
     // @Range: 0 1000
+    // @Increment: 0.1
     // @User: Standard
     AP_GROUPINFO("_MAV_RATEMAX",  9, AP_Logger, _params.mav_ratemax, 0),
 #endif
@@ -155,6 +158,7 @@ const AP_Param::GroupInfo AP_Logger::var_info[] = {
     // @Description: This sets the maximum rate that streaming log messages will be logged to the mavlink backend. A value of zero means that rate limiting is disabled.
     // @Units: Hz
     // @Range: 0 1000
+    // @Increment: 0.1
     // @User: Standard
     AP_GROUPINFO("_BLK_RATEMAX", 10, AP_Logger, _params.blk_ratemax, 0),
 #endif
@@ -864,7 +868,7 @@ void AP_Logger::Write_Mode(uint8_t mode, const ModeReason reason)
 
 void AP_Logger::Write_Parameter(const char *name, float value)
 {
-    FOR_EACH_BACKEND(Write_Parameter(name, value));
+    FOR_EACH_BACKEND(Write_Parameter(name, value, quiet_nanf()));
 }
 
 void AP_Logger::Write_Mission_Cmd(const AP_Mission &mission,

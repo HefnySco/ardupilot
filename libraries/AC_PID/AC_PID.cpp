@@ -75,16 +75,16 @@ AC_PID::AC_PID(float initial_p, float initial_i, float initial_d, float initial_
     // load parameter values from eeprom
     AP_Param::setup_object_defaults(this, var_info);
 
-    _kp = initial_p;
-    _ki = initial_i;
-    _kd = initial_d;
-    _kff = initial_ff;
-    _kimax = fabsf(initial_imax);
-    filt_T_hz(initial_filt_T_hz);
-    filt_E_hz(initial_filt_E_hz);
-    filt_D_hz(initial_filt_D_hz);
-    _slew_rate_max.set(initial_srmax);
-    _slew_rate_tau.set(initial_srtau);
+    _kp.set_and_default(initial_p);
+    _ki.set_and_default(initial_i);
+    _kd.set_and_default(initial_d);
+    _kff.set_and_default(initial_ff);
+    _kimax.set_and_default(initial_imax);
+    _filt_T_hz.set_and_default(initial_filt_T_hz);
+    _filt_E_hz.set_and_default(initial_filt_E_hz);
+    _filt_D_hz.set_and_default(initial_filt_D_hz);
+    _slew_rate_max.set_and_default(initial_srmax);
+    _slew_rate_tau.set_and_default(initial_srtau);
 
     // reset input filter to first value received
     _flags._reset_filter = true;
@@ -272,6 +272,7 @@ float AC_PID::get_ff()
 void AC_PID::reset_I()
 {
     _integrator = 0.0;
+    _pid_info.I = 0.0;
 }
 
 void AC_PID::load_gains()
@@ -281,7 +282,7 @@ void AC_PID::load_gains()
     _kd.load();
     _kff.load();
     _kimax.load();
-    _kimax = fabsf(_kimax);
+    _kimax.set(fabsf(_kimax));
     _filt_T_hz.load();
     _filt_E_hz.load();
     _filt_D_hz.load();
@@ -303,14 +304,14 @@ void AC_PID::save_gains()
 /// Overload the function call operator to permit easy initialisation
 void AC_PID::operator()(float p_val, float i_val, float d_val, float ff_val, float imax_val, float input_filt_T_hz, float input_filt_E_hz, float input_filt_D_hz, float dt)
 {
-    _kp = p_val;
-    _ki = i_val;
-    _kd = d_val;
-    _kff = ff_val;
-    _kimax = fabsf(imax_val);
-    _filt_T_hz = input_filt_T_hz;
-    _filt_E_hz = input_filt_E_hz;
-    _filt_D_hz = input_filt_D_hz;
+    _kp.set(p_val);
+    _ki.set(i_val);
+    _kd.set(d_val);
+    _kff.set(ff_val);
+    _kimax.set(fabsf(imax_val));
+    _filt_T_hz.set(input_filt_T_hz);
+    _filt_E_hz.set(input_filt_E_hz);
+    _filt_D_hz.set(input_filt_D_hz);
     _dt = dt;
 }
 

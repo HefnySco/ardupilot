@@ -59,6 +59,7 @@
 #include "AP_UAVCAN_DNA_Server.h"
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Notify/AP_Notify.h>
+#include <AP_OpenDroneID/AP_OpenDroneID.h>
 #include "AP_UAVCAN_pool.h"
 
 #define LED_DELAY_US 50000
@@ -122,7 +123,7 @@ const AP_Param::GroupInfo AP_UAVCAN::var_info[] = {
     // @Param: OPTION
     // @DisplayName: UAVCAN options
     // @Description: Option flags
-    // @Bitmask: 0:ClearDNADatabase,1:IgnoreDNANodeConflicts,2:EnableCanfd
+    // @Bitmask: 0:ClearDNADatabase,1:IgnoreDNANodeConflicts,2:EnableCanfd,3:IgnoreDNANodeUnhealthy
     // @User: Advanced
     AP_GROUPINFO("OPTION", 5, AP_UAVCAN, _options, 0),
     
@@ -322,8 +323,14 @@ void AP_UAVCAN::init(uint8_t driver_index, bool enable_filters)
         return;
     }
 
+    _dna_server = new AP_UAVCAN_DNA_Server(this, StorageAccess(StorageManager::StorageCANDNA));
+    if (_dna_server == nullptr) {
+        debug_uavcan(AP_CANManager::LOG_ERROR, "UAVCAN: couldn't allocate DNA server\n\r");
+        return;
+    }
+
     //Start Servers
-    if (!AP::uavcan_dna_server().init(this)) {
+    if (!_dna_server->init()) {
         debug_uavcan(AP_CANManager::LOG_ERROR, "UAVCAN: Failed to start DNA Server\n\r");
         return;
     }
@@ -483,7 +490,10 @@ void AP_UAVCAN::loop(void)
         notify_state_send();
         send_parameter_request();
         send_parameter_save_request();
-        AP::uavcan_dna_server().verify_nodes(this);
+        _dna_server->verify_nodes();
+#if AP_OPENDRONEID_ENABLED
+        AP::opendroneid().dronecan_send(this);
+#endif
     }
 }
 
@@ -1196,6 +1206,13 @@ bool AP_UAVCAN::check_and_reset_option(Options option)
         _options.set_and_save(int16_t(_options.get() & ~uint16_t(option)));
     }
     return ret;
+}
+
+// handle prearm check
+bool AP_UAVCAN::prearm_check(char* fail_msg, uint8_t fail_msg_len) const
+{
+    // forward this to DNA_Server
+    return _dna_server->prearm_check(fail_msg, fail_msg_len);
 }
 
 #endif // HAL_NUM_CAN_IFACES

@@ -30,6 +30,7 @@
 #include "AP_RangeFinder_LeddarOne.h"
 #include "AP_RangeFinder_USD1_Serial.h"
 #include "AP_RangeFinder_TeraRangerI2C.h"
+#include "AP_RangeFinder_TeraRanger_Serial.h"
 #include "AP_RangeFinder_VL53L0X.h"
 #include "AP_RangeFinder_VL53L1X.h"
 #include "AP_RangeFinder_NMEA.h"
@@ -539,6 +540,11 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         serial_create_fn = AP_RangeFinder_Benewake_TF03::create;
 #endif
         break;
+    case Type::TeraRanger_Serial:
+#if AP_RANGEFINDER_TERARANGER_SERIAL_ENABLED
+        serial_create_fn = AP_RangeFinder_TeraRanger_Serial::create;
+#endif
+        break;
     case Type::PWM:
 #if AP_RANGEFINDER_PWM_ENABLED
         if (AP_RangeFinder_PWM::detect()) {
@@ -836,6 +842,32 @@ bool RangeFinder::prearm_healthy(char *failure_msg, const uint8_t failure_msg_le
         if (drivers[i] == nullptr) {
             hal.util->snprintf(failure_msg, failure_msg_len, "Rangefinder %X: Not Detected", i + 1);
             return false;
+        }
+
+        // backend-specific checks.  This might end up drivers[i]->arming_checks(...).
+        switch (drivers[i]->allocated_type()) {
+        case Type::ANALOG:
+        case Type::PX4_PWM:
+        case Type::PWM: {
+            // ensure pin is configured
+            if (params[i].pin == -1) {
+                hal.util->snprintf(failure_msg, failure_msg_len, "RNGFND%u_PIN not set", unsigned(i + 1));
+                return false;
+            }
+            // ensure that the pin we're configured to use is available
+            if (!hal.gpio->valid_pin(params[i].pin)) {
+                uint8_t servo_ch;
+                if (hal.gpio->pin_to_servo_channel(params[i].pin, servo_ch)) {
+                    hal.util->snprintf(failure_msg, failure_msg_len, "RNGFND%u_PIN=%d, set SERVO%u_FUNCTION=-1", unsigned(i + 1), int(params[i].pin.get()), unsigned(servo_ch+1));
+                } else {
+                    hal.util->snprintf(failure_msg, failure_msg_len, "RNGFND%u_PIN=%d invalid", unsigned(i + 1), int(params[i].pin.get()));
+                }
+                return false;
+            }
+            break;
+        }
+        default:
+            break;
         }
 
         switch (drivers[i]->status()) {

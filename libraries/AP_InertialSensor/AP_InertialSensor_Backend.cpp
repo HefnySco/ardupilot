@@ -316,6 +316,7 @@ void AP_InertialSensor_Backend::_notify_new_gyro_raw_sample(uint8_t instance,
         _imu._new_gyro_data[instance] = true;
     }
 
+    // 5us
     if (!_imu.batchsampler.doing_post_filter_logging()) {
         log_gyro_raw(instance, sample_us, gyro);
     }
@@ -543,6 +544,7 @@ void AP_InertialSensor_Backend::_notify_new_accel_raw_sample(uint8_t instance,
         _imu._new_accel_data[instance] = true;
     }
 
+    // 5us
     if (!_imu.batchsampler.doing_post_filter_logging()) {
         log_accel_raw(instance, sample_us, accel);
     } else {
@@ -662,18 +664,6 @@ void AP_InertialSensor_Backend::_set_accel_max_abs_offset(uint8_t instance,
                                                           float max_offset)
 {
     _imu._accel_max_abs_offsets[instance] = max_offset;
-}
-
-// set accelerometer error_count
-void AP_InertialSensor_Backend::_set_accel_error_count(uint8_t instance, uint32_t error_count)
-{
-    _imu._accel_error_count[instance] = error_count;
-}
-
-// set gyro error_count
-void AP_InertialSensor_Backend::_set_gyro_error_count(uint8_t instance, uint32_t error_count)
-{
-    _imu._gyro_error_count[instance] = error_count;
 }
 
 // increment accelerometer error_count

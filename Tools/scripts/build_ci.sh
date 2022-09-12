@@ -3,7 +3,11 @@
 # This helps when doing large merges
 # Andrew Tridgell, November 2011
 
+XOLDPWD=$PWD  # profile changes directory :-(
+
 . ~/.profile
+
+cd $XOLDPWD
 
 set -ex
 
@@ -32,6 +36,15 @@ echo "Compiler: $c_compiler"
 pymavlink_installed=0
 mavproxy_installed=0
 
+function install_pymavlink() {
+    if [ $pymavlink_installed -eq 0 ]; then
+        echo "Installing pymavlink"
+        git submodule update --init --recursive
+        (cd modules/mavlink/pymavlink && python setup.py build install --user)
+        pymavlink_installed=1
+    fi
+}
+
 function run_autotest() {
     NAME="$1"
     BVEHICLE="$2"
@@ -52,12 +65,7 @@ function run_autotest() {
         # now uninstall the version of pymavlink pulled in by MAVProxy deps:
         python -m pip uninstall -y pymavlink
     fi
-    if [ $pymavlink_installed -eq 0 ]; then
-        echo "Installing pymavlink"
-        git submodule update --init --recursive
-        (cd modules/mavlink/pymavlink && python setup.py build install --user)
-        pymavlink_installed=1
-    fi
+    install_pymavlink
     unset BUILDROOT
     echo "Running SITL $NAME test"
 
@@ -65,13 +73,13 @@ function run_autotest() {
     if [ $c_compiler == "clang" ]; then
         w="$w --check-c-compiler=clang --check-cxx-compiler=clang++"
     fi
-    if [ $NAME == "Rover" ]; then
+    if [ "$NAME" == "Rover" ]; then
         w="$w --enable-math-check-indexes"
     fi
     if [ "x$CI_BUILD_DEBUG" != "x" ]; then
         w="$w --debug"
     fi
-    if [ $NAME == "Examples" ]; then
+    if [ "$NAME" == "Examples" ]; then
         w="$w --speedup=5 --timeout=14400 --debug --no-clean"
     fi
     Tools/autotest/autotest.py --show-test-timings --waf-configure-args="$w" "$BVEHICLE" "$RVEHICLE"
@@ -142,6 +150,10 @@ for t in $CI_BUILD_TARGET; do
     fi
     if [ "$t" == "sitltest-rover" ]; then
         run_autotest "Rover" "build.Rover" "test.Rover"
+        continue
+    fi
+    if [ "$t" == "sitltest-sailboat" ]; then
+        run_autotest "Rover" "build.Rover" "test.Sailboat"
         continue
     fi
     if [ "$t" == "sitltest-tracker" ]; then
@@ -287,6 +299,15 @@ for t in $CI_BUILD_TARGET; do
         continue
     fi
 
+    if [ "$t" == "CubeOrange-ODID" ]; then
+        echo "Building CubeOrange-ODID"
+        $waf configure --board CubeOrange-ODID
+        $waf clean
+        $waf copter
+        $waf plane
+        continue
+    fi
+    
     if [ "$t" == "fmuv2-plane" ]; then
         echo "Building fmuv2 plane"
         $waf configure --board fmuv2
@@ -331,6 +352,19 @@ for t in $CI_BUILD_TARGET; do
     if [ "$t" == "configure-all" ]; then
         echo "Checking configure of all boards"
         ./Tools/scripts/configure_all.py
+        continue
+    fi
+
+    if [ "$t" == "build-options-defaults-test" ]; then
+        install_pymavlink
+        echo "Checking default options in build_options.py work"
+        time ./Tools/autotest/test_build_options.py \
+             --no-disable-all \
+             --no-disable-none \
+             --no-disable-in-turn \
+             --board=CubeOrange \
+             --build-targets=copter \
+             --build-targets=plane
         continue
     fi
 

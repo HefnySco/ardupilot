@@ -166,6 +166,7 @@ bool AP_Terrain::height_amsl(const Location &loc, float &height, bool corrected)
         // remember home altitude as a special case
         home_height = height;
         home_loc = loc;
+        have_home_height = true;
     }
 
     if (corrected && have_reference_offset) {
@@ -347,6 +348,13 @@ void AP_Terrain::update(void)
     // check for pending rally data
     update_rally_data();
 
+    // update tiles surrounding our current location:
+    if (pos_valid) {
+        have_surrounding_tiles = update_surrounding_tiles(loc);
+    } else {
+        have_surrounding_tiles = false;
+    }
+
     // update capabilities and status
     if (allocate()) {
         if (!pos_valid) {
@@ -361,7 +369,41 @@ void AP_Terrain::update(void)
     } else {
         system_status = TerrainStatusDisabled;
     }
+}
 
+bool AP_Terrain::update_surrounding_tiles(const Location &loc)
+{
+    // also request a larger set of up to 9 grids
+    bool ret = true;
+    for (int8_t x=-1; x<=1; x++) {
+        for (int8_t y=-1; y<=1; y++) {
+            Location loc2 = loc;
+            loc2.offset(x*TERRAIN_GRID_BLOCK_SIZE_X*0.7f*grid_spacing,
+                        y*TERRAIN_GRID_BLOCK_SIZE_Y*0.7f*grid_spacing);
+            float height;
+            if (!height_amsl(loc2, height)) {
+                ret = false;
+            }
+        }
+    }
+    return ret;
+}
+
+bool AP_Terrain::pre_arm_checks(char *failure_msg, uint8_t failure_msg_len) const
+{
+    // check no outstanding requests for data:
+    uint16_t terr_pending, terr_loaded;
+    get_statistics(terr_pending, terr_loaded);
+    if (terr_pending != 0 ||
+        !have_current_loc_height ||
+        !have_home_height ||
+        next_mission_index != 0 ||
+        next_rally_index != 0) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "waiting for terrain data");
+        return false;
+    }
+
+    return true;
 }
 
 void AP_Terrain::log_terrain_data()

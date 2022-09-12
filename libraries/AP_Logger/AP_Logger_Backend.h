@@ -2,6 +2,8 @@
 
 #include "AP_Logger.h"
 
+#include <AP_Common/Bitmask.h>
+
 class LoggerMessageWriter_DFLogStart;
 
 #define MAX_LOG_FILES 500
@@ -118,7 +120,7 @@ public:
     bool Write_EntireMission();
     bool Write_RallyPoint(uint8_t total,
                           uint8_t sequence,
-                          const RallyLocation &rally_point);
+                          const class RallyLocation &rally_point);
     bool Write_Rally();
     bool Write_Format(const struct LogStructure *structure);
     bool Write_Message(const char *message);
@@ -126,10 +128,11 @@ public:
     bool Write_Mission_Cmd(const AP_Mission &mission,
                                const AP_Mission::Mission_Command &cmd);
     bool Write_Mode(uint8_t mode, const ModeReason reason);
-    bool Write_Parameter(const char *name, float value);
+    bool Write_Parameter(const char *name, float value, float default_val);
     bool Write_Parameter(const AP_Param *ap,
                              const AP_Param::ParamToken &token,
-                             enum ap_var_type type);
+                             enum ap_var_type type,
+                             float default_val);
     bool Write_VER();
 
     uint32_t num_dropped(void) const {

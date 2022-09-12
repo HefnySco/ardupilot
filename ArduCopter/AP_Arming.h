@@ -48,8 +48,13 @@ protected:
     bool gcs_failsafe_check(bool display_failure);
     bool winch_checks(bool display_failure) const;
     bool alt_checks(bool display_failure);
+    bool rc_throttle_failsafe_checks(bool display_failure) const;
 
     void set_pre_arm_check(bool b);
+
+    // expected to return true if the terrain database is required to have
+    // all data loaded
+    bool terrain_database_required() const override;
 
 private:
 

@@ -320,6 +320,12 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+// Flowhold - use optical flow to hover in place
+#ifndef MODE_FLOWHOLD_ENABLED
+# define MODE_FLOWHOLD_ENABLED !HAL_MINIMIZE_FEATURES && AP_OPTICALFLOW_ENABLED
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////
 // Autorotate - autonomous auto-rotation - helicopters only
@@ -622,11 +628,6 @@
 // Fence, Rally and Terrain and AC_Avoidance defaults
 //
 
-// Enable/disable Fence
-#ifndef AC_FENCE
- #define AC_FENCE ENABLED
-#endif
-
 #ifndef AC_RALLY
  #define AC_RALLY   ENABLED
 #endif
@@ -641,10 +642,6 @@
 
 #ifndef AC_OAPATHPLANNER_ENABLED
  #define AC_OAPATHPLANNER_ENABLED   !HAL_MINIMIZE_FEATURES
-#endif
-
-#if AC_AVOID_ENABLED && !AC_FENCE
-  #error AC_Avoidance relies on AC_FENCE which is disabled
 #endif
 
 #if MODE_FOLLOW_ENABLED && !AC_AVOID_ENABLED

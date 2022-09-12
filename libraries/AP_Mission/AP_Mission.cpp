@@ -241,7 +241,7 @@ bool AP_Mission::clear()
     }
 
     // remove all commands
-    _cmd_total.set_and_save(0);
+    truncate(0);
 
     // clear index to commands
     _nav_cmd.index = AP_MISSION_CMD_INDEX_NONE;
@@ -259,6 +259,7 @@ void AP_Mission::truncate(uint16_t index)
 {
     if ((unsigned)_cmd_total > index) {
         _cmd_total.set_and_save(index);
+        _last_change_time_ms = AP_HAL::millis();
     }
 }
 
@@ -1141,6 +1142,7 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         break;
 
     case MAV_CMD_NAV_VTOL_LAND:
+        cmd.p1 = (NAV_VTOL_LAND_OPTIONS)packet.param1;
         break;
 
     case MAV_CMD_DO_VTOL_TRANSITION:
@@ -1636,6 +1638,7 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         break;
 
     case MAV_CMD_NAV_VTOL_LAND:
+        packet.param1 = cmd.p1;
         break;
 
     case MAV_CMD_DO_VTOL_TRANSITION:
@@ -2458,6 +2461,32 @@ bool AP_Mission::contains_item(MAV_CMD command) const
             continue;
         }
         if (tmp.id == command) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+  return true if the mission has a terrain relative item.  ~2200us for 530 items on H7
+ */
+bool AP_Mission::contains_terrain_alt_items(void)
+{
+    if (_last_contains_relative_calculated_ms != _last_change_time_ms) {
+        _contains_terrain_alt_items = calculate_contains_terrain_alt_items();
+        _last_contains_relative_calculated_ms = _last_change_time_ms;
+    }
+    return _contains_terrain_alt_items;
+}
+
+bool AP_Mission::calculate_contains_terrain_alt_items(void) const
+{
+    for (int i = 1; i < num_commands(); i++) {
+        Mission_Command tmp;
+        if (!read_cmd_from_storage(i, tmp)) {
+            continue;
+        }
+        if (stored_in_location(tmp.id) && tmp.content.location.terrain_alt) {
             return true;
         }
     }

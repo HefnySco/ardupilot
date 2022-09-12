@@ -42,21 +42,60 @@ bool AP_Arming_Copter::run_pre_arm_checks(bool display_failure)
         return false;
     }
 
+    // always check motors
+    if (!motor_checks(display_failure)) {
+        return false;
+    }
+
     // if pre arm checks are disabled run only the mandatory checks
     if (checks_to_perform == 0) {
         return mandatory_checks(display_failure);
     }
 
     return parameter_checks(display_failure)
-        & motor_checks(display_failure)
         & oa_checks(display_failure)
         & gcs_failsafe_check(display_failure)
         & winch_checks(display_failure)
+        & rc_throttle_failsafe_checks(display_failure)
         & alt_checks(display_failure)
 #if AP_AIRSPEED_ENABLED
         & AP_Arming::airspeed_checks(display_failure)
 #endif
         & AP_Arming::pre_arm_checks(display_failure);
+}
+
+bool AP_Arming_Copter::rc_throttle_failsafe_checks(bool display_failure) const
+{
+    if ((checks_to_perform != ARMING_CHECK_ALL) &&
+        (checks_to_perform & ARMING_CHECK_RC) == 0) {
+        // this check has been disabled
+        return true;
+    }
+
+    // throttle failsafe.  In this case the parameter also gates the
+    // no-pulses RC failure case - the radio-in value can be zero due
+    // to not having received any RC pulses at all.  Note that if we
+    // have ever seen RC and then we *lose* RC then these checks are
+    // likely to pass if the user is relying on no-pulses to detect RC
+    // failure.  However, arming is precluded in that case by being in
+    // RC failsafe.
+    if (copter.g.failsafe_throttle == FS_THR_DISABLED) {
+        return true;
+    }
+
+#if FRAME_CONFIG == HELI_FRAME
+    const char *rc_item = "Collective";
+#else
+    const char *rc_item = "Throttle";
+#endif
+
+    // check throttle is not too low - must be above failsafe throttle
+    if (copter.channel_throttle->get_radio_in() < copter.g.failsafe_throttle_value) {
+        check_failed(ARMING_CHECK_RC, true, "%s below failsafe", rc_item);
+        return false;
+    }
+
+    return true;
 }
 
 bool AP_Arming_Copter::barometer_checks(bool display_failure)
@@ -114,6 +153,17 @@ bool AP_Arming_Copter::board_voltage_checks(bool display_failure)
     }
 
     return true;
+}
+
+// expected to return true if the terrain database is required to have
+// all data loaded
+bool AP_Arming_Copter::terrain_database_required() const
+{
+    if (copter.wp_nav->get_terrain_source() == AC_WPNav::TerrainSource::TERRAIN_FROM_TERRAINDATABASE &&
+        copter.mode_rtl.get_alt_type() == ModeRTL::RTLAltType::RTL_ALTTYPE_TERRAIN) {
+        return true;
+    }
+    return AP_Arming::terrain_database_required();
 }
 
 bool AP_Arming_Copter::parameter_checks(bool display_failure)
@@ -224,22 +274,7 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
                 }
                 break;
             case AC_WPNav::TerrainSource::TERRAIN_FROM_TERRAINDATABASE:
-#if AP_TERRAIN_AVAILABLE
-                if (!copter.terrain.enabled()) {
-                    check_failed(ARMING_CHECK_PARAMETERS, display_failure, failure_template, "terrain disabled");
-                    return false;
-                }
-                // check terrain data is loaded
-                uint16_t terr_pending, terr_loaded;
-                copter.terrain.get_statistics(terr_pending, terr_loaded);
-                if (terr_pending != 0) {
-                    check_failed(ARMING_CHECK_PARAMETERS, display_failure, failure_template, "waiting for terrain data");
-                    return false;
-                }
-#else
-                check_failed(ARMING_CHECK_PARAMETERS, display_failure, failure_template, "terrain disabled");
-                return false;
-#endif
+                // these checks are done in AP_Arming
                 break;
             }
         }
@@ -284,10 +319,6 @@ bool AP_Arming_Copter::motor_checks(bool display_failure)
         return false;
     }
 #endif
-    // further checks enabled with parameters
-    if (!check_enabled(ARMING_CHECK_PARAMETERS)) {
-        return true;
-    }
 
     return true;
 }
@@ -331,7 +362,7 @@ bool AP_Arming_Copter::gps_checks(bool display_failure)
 {
     // check if fence requires GPS
     bool fence_requires_gps = false;
-    #if AC_FENCE == ENABLED
+    #if AP_FENCE_ENABLED
     // if circular or polygon fence is enabled we need GPS
     fence_requires_gps = (copter.fence.get_enabled_fences() & (AC_FENCE_TYPE_CIRCLE | AC_FENCE_TYPE_POLYGON)) > 0;
     #endif
@@ -433,7 +464,7 @@ bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
 
     // check if fence requires GPS
     bool fence_requires_gps = false;
-    #if AC_FENCE == ENABLED
+    #if AP_FENCE_ENABLED
     // if circular or polygon fence is enabled we need GPS
     fence_requires_gps = (copter.fence.get_enabled_fences() & (AC_FENCE_TYPE_CIRCLE | AC_FENCE_TYPE_POLYGON)) > 0;
     #endif
@@ -572,12 +603,7 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
 
     // always check if the current mode allows arming
     if (!copter.flightmode->allows_arming(method)) {
-        check_failed(true, "Mode not armable");
-        return false;
-    }
-
-    // always check motors
-    if (!motor_checks(true)) {
+        check_failed(true, "%s mode not armable", copter.flightmode->name());
         return false;
     }
 
@@ -611,12 +637,6 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
         #else
         const char *rc_item = "Throttle";
         #endif
-        // check throttle is not too low - must be above failsafe throttle
-        if (copter.g.failsafe_throttle != FS_THR_DISABLED && copter.channel_throttle->get_radio_in() < copter.g.failsafe_throttle_value) {
-            check_failed(ARMING_CHECK_RC, true, "%s below failsafe", rc_item);
-            return false;
-        }
-
         // check throttle is not too high - skips checks if arming from GCS in Guided
         if (!(method == AP_Arming::Method::MAVLINK && (copter.flightmode->mode_number() == Mode::Number::GUIDED || copter.flightmode->mode_number() == Mode::Number::GUIDED_NOGPS))) {
             // above top of deadband is too always high

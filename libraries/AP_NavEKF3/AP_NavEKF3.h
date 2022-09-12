@@ -22,7 +22,6 @@
 #include <AP_Common/Location.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
-#include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_NavEKF/AP_Nav_Common.h>
 #include <AP_NavEKF/AP_NavEKF_Source.h>
 
@@ -97,6 +96,9 @@ public:
     // return accelerometer bias estimate in m/s/s
     // An out of range instance (eg -1) returns data for the primary instance
     void getAccelBias(int8_t instance, Vector3f &accelBias) const;
+
+    //returns index of the active source set used
+    uint8_t get_active_source_set() const;
 
     // reset body axis gyro bias estimates
     void resetGyroBias(void);
@@ -277,7 +279,7 @@ public:
     void getFilterStatus(nav_filter_status &status) const;
 
     // send an EKF_STATUS_REPORT message to GCS
-    void send_status_report(mavlink_channel_t chan) const;
+    void send_status_report(class GCS_MAVLINK &link) const;
 
     // provides the height limit to be observed by the control loops
     // returns false if no height limiting is required
@@ -358,7 +360,15 @@ private:
 
     uint32_t _frameTimeUsec;        // time per IMU frame
     uint8_t  _framesPerPrediction;  // expected number of IMU frames per prediction
-    
+  
+    // values for EK3_LOG_LEVEL
+    enum class LogLevel {
+        ALL = 0,
+        XKF4 = 1,
+        XKF4_GSF = 2,
+        NONE = 3
+    };
+
     // EKF Mavlink Tuneable Parameters
     AP_Int8  _enable;               // zero to disable EKF3
     AP_Float _gpsHorizVelNoise;     // GPS horizontal velocity measurement noise : m/s
@@ -424,6 +434,8 @@ private:
     AP_Float _ognmTestScaleFactor;  // Scale factor applied to the thresholds used by the on ground not moving test
     AP_Float _baroGndEffectDeadZone;// Dead zone applied to positive baro height innovations when in ground effect (m)
     AP_Int8 _primary_core;          // initial core number
+    AP_Enum<LogLevel> _log_level;   // log verbosity level
+    AP_Float _gpsVAccThreshold;     // vertical accuracy threshold to use GPS as an altitude source
 
 // Possible values for _flowUse
 #define FLOW_USE_NONE    0

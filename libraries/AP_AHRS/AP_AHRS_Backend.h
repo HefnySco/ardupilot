@@ -25,7 +25,6 @@
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 
-class OpticalFlow;
 #define AP_AHRS_TRIM_LIMIT 10.0f        // maximum trim angle in degrees
 #define AP_AHRS_RP_P_MIN   0.05f        // minimum value for AHRS_RP_P parameter
 #define AP_AHRS_YAW_P_MIN  0.05f        // minimum value for AHRS_YAW_P parameter
@@ -56,8 +55,7 @@ public:
         Matrix3f dcm_matrix;
         Vector3f gyro_estimate;
         Vector3f gyro_drift;
-        Vector3f accel_ef[INS_MAX_INSTANCES];  // must be INS_MAX_INSTANCES
-        Vector3f accel_ef_blended;
+        Vector3f accel_ef;
         Vector3f accel_bias;
     };
 
@@ -310,7 +308,7 @@ public:
         return false;
     }
 
-    virtual void send_ekf_status_report(mavlink_channel_t chan) const = 0;
+    virtual void send_ekf_status_report(class GCS_MAVLINK &link) const = 0;
 
     // Retrieves the corrected NED delta velocity in use by the inertial navigation
     virtual void getCorrectedDeltaVelocityNED(Vector3f& ret, float& dt) const {

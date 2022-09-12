@@ -102,10 +102,12 @@ public:
     void update(void);
 
     bool enabled() const { return enable; }
-    void set_enabled(bool _enable) { enable = _enable; }
+    void set_enabled(bool _enable) { enable.set(_enable); }
 
     // return status enum for health reporting
     enum TerrainStatus status(void) const { return system_status; }
+
+    bool pre_arm_checks(char *failure_msg, uint8_t failure_msg_len) const;
 
     // send any pending terrain request message
     bool send_cache_request(mavlink_channel_t chan);
@@ -340,6 +342,9 @@ private:
     void write_block(void);
     void read_block(void);
 
+    // check for missing data in squares surrounding loc:
+    bool update_surrounding_tiles(const Location &loc);
+
     /*
       check for missing mission terrain data
      */
@@ -407,6 +412,7 @@ private:
     // cache the home altitude, as it is needed so often
     float home_height;
     Location home_loc;
+    bool have_home_height;
 
     // reference position for terrain adjustment, set at arming
     bool have_reference_loc;
@@ -422,6 +428,10 @@ private:
     // temporarily unavailable
     bool have_current_loc_height;
     float last_current_loc_height;
+
+    // true if we have all of the data for the squares around the
+    // current location:
+    bool have_surrounding_tiles;
 
     // next mission command to check
     uint16_t next_mission_index;

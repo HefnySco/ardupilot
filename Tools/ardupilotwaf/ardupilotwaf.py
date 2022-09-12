@@ -110,6 +110,8 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_Torqeedo',
     'AP_CustomRotations',
     'AP_AIS',
+    'AP_OpenDroneID',
+    'AP_CheckFirmware',
 ]
 
 def get_legacy_defines(sketch_name, bld):
@@ -562,6 +564,10 @@ arducopter and upload it to my board".
     g.add_option('--check-verbose',
         action='store_true',
         help='Output all test programs.')
+
+    g.add_option('--define',
+        action='append',
+        help='Add C++ define to build.')
 
     g = opt.ap_groups['clean']
 

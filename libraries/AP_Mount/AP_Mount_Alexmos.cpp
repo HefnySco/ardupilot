@@ -15,7 +15,7 @@ void AP_Mount_Alexmos::init()
         _initialised = true;
         get_boardinfo();
         read_params(0); //we request parameters for profile 0 and therfore get global and profile parameters
-        set_mode((enum MAV_MOUNT_MODE)_state._default_mode.get());
+        set_mode((enum MAV_MOUNT_MODE)_params.default_mode.get());
     }
 }
 
@@ -32,7 +32,7 @@ void AP_Mount_Alexmos::update()
     switch (get_mode()) {
         // move mount to a "retracted" position.  we do not implement a separate servo based retract mechanism
         case MAV_MOUNT_MODE_RETRACT: {
-            const Vector3f &target = _state._retract_angles.get();
+            const Vector3f &target = _params.retract_angles.get();
             _angle_rad.roll = radians(target.x);
             _angle_rad.pitch = radians(target.y);
             _angle_rad.yaw = radians(target.z);
@@ -42,7 +42,7 @@ void AP_Mount_Alexmos::update()
 
         // move mount to a neutral position, typically pointing forward
         case MAV_MOUNT_MODE_NEUTRAL: {
-            const Vector3f &target = _state._neutral_angles.get();
+            const Vector3f &target = _params.neutral_angles.get();
             _angle_rad.roll = radians(target.x);
             _angle_rad.pitch = radians(target.y);
             _angle_rad.yaw = radians(target.z);
@@ -99,18 +99,22 @@ void AP_Mount_Alexmos::update()
 // has_pan_control - returns true if this mount can control it's pan (required for multicopters)
 bool AP_Mount_Alexmos::has_pan_control() const
 {
-    return _gimbal_3axis;
+    return _gimbal_3axis && yaw_range_valid();
 }
 
-// send_mount_status - called to allow mounts to send their status to GCS using the MOUNT_STATUS message
-void AP_Mount_Alexmos::send_mount_status(mavlink_channel_t chan)
+// get attitude as a quaternion.  returns true on success
+bool AP_Mount_Alexmos::get_attitude_quaternion(Quaternion& att_quat)
 {
     if (!_initialised) {
-        return;
+        return false;
     }
 
+    // request attitude from gimbal
     get_angles();
-    mavlink_msg_mount_status_send(chan, 0, 0, _current_angle.y*100, _current_angle.x*100, _current_angle.z*100, _mode);
+
+    // construct quaternion
+    att_quat.from_euler(radians(_current_angle.x), radians(_current_angle.y), radians(_current_angle.z));
+    return true;
 }
 
 /*

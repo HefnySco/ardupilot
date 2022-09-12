@@ -38,7 +38,7 @@ void LoggerMessageWriter_DFLogStart::reset()
     _fmt_done = false;
     _params_done = false;
     _writesysinfo.reset();
-#if HAL_MISSION_ENABLED
+#if AP_MISSION_ENABLED
     _writeentiremission.reset();
 #endif
 #if HAL_RALLY_ENABLED
@@ -50,7 +50,8 @@ void LoggerMessageWriter_DFLogStart::reset()
     _next_unit_to_send = 0;
     _next_multiplier_to_send = 0;
     _next_format_unit_to_send = 0;
-    ap = AP_Param::first(&token, &type);
+    param_default = AP::logger().quiet_nanf();
+    ap = AP_Param::first(&token, &type, &param_default);
 }
 
 bool LoggerMessageWriter_DFLogStart::out_of_time_for_writing_messages() const
@@ -87,10 +88,11 @@ void LoggerMessageWriter_DFLogStart::process()
 
     case Stage::PARMS:
         while (ap) {
-            if (!_logger_backend->Write_Parameter(ap, token, type)) {
+            if (!_logger_backend->Write_Parameter(ap, token, type, param_default)) {
                 return;
             }
-            ap = AP_Param::next_scalar(&token, &type);
+            param_default = AP::logger().quiet_nanf();
+            ap = AP_Param::next_scalar(&token, &type, &param_default);
         }
 
         _params_done = true;
@@ -134,7 +136,7 @@ void LoggerMessageWriter_DFLogStart::process()
                 return;
             }
         }
-#if HAL_MISSION_ENABLED
+#if AP_MISSION_ENABLED
         if (!_writeentiremission.finished()) {
             _writeentiremission.process();
             if (!_writeentiremission.finished()) {
@@ -173,7 +175,7 @@ void LoggerMessageWriter_DFLogStart::process()
     _finished = true;
 }
 
-#if HAL_MISSION_ENABLED
+#if AP_MISSION_ENABLED
 bool LoggerMessageWriter_DFLogStart::writeentiremission()
 {
     if (stage != Stage::DONE) {

@@ -40,6 +40,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>      // Serial manager library
 #include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
 #include <AP_Camera/AP_RunCam.h>
+#include <AP_OpenDroneID/AP_OpenDroneID.h>
 #include <AP_Hott_Telem/AP_Hott_Telem.h>
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
 #include <AP_GyroFFT/AP_GyroFFT.h>
@@ -53,6 +54,8 @@
 #include <SITL/SITL.h>
 #include <AP_CustomRotations/AP_CustomRotations.h>
 #include <AP_AIS/AP_AIS.h>
+#include <AC_Fence/AC_Fence.h>
+#include <AP_CheckFirmware/AP_CheckFirmware.h>
 
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
 
@@ -363,6 +366,10 @@ protected:
     AP_ESC_Telem esc_telem;
 #endif
 
+#if AP_OPENDRONEID_ENABLED
+    AP_OpenDroneID opendroneid;
+#endif
+
 #if HAL_MSP_ENABLED
     AP_MSP msp;
 #endif
@@ -395,6 +402,10 @@ protected:
 #if AP_AIS_ENABLED
     // Automatic Identification System - for tracking sea-going vehicles
     AP_AIS ais;
+#endif
+
+#if AP_FENCE_ENABLED
+    AC_Fence fence;
 #endif
 
     static const struct AP_Param::GroupInfo var_info[];

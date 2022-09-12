@@ -54,6 +54,7 @@ singleton AP_AHRS method set_home boolean Location
 singleton AP_AHRS method get_origin boolean Location'Null
 singleton AP_AHRS method set_origin boolean Location
 singleton AP_AHRS method initialised boolean
+singleton AP_AHRS method get_posvelyaw_source_set uint8_t
 
 include AP_Arming/AP_Arming.h
 
@@ -293,11 +294,11 @@ singleton AP_Baro method get_temperature float
 singleton AP_Baro method get_external_temperature float
 
 include AP_OpticalFlow/AP_OpticalFlow.h
-singleton OpticalFlow depends AP_OPTICALFLOW_ENABLED
-singleton OpticalFlow rename optical_flow
-singleton OpticalFlow method enabled boolean
-singleton OpticalFlow method healthy boolean
-singleton OpticalFlow method quality uint8_t
+singleton AP_OpticalFlow depends AP_OPTICALFLOW_ENABLED
+singleton AP_OpticalFlow rename optical_flow
+singleton AP_OpticalFlow method enabled boolean
+singleton AP_OpticalFlow method healthy boolean
+singleton AP_OpticalFlow method quality uint8_t
 
 include AP_ESC_Telem/AP_ESC_Telem.h
 singleton AP_ESC_Telem depends HAL_WITH_ESC_TELEM == 1
@@ -541,7 +542,7 @@ userdata uint32_t manual_operator __sub uint32_t___sub
 userdata uint32_t manual_operator __mul uint32_t___mul
 userdata uint32_t manual_operator __div uint32_t___div
 userdata uint32_t manual_operator __mod uint32_t___mod
-userdata uint32_t manual_operator __idiv uint32_t___idiv
+userdata uint32_t manual_operator __idiv uint32_t___div
 userdata uint32_t manual_operator __band uint32_t___band
 userdata uint32_t manual_operator __bor uint32_t___bor
 userdata uint32_t manual_operator __bxor uint32_t___bxor

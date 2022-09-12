@@ -12,11 +12,7 @@
  */
 #pragma once
 
-#include <AP_HAL/AP_HAL.h>
-
-#ifndef HAL_MISSION_ENABLED
-#define HAL_MISSION_ENABLED 1
-#endif
+#include "AP_Mission_config.h"
 
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_Math/AP_Math.h>
@@ -619,6 +615,9 @@ public:
     // returns true if the mission contains the requested items
     bool contains_item(MAV_CMD command) const;
 
+    // returns true if the mission has a terrain relative mission item
+    bool contains_terrain_alt_items(void);
+
     // reset the mission history to prevent recalling previous mission histories when restarting missions.
     void reset_wp_history(void);
 
@@ -761,6 +760,10 @@ private:
     // last time that mission changed
     uint32_t _last_change_time_ms;
 
+    // memoisation of contains-relative:
+    bool _contains_terrain_alt_items;  // true if the mission has terrain-relative items
+    uint32_t _last_contains_relative_calculated_ms;  // will be equal to _last_change_time_ms if _contains_terrain_alt_items is up-to-date
+    bool calculate_contains_terrain_alt_items(void) const;
 
     // multi-thread support. This is static so it can be used from
     // const functions

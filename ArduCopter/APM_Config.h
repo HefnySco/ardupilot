@@ -1,13 +1,10 @@
 // User specific config file.  Any items listed in config.h can be overridden here.
 
-// If you used to define your CONFIG_APM_HARDWARE setting here, it is no longer
-// valid! You should switch to using a HAL_BOARD flag in your local config.mk.
-
 // uncomment the lines below to disable features (flash sizes listed are for APM2 boards and will underestimate savings on Pixhawk and other boards)
 //#define LOGGING_ENABLED       DISABLED            // disable logging to save 11K of flash space
 //#define MOUNT                 DISABLED            // disable the camera gimbal to save 8K of flash space
 //#define AUTOTUNE_ENABLED      DISABLED            // disable the auto tune functionality to save 7k of flash
-//#define AC_FENCE              DISABLED            // disable fence to save 2k of flash
+//#define AP_FENCE_ENABLED      DISABLED            // disable fence to save 2k of flash
 //#define CAMERA                DISABLED            // disable camera trigger to save 1k of flash
 //#define RANGEFINDER_ENABLED   DISABLED            // disable rangefinder to save 1k of flash
 //#define AC_RALLY              DISABLED            // disable rally points library (must also disable terrain which relies on rally)

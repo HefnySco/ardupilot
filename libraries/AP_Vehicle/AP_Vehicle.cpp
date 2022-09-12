@@ -9,6 +9,8 @@
 #include <AP_OSD/AP_OSD.h>
 #include <AP_RPM/AP_RPM.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_Motors/AP_Motors.h>
+#include <AP_CheckFirmware/AP_CheckFirmware.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <AP_HAL_ChibiOS/sdcard.h>
 #endif
@@ -92,6 +94,17 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(ais, "AIS_",  13, AP_Vehicle, AP_AIS),
 #endif
 
+#if AP_FENCE_ENABLED
+    // @Group: FENCE_
+    // @Path: ../AC_Fence/AC_Fence.cpp
+    AP_SUBGROUPINFO(fence, "FENCE_", 14, AP_Vehicle, AC_Fence),
+#endif
+
+#if AP_OPENDRONEID_ENABLED
+    // @Group: DID_
+    // @Path: ../AP_OpenDroneID/AP_OpenDroneID.cpp
+    AP_SUBGROUPINFO(opendroneid, "DID_", 15, AP_Vehicle, AP_OpenDroneID),
+#endif
     AP_GROUPEND
 };
 
@@ -117,6 +130,10 @@ void AP_Vehicle::setup()
                         "\n\nFree RAM: %u\n",
                         AP::fwversion().fw_string,
                         (unsigned)hal.util->available_memory());
+
+#if AP_CHECK_FIRMWARE_ENABLED
+    check_firmware_print();
+#endif
 
     load_parameters();
 
@@ -222,6 +239,10 @@ void AP_Vehicle::setup()
     generator.init();
 #endif
 
+#if AP_OPENDRONEID_ENABLED
+    opendroneid.init();
+#endif
+
 // init EFI monitoring
 #if HAL_EFI_ENABLED
     efi.init();
@@ -229,6 +250,10 @@ void AP_Vehicle::setup()
 
 #if AP_AIS_ENABLED
     ais.init();
+#endif
+
+#if AP_FENCE_ENABLED
+    fence.init();
 #endif
 
     custom_rotations.init();
@@ -299,6 +324,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if AP_AIRSPEED_ENABLED
     SCHED_TASK_CLASS(AP_Airspeed,  &vehicle.airspeed,       update,                   10, 100, 41),    // NOTE: the priority number here should be right before Plane's calc_airspeed_errors
 #endif
+#if COMPASS_CAL_ENABLED
+    SCHED_TASK_CLASS(Compass,      &vehicle.compass,        cal_update,     100, 200, 75),
+#endif
 #if HAL_RUNCAM_ENABLED
     SCHED_TASK_CLASS(AP_RunCam,    &vehicle.runcam,         update,                   50, 50, 200),
 #endif
@@ -318,11 +346,17 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if HAL_GENERATOR_ENABLED
     SCHED_TASK_CLASS(AP_Generator, &vehicle.generator,      update,                   10,  50, 235),
 #endif
+#if AP_OPENDRONEID_ENABLED
+    SCHED_TASK_CLASS(AP_OpenDroneID, &vehicle.opendroneid,  update,                   10,  50, 236),
+#endif
 #if OSD_ENABLED
     SCHED_TASK(publish_osd_info, 1, 10, 240),
 #endif
 #if HAL_INS_ACCELCAL_ENABLED
-    SCHED_TASK(accel_cal_update,      10,    100, 245),
+    SCHED_TASK(accel_cal_update,                                                      10, 100, 245),
+#endif
+#if AP_FENCE_ENABLED
+    SCHED_TASK_CLASS(AC_Fence,     &vehicle.fence,          update,                   10, 100, 248),
 #endif
 #if AP_AIS_ENABLED
     SCHED_TASK_CLASS(AP_AIS,       &vehicle.ais,            update,                    5, 100, 249),
@@ -476,12 +510,14 @@ void AP_Vehicle::update_dynamic_notch(AP_InertialSensor::HarmonicNotch &notch)
             if (notch.params.hasOption(HarmonicNotchFilterParams::Options::DynamicHarmonic)) {
                 float notches[INS_MAX_NOTCHES];
                 const uint8_t num_notches = AP::esc_telem().get_motor_frequencies_hz(notch.num_dynamic_notches, notches);
-
-                for (uint8_t i = 0; i < num_notches; i++) {
-                    notches[i] =  MAX(ref_freq, notches[i]);
+                // ESC telemetry will return 0 for missing data, but only after 1s
+                for (uint8_t i = 0; i < notch.num_dynamic_notches; i++) {
+                    if (!is_zero(notches[i])) {
+                        notches[i] =  MAX(ref_freq, notches[i]);
+                    }
                 }
                 if (num_notches > 0) {
-                    notch.update_frequencies_hz(num_notches, notches);
+                    notch.update_frequencies_hz(notch.num_dynamic_notches, notches);
                 } else {    // throttle fallback
                     update_throttle_notch(notch);
                 }

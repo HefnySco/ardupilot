@@ -21,10 +21,9 @@
 #if HAL_ENABLE_LIBUAVCAN_DRIVERS
 
 #include <uavcan/uavcan.hpp>
-#include "AP_UAVCAN_DNA_Server.h"
 #include "AP_UAVCAN_IfaceMgr.h"
 #include "AP_UAVCAN_Clock.h"
-#include <AP_CANManager/AP_CANDriver.h>
+#include <AP_CANManager/AP_CANManager.h>
 #include <AP_HAL/Semaphores.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_ESC_Telem/AP_ESC_Telem_Backend.h>
@@ -54,6 +53,7 @@ class DebugCb;
 class ParamGetSetCb;
 class ParamExecuteOpcodeCb;
 class AP_PoolAllocator;
+class AP_UAVCAN_DNA_Server;
 
 #if defined(__GNUC__) && (__GNUC__ > 8)
 #define DISABLE_W_CAST_FUNCTION_TYPE_PUSH \
@@ -98,6 +98,7 @@ class AP_PoolAllocator;
     }
 
 class AP_UAVCAN : public AP_CANDriver, public AP_ESC_Telem_Backend {
+    friend class AP_UAVCAN_DNA_Server;
 public:
     AP_UAVCAN();
     ~AP_UAVCAN();
@@ -106,6 +107,7 @@ public:
 
     // Return uavcan from @driver_index or nullptr if it's not ready or doesn't exist
     static AP_UAVCAN *get_uavcan(uint8_t driver_index);
+    bool prearm_check(char* fail_msg, uint8_t fail_msg_len) const;
 
     void init(uint8_t driver_index, bool enable_filters) override;
     bool add_interface(AP_HAL::CANIface* can_iface) override;
@@ -200,6 +202,7 @@ public:
         DNA_CLEAR_DATABASE        = (1U<<0),
         DNA_IGNORE_DUPLICATE_NODE = (1U<<1),
         CANFD_ENABLED             = (1U<<2),
+        DNA_IGNORE_UNHEALTHY_NODE = (1U<<3),
     };
 
     // check if a option is set
@@ -267,6 +270,8 @@ private:
     AP_Int16 _pool_size;
 
     AP_PoolAllocator *_allocator;
+    AP_UAVCAN_DNA_Server *_dna_server;
+
     uavcan::Node<0> *_node;
 
     uint8_t _driver_index;

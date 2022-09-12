@@ -87,6 +87,9 @@ struct sitl_fdm {
     } wind_vane_apparent;
 
     bool is_lock_step_scheduled;
+
+    // earthframe wind, from backends that know it
+    Vector3f wind_ef;
 };
 
 // number of rc output channels
@@ -96,10 +99,6 @@ class SIM {
 public:
 
     SIM() {
-        // set a default compass offset
-        for (uint8_t i = 0; i < HAL_COMPASS_MAX_SENSORS; i++) {
-            mag_ofs[i].set(Vector3f(5, 13, -18));
-        }
         AP_Param::setup_object_defaults(this, var_info);
         AP_Param::setup_object_defaults(this, var_info2);
         AP_Param::setup_object_defaults(this, var_info3);
@@ -116,6 +115,10 @@ public:
         }
         for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
             AP_Param::setup_object_defaults(&airspeed[i], airspeed[i].var_info);
+        }
+        // set compass offset
+        for (uint8_t i = 0; i < HAL_COMPASS_MAX_SENSORS; i++) {
+            mag_ofs[i].set(Vector3f(5, 13, -18));
         }
         if (_singleton != nullptr) {
             AP_HAL::panic("Too many SITL instances");
@@ -384,10 +387,10 @@ public:
         return (AP_HAL::Util::safety_state)_safety_switch_state.get();
     }
     void force_safety_off() {
-        _safety_switch_state = (uint8_t)AP_HAL::Util::SAFETY_ARMED;
+        _safety_switch_state.set((uint8_t)AP_HAL::Util::SAFETY_ARMED);
     }
     bool force_safety_on() {
-        _safety_switch_state = (uint8_t)AP_HAL::Util::SAFETY_DISARMED;
+        _safety_switch_state.set((uint8_t)AP_HAL::Util::SAFETY_DISARMED);
         return true;
     }
 

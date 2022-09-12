@@ -31,7 +31,6 @@
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <hal.h>
-#include "../AP_Bootloader/app_comms.h"
 #include <AP_HAL_ChibiOS/CANIface.h>
 #include <AP_HAL_ChibiOS/hwdef/common/stm32_util.h>
 #include <AP_HAL_ChibiOS/hwdef/common/watchdog.h>
@@ -47,11 +46,21 @@
 #include <AP_CANManager/AP_CANSensor.h>
 #endif
 
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+extern const HAL_SITL &hal;
+#else
 extern const AP_HAL::HAL &hal;
+#endif
+
 extern AP_Periph_FW periph;
 
 #ifndef HAL_CAN_POOL_SIZE
-#define HAL_CAN_POOL_SIZE 4000
+#if HAL_CANFD_SUPPORTED
+    #define HAL_CAN_POOL_SIZE 16000
+#else
+    #define HAL_CAN_POOL_SIZE 4000
+#endif
 #endif
 
 #ifndef HAL_PERIPH_LOOP_DELAY_US
@@ -1301,7 +1310,7 @@ static void process1HzTasks(uint64_t timestamp_usec)
          */
         for (auto &ins : instances) {
             if (pool_peak_percent(ins) > 70) {
-                printf("WARNING: ENLARGE MEMORY POOL on Iface %d\n", ins.index);
+                printf("WARNING: ENLARGE MEMORY POOL on Iface %d Peak Usage: %u%%\n", ins.index, pool_peak_percent(ins));
             }
         }
     }
@@ -1347,7 +1356,14 @@ static void process1HzTasks(uint64_t timestamp_usec)
     }
 #endif
 
-    node_status.mode = UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    if (hal.run_in_maintenance_mode()) {
+        node_status.mode = UAVCAN_PROTOCOL_NODESTATUS_MODE_MAINTENANCE;
+    } else
+#endif
+    {
+        node_status.mode = UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
+    }
 
 #if 0
     // test code for watchdog reset
@@ -1654,36 +1670,42 @@ void AP_Periph_FW::can_update()
         last_1Hz_ms = now;
         process1HzTasks(AP_HAL::native_micros64());
     }
-    can_mag_update();
-    can_gps_update();
-    can_battery_update();
-    can_baro_update();
-    can_airspeed_update();
-    can_rangefinder_update();
-#if defined(HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY) || defined (HAL_PERIPH_ENABLE_NOTIFY)
-    can_buzzer_update();
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    if (!hal.run_in_maintenance_mode())
 #endif
-#ifdef HAL_GPIO_PIN_SAFE_LED
-    can_safety_LED_update();
-#endif
-#ifdef HAL_GPIO_PIN_SAFE_BUTTON
-    can_safety_button_update();
-#endif
-#ifdef HAL_PERIPH_ENABLE_PWM_HARDPOINT
-    pwm_hardpoint_update();
-#endif
-#ifdef HAL_PERIPH_ENABLE_HWESC
-    hwesc_telem_update();
-#endif
-#ifdef HAL_PERIPH_ENABLE_MSP
-    msp_sensor_update();
-#endif
-#ifdef HAL_PERIPH_ENABLE_RC_OUT
-    rcout_update();
-#endif
-#ifdef HAL_PERIPH_ENABLE_EFI
-    can_efi_update();
-#endif
+    {
+        can_mag_update();
+        can_gps_update();
+        can_battery_update();
+        can_baro_update();
+        can_airspeed_update();
+        can_rangefinder_update();
+    #if defined(HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY) || defined (HAL_PERIPH_ENABLE_NOTIFY)
+        can_buzzer_update();
+    #endif
+    #ifdef HAL_GPIO_PIN_SAFE_LED
+        can_safety_LED_update();
+    #endif
+    #ifdef HAL_GPIO_PIN_SAFE_BUTTON
+        can_safety_button_update();
+    #endif
+    #ifdef HAL_PERIPH_ENABLE_PWM_HARDPOINT
+        pwm_hardpoint_update();
+    #endif
+    #ifdef HAL_PERIPH_ENABLE_HWESC
+        hwesc_telem_update();
+    #endif
+    #ifdef HAL_PERIPH_ENABLE_MSP
+        msp_sensor_update();
+    #endif
+    #ifdef HAL_PERIPH_ENABLE_RC_OUT
+        rcout_update();
+    #endif
+    #ifdef HAL_PERIPH_ENABLE_EFI
+        can_efi_update();
+    #endif
+    }
     const uint32_t now_us = AP_HAL::micros();
     while ((AP_HAL::micros() - now_us) < 1000) {
         hal.scheduler->delay_microseconds(HAL_PERIPH_LOOP_DELAY_US);
@@ -1836,8 +1858,12 @@ void AP_Periph_FW::can_gps_update(void)
         }
         pkt.longitude_deg_1e8 = uint64_t(loc.lng) * 10ULL;
         pkt.latitude_deg_1e8 = uint64_t(loc.lat) * 10ULL;
-        pkt.height_ellipsoid_mm = loc.alt * 10;
         pkt.height_msl_mm = loc.alt * 10;
+        pkt.height_ellipsoid_mm = loc.alt * 10;
+        float undulation;
+        if (gps.get_undulation(undulation)) {
+            pkt.height_ellipsoid_mm -= undulation*1000;
+        }
         for (uint8_t i=0; i<3; i++) {
             // the canard dsdl compiler doesn't understand float16
             pkt.ned_velocity[i] = vel[i];

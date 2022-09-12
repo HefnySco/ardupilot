@@ -1,5 +1,15 @@
 #include "AC_Fence.h"
 
+#if AP_FENCE_ENABLED
+
+#include <AP_Vehicle/AP_Vehicle_Type.h>
+
+#ifndef AC_FENCE_DUMMY_METHODS_ENABLED
+#define AC_FENCE_DUMMY_METHODS_ENABLED  (!(APM_BUILD_TYPE(APM_BUILD_Rover) | APM_BUILD_COPTER_OR_HELI | APM_BUILD_TYPE(APM_BUILD_ArduPlane) | APM_BUILD_TYPE(APM_BUILD_ArduSub) | (AP_FENCE_ENABLED == 1)))
+#endif
+
+#if !AC_FENCE_DUMMY_METHODS_ENABLED
+
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
@@ -13,6 +23,22 @@ extern const AP_HAL::HAL& hal;
 #else
 #define AC_FENCE_TYPE_DEFAULT AC_FENCE_TYPE_ALT_MAX | AC_FENCE_TYPE_CIRCLE | AC_FENCE_TYPE_POLYGON
 #endif
+
+// default boundaries
+#define AC_FENCE_ALT_MAX_DEFAULT                    100.0f  // default max altitude is 100m
+#define AC_FENCE_ALT_MIN_DEFAULT                    -10.0f  // default maximum depth in meters
+#define AC_FENCE_CIRCLE_RADIUS_DEFAULT              300.0f  // default circular fence radius is 300m
+#define AC_FENCE_ALT_MAX_BACKUP_DISTANCE            20.0f   // after fence is broken we recreate the fence 20m further up
+#define AC_FENCE_ALT_MIN_BACKUP_DISTANCE            20.0f   // after fence is broken we recreate the fence 20m further down
+#define AC_FENCE_MARGIN_DEFAULT                     2.0f    // default distance in meters that autopilot's should maintain from the fence to avoid a breach
+#define AC_FENCE_MANUAL_RECOVERY_TIME_MIN           10000   // pilot has 10seconds to recover during which time the autopilot will not attempt to re-take control
+
+#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+#define AC_FENCE_CIRCLE_RADIUS_BACKUP_DISTANCE     100.0   // after fence is broken we recreate the fence 50m further out
+#else
+#define AC_FENCE_CIRCLE_RADIUS_BACKUP_DISTANCE      20.0   // after fence is broken we recreate the fence 20m further out
+#endif
+
 
 const AP_Param::GroupInfo AC_Fence::var_info[] = {
     // @Param: ENABLE
@@ -108,6 +134,13 @@ const AP_Param::GroupInfo AC_Fence::var_info[] = {
     // @User: Standard
     AP_GROUPINFO_FRAME("AUTOENABLE", 10, AC_Fence, _auto_enabled, static_cast<uint8_t>(AutoEnable::ALWAYS_DISABLED), AP_PARAM_FRAME_PLANE),
 
+    // @Param{Plane}: OPTIONS
+    // @DisplayName: Fence options
+    // @Description: 0:Disable mode change following fence action until fence breach is cleared
+    // @Bitmask: 0:Disable mode change following fence action until fence breach is cleared
+    // @User: Standard
+    AP_GROUPINFO_FRAME("OPTIONS", 11, AC_Fence, _options, static_cast<uint16_t>(OPTIONS::DISABLE_MODE_CHANGE), AP_PARAM_FRAME_PLANE),
+
     AP_GROUPEND
 };
 
@@ -131,7 +164,7 @@ void AC_Fence::enable(bool value)
     } else if (!_enabled && value) {
         AP::logger().Write_Event(LogEvent::FENCE_ENABLE);
     }
-    _enabled = value;
+    _enabled.set(value);
     if (!value) {
         clear_breach(AC_FENCE_TYPE_ALT_MIN | AC_FENCE_TYPE_ALT_MAX | AC_FENCE_TYPE_CIRCLE | AC_FENCE_TYPE_POLYGON);
         disable_floor();
@@ -693,6 +726,46 @@ const AC_PolyFence_loader &AC_Fence::polyfence() const
     return _poly_loader;
 }
 
+
+#else  // build type is not appropriate; provide a dummy implementation:
+const AP_Param::GroupInfo AC_Fence::var_info[] = { AP_GROUPEND };
+
+AC_Fence::AC_Fence() {};
+
+void AC_Fence::enable(bool value) {};
+
+void AC_Fence::disable_floor() {};
+
+void AC_Fence::auto_enable_fence_after_takeoff() {};
+void AC_Fence::auto_disable_fence_for_landing() {};
+
+bool AC_Fence::present() const { return false; }
+
+uint8_t AC_Fence::get_enabled_fences() const { return 0; }
+
+bool AC_Fence::pre_arm_check(const char* &fail_msg) const  { return true; }
+
+uint8_t AC_Fence::check() { return 0; }
+bool AC_Fence::check_destination_within_fence(const Location& loc) { return true; }
+float AC_Fence::get_breach_distance(uint8_t fence_type) const { return 0.0; }
+
+void AC_Fence::manual_recovery_start() {}
+
+bool AC_Fence::sys_status_present() const { return false; }
+bool AC_Fence::sys_status_enabled() const { return false; }
+bool AC_Fence::sys_status_failed() const { return false; }
+
+AC_PolyFence_loader &AC_Fence::polyfence()
+{
+    return _poly_loader;
+}
+const AC_PolyFence_loader &AC_Fence::polyfence() const
+{
+    return _poly_loader;
+}
+
+#endif // #if AC_FENCE_DUMMY_METHODS_ENABLED
+
 // singleton instance
 AC_Fence *AC_Fence::_singleton;
 
@@ -705,3 +778,5 @@ AC_Fence *fence()
 }
 
 }
+
+#endif // AP_FENCE_ENABLED

@@ -36,9 +36,10 @@ AC_PI_2D::AC_PI_2D(float initial_p, float initial_i, float initial_imax, float i
     // load parameter values from eeprom
     AP_Param::setup_object_defaults(this, var_info);
 
-    _kp = initial_p;
-    _ki = initial_i;
-    _imax = fabsf(initial_imax);
+    _kp.set_and_default(initial_p);
+    _ki.set_and_default(initial_i);
+    _imax.set_and_default(initial_imax);
+    _filt_hz.set_and_default(initial_filt_hz);
     filt_hz(initial_filt_hz);
 
     // reset input filter to first value received
@@ -59,7 +60,7 @@ void AC_PI_2D::filt_hz(float hz)
     _filt_hz.set(fabsf(hz));
 
     // sanity check _filt_hz
-    _filt_hz = MAX(_filt_hz, AC_PI_2D_FILT_HZ_MIN);
+    _filt_hz.set(MAX(_filt_hz, AC_PI_2D_FILT_HZ_MIN));
 
     // calculate the input filter alpha
     calc_filt_alpha();
@@ -134,7 +135,7 @@ void AC_PI_2D::load_gains()
     _kp.load();
     _ki.load();
     _imax.load();
-    _imax = fabsf(_imax);
+    _imax.set(fabsf(_imax));
     _filt_hz.load();
 
     // calculate the input filter alpha
@@ -153,10 +154,10 @@ void AC_PI_2D::save_gains()
 /// Overload the function call operator to permit easy initialisation
 void AC_PI_2D::operator() (float p, float i, float imaxval, float input_filt_hz, float dt)
 {
-    _kp = p;
-    _ki = i;
-    _imax = fabsf(imaxval);
-    _filt_hz = input_filt_hz;
+    _kp.set(p);
+    _ki.set(i);
+    _imax.set(fabsf(imaxval));
+    _filt_hz.set(input_filt_hz);
     _dt = dt;
     // calculate the input filter alpha
     calc_filt_alpha();
