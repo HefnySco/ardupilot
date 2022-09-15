@@ -168,7 +168,7 @@ bool AP_Proximity_Backend::check_obstacle_near_ground(float pitch, float yaw, fl
 
     if (rotated_object_3D.z > -0.5f) {
         // obstacle is at the most 0.5 meters above vehicle
-        if ((alt - PROXIMITY_GND_DETECT_THRESHOLD) < rotated_object_3D.z) {
+        if ((alt - frontend.get_minimum_obstacles_alt_m()) < rotated_object_3D.z) {
             // obstacle is near or below ground
             return true;
         }

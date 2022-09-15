@@ -91,6 +91,7 @@ public:
     uint8_t get_orientation(uint8_t instance) const;
     int16_t get_yaw_correction(uint8_t instance) const;
     float get_filter_freq() const { return _filt_freq; }
+    float get_minimum_obstacles_alt_m() const { return _min_obs_alt_m; }
 
     // return sensor health
     Status get_status(uint8_t instance) const;
@@ -189,12 +190,12 @@ private:
     AP_Int16 _ignore_angle_deg[PROXIMITY_MAX_IGNORE];   // angle (in degrees) of area that should be ignored by sensor (i.e. leg shows up)
     AP_Int8 _ignore_width_deg[PROXIMITY_MAX_IGNORE];    // width of beam (in degrees) that should be ignored
     AP_Int8 _raw_log_enable;                            // enable logging raw distances
-    AP_Int8 _ign_gnd_enable;                           // true if land detection should be enabled
-    AP_Float _filt_freq;                               // cutoff frequency for low pass filter
-    AP_Float _max_m;                                   // Proximity maximum range
-    AP_Float _min_m;                                   // Proximity minimum range
-
-    void detect_instance(uint8_t instance);
+    AP_Int8 _ign_gnd_enable;                            // true if land detection should be enabled
+    AP_Float _filt_freq;                                // cutoff frequency for low pass filter
+    AP_Float _max_m;                                    // Proximity maximum range
+    AP_Float _min_m;                                    // Proximity minimum range
+    AP_Float _min_obs_alt_m;                                // Minimum altitude -in meters- below which proximity should not work.
+    void detect_instance(uint8_t instance);            
 };
 
 namespace AP {

@@ -190,6 +190,14 @@ const AP_Param::GroupInfo AP_Proximity::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("_MAX", 20, AP_Proximity, _max_m, 0.0f),
 
+    // @Param: _MIN_OBS_ALT
+    // @DisplayName: Proximity lowest altitude.
+    // @Description: Minimum altitude below which proximity should not work.
+    // @Units: m
+    // @Range: 0 10
+    // @User: Advanced
+    AP_GROUPINFO("_MIN_OBS_ALT", 21, AP_Proximity, _min_obs_alt_m, 1.0f),
+    
     AP_GROUPEND
 };
 
