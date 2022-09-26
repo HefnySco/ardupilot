@@ -457,13 +457,13 @@ uint8_t AP_Proximity::get_object_count() const
 
 // get an object's angle and distance, used for non-GPS avoidance
 // returns false if no angle or distance could be returned for some reason
-bool AP_Proximity::get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance) const
+bool AP_Proximity::get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance, float &speed) const
 {
     if (!valid_instance(primary_instance)) {
         return false;
     }
     // get angle and distance from backend
-    return drivers[primary_instance]->get_horizontal_object_angle_and_distance(object_number, angle_deg, distance);
+    return drivers[primary_instance]->get_horizontal_object_angle_and_distance(object_number, angle_deg, distance, speed);
 }
 
 // get maximum and minimum distances (in meters) of primary sensor

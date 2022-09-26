@@ -68,8 +68,9 @@ public:
     // This method will also mark the sector and layer to be "valid",
     // This distance can then be used for Obstacle Avoidance
     // Assume detected obstacle is horizontal (zero pitch), if no pitch is passed
-    void set_face_attributes(const Face &face, float pitch, float yaw, float distance);
-    void set_face_attributes(const Face &face, float yaw, float distance) { set_face_attributes(face, 0, yaw, distance); }
+    void set_face_attributes(const Face &face, float pitch, float yaw, float distance, float speed);
+    void set_face_attributes(const Face &face, float pitch, float yaw, float distance) { set_face_attributes(face, pitch, yaw, distance, 0.0f); }
+    void set_face_attributes(const Face &face, float yaw, float distance) { set_face_attributes(face, 0, yaw, distance, 0.0f); }
 
     // update boundary points used for simple avoidance based on a single sector and pitch distance changing
     //   the boundary points lie on the line between sectors meaning two boundary points may be updated based on a single sector's distance changing
@@ -106,7 +107,7 @@ public:
 
     // get number of objects, angle and distance - used for non-GPS avoidance
     uint8_t get_horizontal_object_count() const;
-    bool get_horizontal_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance) const;
+    bool get_horizontal_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance, float &speed) const;
 
     // get number of layers
     uint8_t get_num_layers() const { return PROXIMITY_NUM_LAYERS; }
@@ -154,6 +155,7 @@ private:
     Vector3f _sector_edge_vector[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];
     Vector3f _boundary_points[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];
 
+    float _speed[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // yaw angle in degrees to closest object within each sector and layer
     float _angle[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // yaw angle in degrees to closest object within each sector and layer
     float _pitch[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // pitch angle in degrees to the closest object within each sector and layer
     float _distance[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];       // distance to closest object within each sector and layer
@@ -177,6 +179,7 @@ public:
 
     // add a distance to the temp boundary if it is shorter than any other provided distance since the last time the boundary was reset
     // pitch and yaw are in degrees, distance is in meters
+    void add_distance(const AP_Proximity_Boundary_3D::Face &face, float pitch, float yaw, float distance, float speed);
     void add_distance(const AP_Proximity_Boundary_3D::Face &face, float pitch, float yaw, float distance);
     void add_distance(const AP_Proximity_Boundary_3D::Face &face, float yaw, float distance) { add_distance(face, 0.0f, yaw, distance); }
 
@@ -188,6 +191,7 @@ private:
     float _distances[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];      // distance to closest object within each sector and layer. Will start with FLT_MAX, and then be changed to a valid distance if needed
     float _angle[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // yaw angle in degrees to closest object within each sector and layer
     float _pitch[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // pitch angle in degrees to the closest object within each sector and layer
+    float _speed[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // pitch angle in degrees to the closest object within each sector and layer
 };
 
 #endif // HAL_PROXIMITY_ENABLED

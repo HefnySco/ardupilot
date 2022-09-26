@@ -12,7 +12,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include <stdio.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
 #include "AP_RangeFinder.h"
@@ -77,6 +77,44 @@ void AP_RangeFinder_Backend::set_status(RangeFinder::Status _status)
         }
     } else {
         state.range_valid_count = 0;
+        _estimated_speed_valid = false;
     }
+}
+
+void AP_RangeFinder_Backend::calculate_speed(const uint32_t& now, const int64_t& distance_cm)
+{
+    if ((distance_cm < min_distance_cm()) || (distance_cm > max_distance_cm())) {
+        _estimated_speed_cms = 0;
+        _estimated_speed_valid = false;
+        return ;
+    }
+
+    const uint32_t delta_time = now - _last_update_ms;
+    const int64_t delta_distance = distance_cm - _distance_last;
+    
+    if (abs(delta_distance)==1) {
+       //printf("reject min %lld %lld\n", distance_cm,_distance_last);
+       return ; // zero margin
+    } 
+    
+    if (abs(delta_distance)>20) {
+        // noise or sudden appearance of an obstacle.
+        //printf("reject max %lld %lld\n", distance_cm,_distance_last);
+        _distance_last = distance_cm;
+        return ; 
+    }
+    
+    
+    float speed_cms = 1000*((float)delta_distance / delta_time);
+    // if (_estimated_speed_cms != speed_cms)
+    // {
+    //     if (orientation()==ROTATION_YAW_270)
+    //     printf("_ s:%f es:%fdn:%lld do:%lld ac:%f\n", speed_cms, _estimated_speed_cms, distance_cm,_distance_last, (_last_speed_cms - speed_cms) );
+    // }
+    
+    _last_speed_cms = _estimated_speed_cms;
+    _distance_last = distance_cm;
+    _estimated_speed_cms = speed_cms; 
+    _estimated_speed_valid = true;
 }
 

@@ -13,6 +13,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
 #include "AP_RangeFinder_MAVLink.h"
 #include <AP_HAL/AP_HAL.h>
 
@@ -26,11 +27,14 @@ void AP_RangeFinder_MAVLink::handle_msg(const mavlink_message_t &msg)
 
     // only accept distances for the configured orentation
     if (packet.orientation == orientation()) {
-        state.last_reading_ms = AP_HAL::millis();
+        const uint32_t now = AP_HAL::millis();
+        state.last_reading_ms = now;
         distance_cm = packet.current_distance;
         _max_distance_cm = packet.max_distance;
         _min_distance_cm = packet.min_distance;
         sensor_type = (MAV_DISTANCE_SENSOR)packet.type;
+        calculate_speed(now, distance_cm);
+        _last_update_ms = now;
     }
 }
 

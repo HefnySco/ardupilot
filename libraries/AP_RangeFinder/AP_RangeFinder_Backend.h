@@ -18,6 +18,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_RangeFinder.h"
 
+#define DISTANCE_UNKNOWN 65000
+#define SPEED_UNKNOWN   999
 class AP_RangeFinder_Backend
 {
 public:
@@ -39,6 +41,8 @@ public:
 
     enum Rotation orientation() const { return (Rotation)params.orientation.get(); }
     float distance() const { return state.distance_m; }
+    float estimated_speed_cms() const { return _estimated_speed_cms;}
+    virtual bool speed_calculated() const { return _estimated_speed_valid;}
     uint16_t distance_cm() const { return state.distance_m*100.0f; }
     uint16_t voltage_mv() const { return state.voltage_mv; }
     virtual int16_t max_distance_cm() const { return params.max_distance_cm; }
@@ -76,7 +80,7 @@ protected:
 
     // update status based on distance measurement
     void update_status();
-
+    virtual void calculate_speed(const uint32_t& now, const int64_t& distance_cm);
     // set status and update valid_count
     void set_status(RangeFinder::Status status);
 
@@ -90,4 +94,11 @@ protected:
     RangeFinder::Type _backend_type;
 
     virtual MAV_DISTANCE_SENSOR _get_mav_distance_sensor_type() const = 0;
+
+    int64_t _distance_last = DISTANCE_UNKNOWN;    //MHEFNY: 
+    uint32_t _last_update_ms = 0;       //MHefny:
+    float _estimated_speed_cms = 0;     //MHEFNY: estimated speed in meter/second
+    float _last_speed_cms = 0;          //MHEFNY: estimated speed in meter/second
+    bool _estimated_speed_valid = false;
+    
 };

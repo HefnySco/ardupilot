@@ -154,7 +154,7 @@ singleton AP_Proximity method get_status uint8_t
 singleton AP_Proximity method num_sensors uint8_t
 singleton AP_Proximity method get_object_count uint8_t
 singleton AP_Proximity method get_closest_object boolean float'Null float'Null
-singleton AP_Proximity method get_object_angle_and_distance boolean uint8_t 0 UINT8_MAX float'Null float'Null
+singleton AP_Proximity method get_object_angle_and_distance boolean uint8_t 0 UINT8_MAX float'Null float'Null float'Null
 
 include AP_RangeFinder/AP_RangeFinder.h
 

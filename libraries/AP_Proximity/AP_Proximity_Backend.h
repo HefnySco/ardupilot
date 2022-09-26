@@ -68,7 +68,7 @@ public:
 
     // get number of objects, angle and distance - used for non-GPS avoidance
     uint8_t get_horizontal_object_count() const {return boundary.get_horizontal_object_count(); }
-    bool get_horizontal_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance) const { return boundary.get_horizontal_object_angle_and_distance(object_number, angle_deg, distance); }
+    bool get_horizontal_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance, float &speed) const { return boundary.get_horizontal_object_angle_and_distance(object_number, angle_deg, distance, speed); }
 
     // get distances in 8 directions. used for sending distances to ground station
     bool get_horizontal_distances(AP_Proximity::Proximity_Distance_Array &prx_dist_array) const;
@@ -82,6 +82,9 @@ public:
     // store rangefinder values
     void set_rangefinder_alt(bool use, bool healthy, float alt_cm);
 
+    AP_Proximity::Status get_status() const {return state.status;} ;
+    virtual bool speed_calculated() const { return false;}
+    
 protected:
 
     // set status and update valid_count

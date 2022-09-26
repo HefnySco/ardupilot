@@ -124,7 +124,7 @@ public:
 
     // get number of objects, angle and distance - used for non-GPS avoidance
     uint8_t get_object_count() const;
-    bool get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance) const;
+    bool get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance, float &speed) const;
 
     // get number of layers
     uint8_t get_num_layers() const;
