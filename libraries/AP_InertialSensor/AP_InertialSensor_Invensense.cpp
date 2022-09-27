@@ -17,7 +17,7 @@
   MPU6000, MPU9250,  ICM20608, ICM20602, ICM20601, ICM20789, ICM20689
  */
 #define AP_INLINE_VECTOR_OPS
-
+#include <stdio.h>
 #include <assert.h>
 #include <utility>
 #include <stdio.h>
@@ -904,6 +904,8 @@ void AP_InertialSensor_Invensense::_set_filter_register(void)
 bool AP_InertialSensor_Invensense::_check_whoami(void)
 {
     uint8_t whoami = _register_read(MPUREG_WHOAMI);
+    printf("IMU ID is: %d \n",whoami);
+    
     switch (whoami) {
     case MPU_WHOAMI_6000:
         _mpu_type = Invensense_MPU6000;
@@ -913,6 +915,7 @@ bool AP_InertialSensor_Invensense::_check_whoami(void)
         return true;
     case MPU_WHOAMI_MPU9250:
     case MPU_WHOAMI_MPU9255:
+    case MPU_WHOAMI_MPU9255_1:
         _mpu_type = Invensense_MPU9250;
         return true;
     case MPU_WHOAMI_20608D:    
