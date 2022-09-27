@@ -20,7 +20,7 @@
 
 #if HAL_PROXIMITY_ENABLED
 
-#define PROXIMITY_GND_DETECT_THRESHOLD 1.0f // set ground detection threshold to be 1 meters
+#define PROXIMITY_GND_DETECT_THRESHOLD 0.01f // set ground detection threshold to be 1 meters
 #define PROXIMITY_ALT_DETECT_TIMEOUT_MS 500 // alt readings should arrive within this much time
 
 extern const AP_HAL::HAL& hal;
