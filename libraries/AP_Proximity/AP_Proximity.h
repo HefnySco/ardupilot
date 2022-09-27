@@ -113,7 +113,8 @@ public:
 
     // get number of objects
     uint8_t get_object_count() const;
-    bool get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance) const;
+    bool get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance) const {float speed; return get_object_angle_and_distance(object_number, angle_deg, distance, speed);} ;
+    bool get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance, float &speed) const;
 
     //
     // mavlink related methods
