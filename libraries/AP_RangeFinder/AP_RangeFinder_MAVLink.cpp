@@ -29,11 +29,13 @@ void AP_RangeFinder_MAVLink::handle_msg(const mavlink_message_t &msg)
 
     // only accept distances for the configured orentation
     if (packet.orientation == orientation()) {
-        state.last_reading_ms = AP_HAL::millis();
+        const uint32_t now = AP_HAL::millis();
+        state.last_reading_ms = now;
         distance_cm = packet.current_distance;
         _max_distance_cm = packet.max_distance;
         _min_distance_cm = packet.min_distance;
         sensor_type = (MAV_DISTANCE_SENSOR)packet.type;
+        calculate_speed(now, distance_cm);
     }
 }
 

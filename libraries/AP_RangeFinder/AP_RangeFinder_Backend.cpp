@@ -18,6 +18,11 @@
 #include "AP_RangeFinder.h"
 #include "AP_RangeFinder_Backend.h"
 
+// 100 * ACCEPTED_MIN_DISTANCE_DIFFEREENCE * DTms = min speed in cms
+#define ACCEPTED_MIN_DISTANCE_DIFFEREENCE 1
+// 100 * ACCEPTED_MIN_DISTANCE_DIFFEREENCE * DTms = max speed in cms
+#define ACCEPTED_MAX_DISTANCE_DIFFERENCE 20
+
 extern const AP_HAL::HAL& hal;
 
 /*
@@ -77,6 +82,41 @@ void AP_RangeFinder_Backend::set_status(RangeFinder::Status _status)
         }
     } else {
         state.range_valid_count = 0;
+        _estimated_speed_valid = false;
     }
+}
+
+void AP_RangeFinder_Backend::calculate_speed(const uint32_t& now, const int64_t& distance_cm)
+{
+    if ((distance_cm < min_distance_cm()) || (distance_cm > max_distance_cm())) {
+        _estimated_speed_cms = 0;
+        _estimated_speed_valid = false;
+        return ;
+    }
+
+    const uint32_t delta_time = now - _last_update_ms;
+    const int64_t delta_distance = distance_cm - _distance_last;
+    const int64_t abs_delta_distance = abs(delta_distance);
+
+    if (abs_delta_distance<= ACCEPTED_MIN_DISTANCE_DIFFEREENCE) {
+       //this is normally a noise.
+       return ; 
+    } 
+    
+    if (abs_delta_distance>ACCEPTED_MAX_DISTANCE_DIFFERENCE) {
+        // noise or sudden appearance of an obstacle.
+        _distance_last = distance_cm;
+        _last_update_ms = now;
+        return ; 
+    }
+    
+    
+    float speed_cms = 1000*((float)delta_distance / delta_time);
+    
+    _last_speed_cms = _estimated_speed_cms;
+    _distance_last = distance_cm;
+    _estimated_speed_cms = speed_cms; 
+    _estimated_speed_valid = true;
+    _last_update_ms = now;
 }
 
