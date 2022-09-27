@@ -51,7 +51,8 @@ void AP_Proximity_RangeFinder::update(void)
                 _distance_min = sensor->min_distance_cm() * 0.01f;
                 _distance_max = sensor->max_distance_cm() * 0.01f;
                 if ((distance <= _distance_max) && (distance >= _distance_min) && !ignore_reading(angle, distance, false)) {
-                    frontend.boundary.set_face_attributes(face, angle, distance, state.instance);
+                    const float estimated_speed_cms = sensor->estimated_speed_cms();
+                    frontend.boundary.set_face_attributes(face, 0.0f, angle, distance, estimated_speed_cms, state.instance);
                     // update OA database
                     database_push(angle, distance);
                 } else {

@@ -341,10 +341,11 @@ uint8_t AP_Proximity::get_object_count() const
 }
 
 // get number of objects, angle and distance - used for non-GPS avoidance
-bool AP_Proximity::get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance) const
+bool AP_Proximity::get_object_angle_and_distance(uint8_t object_number, float& angle_deg, float &distance, float &speed) const
 {
-    return boundary.get_horizontal_object_angle_and_distance(object_number, angle_deg, distance);
+    return boundary.get_horizontal_object_angle_and_distance(object_number, angle_deg, distance, speed);
 }
+
 
 // handle mavlink messages
 void AP_Proximity::handle_msg(const mavlink_message_t &msg)

@@ -57,7 +57,7 @@ AP_Proximity_Boundary_3D::Face AP_Proximity_Boundary_3D::get_face(float pitch, f
 // This distance can then be used for Obstacle Avoidance
 // Assume detected obstacle is horizontal (zero pitch), if no pitch is passed
 // prx_instance should be set to the proximity sensor backend instance number
-void AP_Proximity_Boundary_3D::set_face_attributes(const Face &face, float pitch, float angle, float distance, uint8_t prx_instance)
+void AP_Proximity_Boundary_3D::set_face_attributes(const Face &face, float pitch, float angle, float distance, float speed, uint8_t prx_instance)
 {
     if (!face.valid()) {
         return;
@@ -72,6 +72,7 @@ void AP_Proximity_Boundary_3D::set_face_attributes(const Face &face, float pitch
         }
     }
 
+    _speed[face.layer][face.sector] = speed;
     _angle[face.layer][face.sector] = angle;
     _pitch[face.layer][face.sector] = pitch;
     _distance[face.layer][face.sector] = distance;
@@ -370,11 +371,12 @@ uint8_t AP_Proximity_Boundary_3D::get_horizontal_object_count() const
 
 // get an object's angle and distance, used for non-GPS avoidance
 // returns false if no angle or distance could be returned for some reason
-bool AP_Proximity_Boundary_3D::get_horizontal_object_angle_and_distance(uint8_t object_number, float &angle_deg, float &distance) const
+bool AP_Proximity_Boundary_3D::get_horizontal_object_angle_and_distance(uint8_t object_number, float &angle_deg, float &distance, float &speed) const
 {
     if ((object_number < PROXIMITY_NUM_SECTORS) && _distance_valid[PROXIMITY_MIDDLE_LAYER][object_number]) {
         angle_deg = _angle[PROXIMITY_MIDDLE_LAYER][object_number];
         distance = _filtered_distance[PROXIMITY_MIDDLE_LAYER][object_number].get();
+        speed = _speed[PROXIMITY_MIDDLE_LAYER][object_number];
         return true;
     }
     return false;
@@ -435,12 +437,13 @@ void AP_Proximity_Temp_Boundary::reset()
 
 // add a distance to the temp boundary if it is shorter than any other provided distance since the last time the boundary was reset
 // pitch and yaw are in degrees, distance is in meters
-void AP_Proximity_Temp_Boundary::add_distance(const AP_Proximity_Boundary_3D::Face &face, float pitch, float yaw, float distance)
+void AP_Proximity_Temp_Boundary::add_distance(const AP_Proximity_Boundary_3D::Face &face, float pitch, float yaw, float distance, float speed)
 {
     if (face.valid() && distance < _distances[face.layer][face.sector]) {
         _distances[face.layer][face.sector] = distance;
         _angle[face.layer][face.sector] = yaw;
         _pitch[face.layer][face.sector] = pitch;
+        _speed[face.layer][face.sector] = speed;
     }
 }
 
@@ -452,7 +455,7 @@ void AP_Proximity_Temp_Boundary::update_3D_boundary(uint8_t prx_instance, AP_Pro
         for (uint8_t sector=0; sector < PROXIMITY_NUM_SECTORS; sector++) {
             if (_distances[layer][sector] < FLT_MAX) {
                 AP_Proximity_Boundary_3D::Face face{layer, sector};
-                boundary.set_face_attributes(face, _pitch[layer][sector], _angle[layer][sector], _distances[layer][sector], prx_instance);
+                boundary.set_face_attributes(face, _pitch[layer][sector], _angle[layer][sector], _distances[layer][sector], _speed[layer][sector], prx_instance);
             }
         }
     }
