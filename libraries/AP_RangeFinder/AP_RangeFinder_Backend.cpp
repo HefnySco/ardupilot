@@ -101,6 +101,7 @@ void AP_RangeFinder_Backend::calculate_speed(const uint32_t& now, const int64_t&
         // noise or sudden appearance of an obstacle.
         //printf("reject max %lld %lld\n", distance_cm,_distance_last);
         _distance_last = distance_cm;
+        _last_update_ms = now;
         return ; 
     }
     
@@ -116,5 +117,6 @@ void AP_RangeFinder_Backend::calculate_speed(const uint32_t& now, const int64_t&
     _distance_last = distance_cm;
     _estimated_speed_cms = speed_cms; 
     _estimated_speed_valid = true;
+    _last_update_ms = now;
 }
 

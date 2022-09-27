@@ -191,7 +191,7 @@ private:
     float _distances[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];      // distance to closest object within each sector and layer. Will start with FLT_MAX, and then be changed to a valid distance if needed
     float _angle[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // yaw angle in degrees to closest object within each sector and layer
     float _pitch[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // pitch angle in degrees to the closest object within each sector and layer
-    float _speed[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // pitch angle in degrees to the closest object within each sector and layer
+    float _speed[PROXIMITY_NUM_LAYERS][PROXIMITY_NUM_SECTORS];          // speed angle in degrees to the closest object within each sector and layer
 };
 
 #endif // HAL_PROXIMITY_ENABLED

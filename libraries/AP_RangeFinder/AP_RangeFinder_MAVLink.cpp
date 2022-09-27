@@ -34,7 +34,6 @@ void AP_RangeFinder_MAVLink::handle_msg(const mavlink_message_t &msg)
         _min_distance_cm = packet.min_distance;
         sensor_type = (MAV_DISTANCE_SENSOR)packet.type;
         calculate_speed(now, distance_cm);
-        _last_update_ms = now;
     }
 }
 
