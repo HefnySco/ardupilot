@@ -20,8 +20,7 @@
 
 // 100 * ACCEPTED_MIN_DISTANCE_DIFFEREENCE * DTms = min speed in cms
 #define ACCEPTED_MIN_DISTANCE_DIFFEREENCE 1
-// 100 * ACCEPTED_MIN_DISTANCE_DIFFEREENCE * DTms = max speed in cms
-#define ACCEPTED_MAX_DISTANCE_DIFFERENCE 20
+#define ACCEPTED_MAX_SPEED 200
 
 extern const AP_HAL::HAL& hal;
 
@@ -98,20 +97,23 @@ void AP_RangeFinder_Backend::calculate_speed(const uint32_t& now, const int64_t&
     const int64_t delta_distance = distance_cm - _distance_last;
     const int64_t abs_delta_distance = abs(delta_distance);
 
+    float speed_cms;
     if (abs_delta_distance<= ACCEPTED_MIN_DISTANCE_DIFFEREENCE) {
-       //this is normally a noise.
-       return ; 
+       // this is normally a noise.
+       speed_cms = 0;
     } 
-    
-    if (abs_delta_distance>ACCEPTED_MAX_DISTANCE_DIFFERENCE) {
+    else {
+        // calculate the speed
+        speed_cms = 1000*((float)delta_distance / delta_time);
+        // check if speed is not too high. This is another sort of noise.
+        if (abs(speed_cms)>ACCEPTED_MAX_SPEED) {
         // noise or sudden appearance of an obstacle.
         _distance_last = distance_cm;
         _last_update_ms = now;
         return ; 
+        }
     }
     
-    
-    float speed_cms = 1000*((float)delta_distance / delta_time);
     
     _last_speed_cms = _estimated_speed_cms;
     _distance_last = distance_cm;
