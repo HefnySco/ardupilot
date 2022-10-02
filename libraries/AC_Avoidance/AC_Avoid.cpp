@@ -1408,11 +1408,13 @@ float AC_Avoid::get_stopping_distance(float kP, float accel_cmss, float speed_cm
 // convert distance (in meters) to a lean percentage (in 0~1 range) for use in manual flight modes
 float AC_Avoid::distance_to_lean_pct(float dist_m, float speed_cms)
 {
+    // run away value is zero..
     if (speed_cms>0) speed_cms  = 0;
-    if (speed_cms<-50) speed_cms = -50;
+    // limit appraoching speed value.
+    if (speed_cms<-200) speed_cms = -200;
     
 
-    speed_cms = 0.1 - speed_cms / 50;
+    const float speed_pct = 0.1 - speed_cms / 200;
     
     // ignore objects beyond DIST_MAX
     if (dist_m < 0.0f || dist_m >= _dist_max || _dist_max <= 0.0f) {
@@ -1420,8 +1422,9 @@ float AC_Avoid::distance_to_lean_pct(float dist_m, float speed_cms)
     }
     // inverted but linear response
     
-    const float lean_pct = (1.0f - (dist_m / _dist_max)) * speed_cms;
-    //printf("s:%f d:%f lean:%f\n",speed_cms, dist_m, lean_pct);
+    const float lean_pct = (1.0f - (dist_m / _dist_max)) * speed_pct;
+    
+    //printf("s:%f sp:%f d:%f lean:%f\n",speed_cms, speed_pct, dist_m, lean_pct);
 
     return lean_pct;
 }
@@ -1453,8 +1456,12 @@ void AC_Avoid::get_proximity_roll_pitch_pct(float &roll_positive, float &roll_ne
         float ang_deg, dist_m, speed_cms;
         if (_proximity.get_object_angle_and_distance(i, ang_deg, dist_m, speed_cms)) {
             if (dist_m < _dist_max) {
-                
-                //if (ang_deg!=270) continue ;  TESTING
+                if (speed_cms>0) 
+                {
+                    
+                }
+
+                //if (ang_deg!=270) continue ;  //TESTING
                 
                 // convert distance to lean angle (in 0 to 1 range)
                 const float lean_pct = distance_to_lean_pct(dist_m, speed_cms);
