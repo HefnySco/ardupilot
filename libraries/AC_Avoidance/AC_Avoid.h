@@ -198,10 +198,11 @@ private:
      */
 
     // convert distance (in meters) to a lean percentage (in 0~1 range) for use in manual flight modes
-    float distance_to_lean_pct(float dist_m, float speed_cms);
+    float distance_to_lean_pct(float dist_m, float speed_cms) const ;
 
+    float speed_to_pct (float speed_cms) const ;
     // returns the maximum positive and negative roll and pitch percentages (in -1 ~ +1 range) based on the proximity sensor
-    void get_proximity_roll_pitch_pct(float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative);
+    void get_proximity_roll_pitch_pct(float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative, float &roll_speed_positive, float &roll_speed_negative, float &pitch_speed_positive, float &pitch_speed_negative);
 
     // Logging function
     void Write_SimpleAvoidance(const uint8_t state, const Vector3f& desired_vel, const Vector3f& modified_vel, const bool back_up) const;

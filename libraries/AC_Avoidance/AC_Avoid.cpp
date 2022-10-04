@@ -441,15 +441,104 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     float pitch_positive = 0.0f;   // maximum positive pitch value
     float pitch_negative = 0.0f;   // minimum negative pitch value
 
-    // get maximum positive and negative roll and pitch percentages from proximity sensor
-    get_proximity_roll_pitch_pct(roll_positive, roll_negative, pitch_positive, pitch_negative);
+    float roll_speed_positive = 0.0f;    // maximum positive roll value
+    float roll_speed_negative = 0.0f;    // minimum negative roll value
+    float pitch_speed_positive = 0.0f;   // maximum positive pitch value
+    float pitch_speed_negative = 0.0f;   // minimum negative pitch value
 
+    // get maximum positive and negative roll and pitch percentages from proximity sensor
+    get_proximity_roll_pitch_pct(roll_positive, roll_negative, pitch_positive, pitch_negative, roll_speed_positive, roll_speed_negative, pitch_speed_positive, pitch_speed_negative);
+
+    //printf("roll: %2.2f, pitch: %2.2f\n", roll, pitch);
+    //printf("roll_positive: %2.2f, roll_negative: %2.2f, pitch_positive: %2.2f, pitch_negative: %2.2f\n", roll_positive, roll_negative, pitch_positive, pitch_negative);
+    //printf("sroll_positive: %2.2f, sroll_negative: %2.2f, spitch_positive: %2.2f, spitch_negative: %2.2f\n", roll_speed_positive, roll_speed_negative, pitch_speed_positive, pitch_speed_negative);
+     
     // add maximum positive and negative percentages together for roll and pitch, convert to centi-degrees
-    Vector2f rp_out((roll_positive + roll_negative) * 4500.0f, (pitch_positive + pitch_negative) * 4500.0f);
+    Vector2f rp_out((roll_positive + roll_negative) , (pitch_positive + pitch_negative) );
+    Vector2f rp_speed_out((roll_speed_positive + roll_speed_negative) , (pitch_speed_positive + pitch_speed_negative));
+
+
+    //printf("roll:  %2.2f, rp_out.x: %2.2f, rp_out.y: %2.2f, rp_speed_out.x: %2.2f, rp_speed_out.y: %2.2f\n", roll, rp_out.x, rp_out.y, rp_speed_out.x, rp_speed_out.y);
+    
+    if (rp_speed_out.x < 0 && roll < 0)
+    { // do not go to hit
+        roll = 0.0;
+    }
+    
+    #define AUTO_AVOID_LIMIT        0.8f
+    #define MIN_AVOID_RATIO         0.01f
+    if (is_negative(rp_speed_out.x))  // moving left
+    { // if user wants to go left and obstacle is on the left  & approaching do not obey user.
+        if (is_positive(rp_out.x)) // avoiding obstacle on the left.
+        {
+            if (is_negative(roll) && (rp_out.x > AUTO_AVOID_LIMIT)) roll = 0.0;
+            rp_speed_out.x = -rp_speed_out.x;
+        }
+        else
+        {
+            rp_speed_out.x = MIN_AVOID_RATIO;
+        }
+    }
+    else
+    if (is_positive(rp_speed_out.x))
+    { // if user wants to go right and obstacle is on the right  & approaching do not obey user.
+        if (is_negative(rp_out.x)) // avoiding obstacle on the left.
+        {
+            if (is_positive(roll) && (rp_out.x < -AUTO_AVOID_LIMIT)) roll = 0.0;
+            rp_speed_out.x = -rp_speed_out.x;
+        }
+        else
+        {
+            rp_speed_out.x = MIN_AVOID_RATIO;
+        }
+    }
+    
+    if (is_negative(rp_speed_out.y))
+    { // if user wants to go forward and obstacle in front of us is near & approaching do not obey user.
+        if (is_positive(rp_out.y)) // avoiding obstacle on the left.
+        {
+            if (is_negative(pitch) && (rp_out.y > AUTO_AVOID_LIMIT)) pitch = 0.0;
+            rp_speed_out.y = -rp_speed_out.y;
+        }
+        else
+        {
+            rp_speed_out.y = MIN_AVOID_RATIO;
+        }
+    }
+    else
+    if (is_positive(rp_speed_out.y) )
+    { // if user wants to go backword and obstacle is behind us us is near & approaching do not obey user.
+        if (is_negative(rp_out.y)) // avoiding obstacle on the left.
+        {
+            if (is_positive(pitch) && (rp_out.y < -AUTO_AVOID_LIMIT)) pitch = 0.0;
+            rp_speed_out.y = -rp_speed_out.y;
+        }
+        else
+        {
+            rp_speed_out.y = MIN_AVOID_RATIO;
+        }
+    }
+    
+
+    
+    if ((roll < 100) && (roll > -100))
+    {
+        // idle 
+    }
+    if ((pitch < 100) && (pitch > -100))
+    {
+        // idle 
+    }
 
     // apply avoidance angular limits
     // the object avoidance lean angle is never more than 75% of the total angle-limit to allow the pilot to override
-    const float angle_limit = constrain_float(_angle_max, 0.0f, veh_angle_max * AC_AVOID_ANGLE_MAX_PERCENT);
+    //const float angle_limit = constrain_float(_angle_max, 0.0f, veh_angle_max * AC_AVOID_ANGLE_MAX_PERCENT);
+    const float angle_limit = constrain_float(_angle_max, 0.0f, veh_angle_max);
+    rp_out = rp_out * 4500.0f;
+    rp_out.x  *= rp_speed_out.x;
+    rp_out.y  *= rp_speed_out.y;
+    //printf("rp_out.x: %2.2f, rp_out.y: %2.2f\n", rp_out.x, rp_out.y);
+    
     float vec_len = rp_out.length();
     if (vec_len > angle_limit) {
         rp_out *= (angle_limit / vec_len);
@@ -1406,15 +1495,15 @@ float AC_Avoid::get_stopping_distance(float kP, float accel_cmss, float speed_cm
 }
 
 // convert distance (in meters) to a lean percentage (in 0~1 range) for use in manual flight modes
-float AC_Avoid::distance_to_lean_pct(float dist_m, float speed_cms)
+float AC_Avoid::distance_to_lean_pct(float dist_m, float speed_cms) const
 {
-    // run away value is zero..
-    if (speed_cms>0) speed_cms  = 0;
-    // limit appraoching speed value.
-    if (speed_cms<-200) speed_cms = -200;
+    // // run away value is zero..
+    // if (speed_cms>0) speed_cms  = 0;
+    // // limit appraoching speed value.
+    // if (speed_cms<-200) speed_cms = -200;
     
 
-    const float speed_pct = 0.1 - speed_cms / 200;
+    // const float speed_cms = 0.1 - speed_cms / 200;
     
     // ignore objects beyond DIST_MAX
     if (dist_m < 0.0f || dist_m >= _dist_max || _dist_max <= 0.0f) {
@@ -1422,15 +1511,27 @@ float AC_Avoid::distance_to_lean_pct(float dist_m, float speed_cms)
     }
     // inverted but linear response
     
-    const float lean_pct = (1.0f - (dist_m / _dist_max)) * speed_pct;
+    const float lean_pct = (1.0f - (dist_m / _dist_max)); // * speed_pct;
     
     //printf("s:%f sp:%f d:%f lean:%f\n",speed_cms, speed_pct, dist_m, lean_pct);
 
     return lean_pct;
 }
 
+
+// convert speed to range -1 to 1 . negative means fly away and positive is approaching.
+float  AC_Avoid::speed_to_pct (float speed_cms) const
+{
+    
+    speed_cms = constrain_float(speed_cms,-200.0f,200.0f);
+    speed_cms = speed_cms / 200.0f;
+
+    return speed_cms;   
+}
+    
+
 // returns the maximum positive and negative roll and pitch percentages (in -1 ~ +1 range) based on the proximity sensor
-void AC_Avoid::get_proximity_roll_pitch_pct(float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative)
+void AC_Avoid::get_proximity_roll_pitch_pct(float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative, float &roll_speed_positive, float &roll_speed_negative, float &pitch_speed_positive, float &pitch_speed_negative)
 {
 #if HAL_PROXIMITY_ENABLED
     AP_Proximity *proximity = AP::proximity();
@@ -1456,29 +1557,47 @@ void AC_Avoid::get_proximity_roll_pitch_pct(float &roll_positive, float &roll_ne
         float ang_deg, dist_m, speed_cms;
         if (_proximity.get_object_angle_and_distance(i, ang_deg, dist_m, speed_cms)) {
             if (dist_m < _dist_max) {
-                if (speed_cms>0) 
-                {
-                    
-                }
-
-                //if (ang_deg!=270) continue ;  //TESTING
+                
+                //if (ang_deg==270) ang_deg=90; //continue ;  //TESTING
                 
                 // convert distance to lean angle (in 0 to 1 range)
+                const float speed_pct = speed_to_pct (speed_cms);
                 const float lean_pct = distance_to_lean_pct(dist_m, speed_cms);
                 // convert angle to roll and pitch lean percentages
                 const float angle_rad = radians(ang_deg);
-                const float roll_pct = -sinf(angle_rad) * lean_pct;
-                const float pitch_pct = cosf(angle_rad) * lean_pct;
+                const float sin_angle = -sinf(angle_rad);
+                const float cos_angle = cosf(angle_rad);
+
+                const float roll_pct = sin_angle * lean_pct;
+                const float pitch_pct = cos_angle * lean_pct;
+                const float roll_speed_pct = sin_angle * speed_pct;
+                const float pitch_speed_pct = cos_angle * speed_pct;
+                /*
+                * speed_cms: (-ve) when vehicle is moving tiward the obstacle.
+                * speed_pct: (-ve) when vehicle is moving forward or left.
+                * lean_pct:  (+ve) when obstacle is in front or left.
+                */
                 // update roll, pitch maximums
                 if (roll_pct > 0.0f) {
-                    roll_positive = MAX(roll_positive, roll_pct);
+                    roll_positive += roll_pct; //MAX(roll_positive, roll_pct);
                 } else if (roll_pct < 0.0f) {
-                    roll_negative = MIN(roll_negative, roll_pct);
+                    roll_negative += roll_pct; //MIN(roll_negative, roll_pct);
                 }
                 if (pitch_pct > 0.0f) {
-                    pitch_positive = MAX(pitch_positive, pitch_pct);
+                    pitch_positive += pitch_pct; //MAX(pitch_positive, pitch_pct);
                 } else if (pitch_pct < 0.0f) {
-                    pitch_negative = MIN(pitch_negative, pitch_pct);
+                    pitch_negative += pitch_pct; //MIN(pitch_negative, pitch_pct);
+                }
+
+                if (roll_speed_pct > 0.0f) {
+                    roll_speed_positive += roll_speed_pct; //MAX(roll_speed_positive, roll_speed_pct);
+                } else if (roll_speed_pct < 0.0f) {
+                    roll_speed_negative += roll_speed_pct; //MIN(roll_speed_negative, roll_speed_pct);
+                }
+                if (pitch_speed_pct > 0.0f) {
+                    pitch_speed_positive += pitch_speed_pct; //MAX(pitch_speed_positive, pitch_speed_pct);
+                } else if (pitch_speed_pct < 0.0f) {
+                    pitch_speed_negative += pitch_speed_pct; //MIN(pitch_speed_negative, pitch_speed_pct);
                 }
             }
         }
