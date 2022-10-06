@@ -460,61 +460,78 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
 
     //printf("roll:  %2.2f, rp_out.x: %2.2f, rp_out.y: %2.2f, rp_speed_out.x: %2.2f, rp_speed_out.y: %2.2f\n", roll, rp_out.x, rp_out.y, rp_speed_out.x, rp_speed_out.y);
     
-    if (rp_speed_out.x < 0 && roll < 0)
-    { // do not go to hit
-        roll = 0.0;
-    }
     
-    #define AUTO_AVOID_LIMIT        0.8f
+    #define AUTO_AVOID_LIMIT        0.75f
     #define MIN_AVOID_RATIO         0.01f
-    if (is_negative(rp_speed_out.x))  // moving left
+    if (rp_speed_out.x < 0.0f)  // moving left
     { // if user wants to go left and obstacle is on the left  & approaching do not obey user.
         if (is_positive(rp_out.x)) // avoiding obstacle on the left.
         {
-            if (is_negative(roll) && (rp_out.x > AUTO_AVOID_LIMIT)) roll = 0.0;
-            rp_speed_out.x = -rp_speed_out.x;
+            if (is_negative(roll) /*&& (rp_out.x > AUTO_AVOID_LIMIT)*/) {
+                roll = 0.0;
+                //printf("stop roll\n");
+            }
+
+            _hitting_x = true;
+            rp_speed_out.x = -rp_speed_out.x; // keep it positive
         }
         else
         {
+            _hitting_x = false;
             rp_speed_out.x = MIN_AVOID_RATIO;
         }
     }
     else
-    if (is_positive(rp_speed_out.x))
+    if (rp_speed_out.x>=0.0f)
     { // if user wants to go right and obstacle is on the right  & approaching do not obey user.
         if (is_negative(rp_out.x)) // avoiding obstacle on the left.
         {
-            if (is_positive(roll) && (rp_out.x < -AUTO_AVOID_LIMIT)) roll = 0.0;
-            rp_speed_out.x = -rp_speed_out.x;
+            if (is_positive(roll) /*&& (rp_out.x < -AUTO_AVOID_LIMIT)*/) {
+                roll = 0.0;
+                //printf("stop roll\n");
+            }
+            
+            _hitting_x = true;
         }
         else
         {
+            _hitting_x = false;
             rp_speed_out.x = MIN_AVOID_RATIO;
         }
     }
     
-    if (is_negative(rp_speed_out.y))
+    if (rp_speed_out.y < 0.0f)
     { // if user wants to go forward and obstacle in front of us is near & approaching do not obey user.
         if (is_positive(rp_out.y)) // avoiding obstacle on the left.
         {
-            if (is_negative(pitch) && (rp_out.y > AUTO_AVOID_LIMIT)) pitch = 0.0;
-            rp_speed_out.y = -rp_speed_out.y;
+            if (is_negative(pitch) /*&& (rp_out.y > AUTO_AVOID_LIMIT)*/) {
+                pitch = 0.0;
+            }
+            
+            _hitting_y = true;
+            rp_speed_out.y = -rp_speed_out.y; // keep it positive
         }
         else
         {
+            _hitting_y = false;
             rp_speed_out.y = MIN_AVOID_RATIO;
         }
     }
     else
-    if (is_positive(rp_speed_out.y) )
+    if (rp_speed_out.y>=0.0f)
     { // if user wants to go backword and obstacle is behind us us is near & approaching do not obey user.
         if (is_negative(rp_out.y)) // avoiding obstacle on the left.
         {
-            if (is_positive(pitch) && (rp_out.y < -AUTO_AVOID_LIMIT)) pitch = 0.0;
-            rp_speed_out.y = -rp_speed_out.y;
+            if (is_positive(pitch) /*&& (rp_out.y < -AUTO_AVOID_LIMIT)*/) {
+                pitch = 0.0;
+            }
+
+            _hitting_y = true;
+            
         }
         else
         {
+            _hitting_y = false;
             rp_speed_out.y = MIN_AVOID_RATIO;
         }
     }
@@ -530,6 +547,7 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
         // idle 
     }
 
+    //const float org_x = rp_out.x;
     // apply avoidance angular limits
     // the object avoidance lean angle is never more than 75% of the total angle-limit to allow the pilot to override
     //const float angle_limit = constrain_float(_angle_max, 0.0f, veh_angle_max * AC_AVOID_ANGLE_MAX_PERCENT);
@@ -537,7 +555,22 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     rp_out = rp_out * 4500.0f;
     rp_out.x  *= rp_speed_out.x;
     rp_out.y  *= rp_speed_out.y;
-    //printf("rp_out.x: %2.2f, rp_out.y: %2.2f\n", rp_out.x, rp_out.y);
+    
+    const float f_xdiff = fabs(rp_out.x -_rp_out.x);
+    if (rp_out.x > _rp_out.x) _rp_out.x +=f_xdiff*0.1f;
+    else 
+    if (rp_out.x < _rp_out.x) _rp_out.x -=f_xdiff*0.1f;
+    
+    const float f_ydiff = fabs(rp_out.y -_rp_out.y)*0.1f;
+    if (rp_out.y > _rp_out.y) _rp_out.y +=f_ydiff*0.1f;
+    else 
+    if (rp_out.y < _rp_out.y) _rp_out.y -=f_ydiff*0.1f;
+
+    //printf("rp_out.x: %2.2f, rp_out.y: %2.2f rp_speed_out.x:%f org_x:%f\n", rp_out.x, rp_out.y, rp_speed_out.x, org_x);
+    //printf("rp_out.x: %2.2f, rp_out.y: %2.2f _rp_out.x:%2.2f _rp_out.y:%2.2f\n", rp_out.x, rp_out.y, _rp_out.x, _rp_out.y);
+    
+    rp_out.x  = _rp_out.x;
+    rp_out.y  = _rp_out.y;
     
     float vec_len = rp_out.length();
     if (vec_len > angle_limit) {
@@ -553,6 +586,8 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     if (vec_len > veh_angle_max) {
         rp_out *= (veh_angle_max / vec_len);
     }
+
+    //printf("rp_out.x: %2.2f, rp_out.y: %2.2f rp_speed_out.x:%f org_x:%f\n", rp_out.x, rp_out.y, rp_speed_out.x, org_x);
 
     // return adjusted roll, pitch
     roll = rp_out.x;

@@ -223,8 +223,10 @@ private:
     uint32_t _last_limit_time;      // the last time a limit was active
     uint32_t _last_log_ms;          // the last time simple avoidance was logged
     Vector3f _prev_avoid_vel;       // copy of avoidance adjusted velocity
-
+    Vector2f _rp_out = {0.0f,0.0f};
     static AC_Avoid *_singleton;
+    bool _hitting_x = false;
+    bool _hitting_y = false;
 };
 
 namespace AP {
