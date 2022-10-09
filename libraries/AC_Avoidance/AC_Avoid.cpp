@@ -457,60 +457,71 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     Vector2f rp_out((roll_positive + roll_negative) , (pitch_positive + pitch_negative) );
     Vector2f rp_speed_out((roll_speed_positive + roll_speed_negative) , (pitch_speed_positive + pitch_speed_negative));
 
-
+    /* *
+    * Note: if rp_out.x =0 or rp_out.y =0 that means there is no obstale in the avoidance area.
+    * however there may be speed data available if obstacles outside the avoidance length.
+    * */ 
     //printf("roll:  %2.2f, rp_out.x: %2.2f, rp_out.y: %2.2f, rp_speed_out.x: %2.2f, rp_speed_out.y: %2.2f\n", roll, rp_out.x, rp_out.y, rp_speed_out.x, rp_speed_out.y);
     
-    
-    #define AUTO_AVOID_LIMIT        0.75f
     #define MIN_AVOID_RATIO         0.01f
-    if (rp_speed_out.x < 0.0f)  // moving left
-    { // if user wants to go left and obstacle is on the left  & approaching do not obey user.
-        if (is_positive(rp_out.x)) // avoiding obstacle on the left.
-        {
-            if (is_negative(roll) /*&& (rp_out.x > AUTO_AVOID_LIMIT)*/) {
-                roll = 0.0;
-                //printf("stop roll\n");
-            }
 
+    if (rp_out.x>0.0f) {    // there is an obtacle on the left with distance less than minimum.
+
+        if (roll<0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+            roll = 0.0f;
+            //printf("stop roll\n");
+        }
+    }else
+    if (rp_out.x<0.0f) {    // there is an obtacle on the left with distance less than minimum.
+
+        if (roll>0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+            roll = 0.0f;
+            //printf("stop roll\n");
+        }
+    }
+
+    if (rp_out.y>0.0f) {    // there is an obtacle on the left with distance less than minimum.
+
+        if (pitch<0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+            pitch = 0.0f;
+            //printf("stop roll\n");
+        }
+    }else
+    if (rp_out.y<0.0f) {    // there is an obtacle on the left with distance less than minimum.
+
+        if (pitch>0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+            pitch = 0.0f;
+            //printf("stop roll\n");
+        }
+    }
+        
+
+    if (rp_speed_out.x < 0.0f) {        // copter is moving to the left
+        if (is_positive(rp_out.x)) {    // there is an obtacle on the left with distance less than minimum.
             _hitting_x = true;
-            rp_speed_out.x = -rp_speed_out.x; // keep it positive
         }
         else
-        {
+        {   // flying away from object on right
             _hitting_x = false;
             rp_speed_out.x = MIN_AVOID_RATIO;
         }
     }
     else
-    if (rp_speed_out.x>=0.0f)
-    { // if user wants to go right and obstacle is on the right  & approaching do not obey user.
-        if (is_negative(rp_out.x)) // avoiding obstacle on the left.
-        {
-            if (is_positive(roll) /*&& (rp_out.x < -AUTO_AVOID_LIMIT)*/) {
-                roll = 0.0;
-                //printf("stop roll\n");
-            }
-            
+    if (rp_speed_out.x>=0.0f) {         // copter is moving to the right
+        if (is_negative(rp_out.x)) {    // there is an obtacle on the right with distance less than minimum.
             _hitting_x = true;
         }
         else
-        {
+        {   // flying away from object on left
             _hitting_x = false;
             rp_speed_out.x = MIN_AVOID_RATIO;
         }
     }
     
-    if (rp_speed_out.y < 0.0f)
-    { // if user wants to go forward and obstacle in front of us is near & approaching do not obey user.
-        if (is_positive(rp_out.y)) // avoiding obstacle on the left.
-        {
-            if (is_negative(pitch) /*&& (rp_out.y > AUTO_AVOID_LIMIT)*/) {
-                pitch = 0.0;
-            }
-            
+    if (rp_speed_out.y < 0.0f) {        // copter is moving forward.
+        if (is_positive(rp_out.y)) {    // there is an obtacle in the front with distance less than minimum.
             _hitting_y = true;
-            rp_speed_out.y = -rp_speed_out.y; // keep it positive
-        }
+       }
         else
         {
             _hitting_y = false;
@@ -518,14 +529,8 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
         }
     }
     else
-    if (rp_speed_out.y>=0.0f)
-    { // if user wants to go backword and obstacle is behind us us is near & approaching do not obey user.
-        if (is_negative(rp_out.y)) // avoiding obstacle on the left.
-        {
-            if (is_positive(pitch) /*&& (rp_out.y < -AUTO_AVOID_LIMIT)*/) {
-                pitch = 0.0;
-            }
-
+    if (rp_speed_out.y>=0.0f) {         // copter is moving backward.
+        if (is_negative(rp_out.y)) {    // there is an obtacle in the back with distance less than minimum.
             _hitting_y = true;
             
         }
@@ -538,14 +543,14 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     
 
     
-    if ((roll < 100) && (roll > -100))
-    {
-        // idle 
-    }
-    if ((pitch < 100) && (pitch > -100))
-    {
-        // idle 
-    }
+    // if ((roll < 100) && (roll > -100))
+    // {
+    //     // idle 
+    // }
+    // if ((pitch < 100) && (pitch > -100))
+    // {
+    //     // idle 
+    // }
 
     //const float org_x = rp_out.x;
     // apply avoidance angular limits
@@ -553,20 +558,23 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     //const float angle_limit = constrain_float(_angle_max, 0.0f, veh_angle_max * AC_AVOID_ANGLE_MAX_PERCENT);
     const float angle_limit = constrain_float(_angle_max, 0.0f, veh_angle_max);
     rp_out = rp_out * 4500.0f;
-    rp_out.x  *= rp_speed_out.x;
-    rp_out.y  *= rp_speed_out.y;
+    rp_out.x  *= fabsf(rp_speed_out.x); // respond proportional to speed x
+    rp_out.y  *= fabsf(rp_speed_out.y); // respond proportional to speed y
     
-    const float f_xdiff = fabs(rp_out.x -_rp_out.x);
-    if (rp_out.x > _rp_out.x) _rp_out.x +=f_xdiff*0.1f;
+    const float response_x = 1.0; //_hitting_x?1.0:0.1;
+    const float response_y = 1.0; //_hitting_x?1.0:0.1;
+    // Smoothing response.
+    const float f_xdiff = fabsf(rp_out.x -_rp_out.x);
+    if (rp_out.x > _rp_out.x) _rp_out.x +=f_xdiff*response_x; //0.1f;
     else 
-    if (rp_out.x < _rp_out.x) _rp_out.x -=f_xdiff*0.1f;
+    if (rp_out.x < _rp_out.x) _rp_out.x -=f_xdiff*response_x; //0.1f;
     
-    const float f_ydiff = fabs(rp_out.y -_rp_out.y)*0.1f;
-    if (rp_out.y > _rp_out.y) _rp_out.y +=f_ydiff*0.1f;
+    const float f_ydiff = fabsf(rp_out.y -_rp_out.y);
+    if (rp_out.y > _rp_out.y) _rp_out.y +=f_ydiff*response_y; //0.1f;
     else 
-    if (rp_out.y < _rp_out.y) _rp_out.y -=f_ydiff*0.1f;
+    if (rp_out.y < _rp_out.y) _rp_out.y -=f_ydiff*response_y; //0.1f;
 
-    //printf("rp_out.x: %2.2f, rp_out.y: %2.2f rp_speed_out.x:%f org_x:%f\n", rp_out.x, rp_out.y, rp_speed_out.x, org_x);
+    //printf("rp_out.x: %2.2f, rp_out.y: %2.2f rp_speed_out.x:%f rp_speed_out.y:%f\n", rp_out.x, rp_out.y, rp_speed_out.x, rp_speed_out.y);
     //printf("rp_out.x: %2.2f, rp_out.y: %2.2f _rp_out.x:%2.2f _rp_out.y:%2.2f\n", rp_out.x, rp_out.y, _rp_out.x, _rp_out.y);
     
     rp_out.x  = _rp_out.x;
@@ -588,7 +596,8 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     }
 
     //printf("rp_out.x: %2.2f, rp_out.y: %2.2f rp_speed_out.x:%f org_x:%f\n", rp_out.x, rp_out.y, rp_speed_out.x, org_x);
-
+    //printf("_rp_out.x: %2.2f, _rp_out.y: %2.2f roll:%f pitch:%f\n", _rp_out.x, _rp_out.y, roll, pitch);
+    
     // return adjusted roll, pitch
     roll = rp_out.x;
     pitch = rp_out.y;
