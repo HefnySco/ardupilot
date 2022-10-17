@@ -467,14 +467,14 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
 
     if (rp_out.x>0.0f) {    // there is an obtacle on the left with distance less than minimum.
 
-        if (roll<0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+        if (roll<0.0f)  {   // user wants to go to left but there is a near obstacle and we should slow down.
             roll = 0.0f;
             //printf("stop roll\n");
         }
     }else
     if (rp_out.x<0.0f) {    // there is an obtacle on the left with distance less than minimum.
 
-        if (roll>0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+        if (roll>0.0f)  {   // user wants to go to left but there is a near obstacle and we should slow down.
             roll = 0.0f;
             //printf("stop roll\n");
         }
@@ -482,14 +482,14 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
 
     if (rp_out.y>0.0f) {    // there is an obtacle on the left with distance less than minimum.
 
-        if (pitch<0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+        if (pitch<0.0f)  {   // user wants to go to left but there is a near obstacle and we should slow down.
             pitch = 0.0f;
             //printf("stop roll\n");
         }
     }else
     if (rp_out.y<0.0f) {    // there is an obtacle on the left with distance less than minimum.
 
-        if (pitch>0.0f)  {   // user wants to go to left but there is a near obstacle and we shoudl slow down.
+        if (pitch>0.0f)  {   // user wants to go to left but there is a near obstacle and we should slow down.
             pitch = 0.0f;
             //printf("stop roll\n");
         }
@@ -561,18 +561,18 @@ void AC_Avoid::adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max)
     rp_out.x  *= fabsf(rp_speed_out.x); // respond proportional to speed x
     rp_out.y  *= fabsf(rp_speed_out.y); // respond proportional to speed y
     
-    const float response_x = 1.0; //_hitting_x?1.0:0.1;
-    const float response_y = 1.0; //_hitting_x?1.0:0.1;
+    //const float response_x = 1.0; //_hitting_x?1.0:0.1;
+    //const float response_y = 1.0; //_hitting_x?1.0:0.1;
     // Smoothing response.
     const float f_xdiff = fabsf(rp_out.x -_rp_out.x);
-    if (rp_out.x > _rp_out.x) _rp_out.x +=f_xdiff*response_x; //0.1f;
+    if (rp_out.x > _rp_out.x) _rp_out.x +=f_xdiff;//*response_x; //0.1f;
     else 
-    if (rp_out.x < _rp_out.x) _rp_out.x -=f_xdiff*response_x; //0.1f;
+    if (rp_out.x < _rp_out.x) _rp_out.x -=f_xdiff;//*response_x; //0.1f;
     
     const float f_ydiff = fabsf(rp_out.y -_rp_out.y);
-    if (rp_out.y > _rp_out.y) _rp_out.y +=f_ydiff*response_y; //0.1f;
+    if (rp_out.y > _rp_out.y) _rp_out.y +=f_ydiff;//*response_y; //0.1f;
     else 
-    if (rp_out.y < _rp_out.y) _rp_out.y -=f_ydiff*response_y; //0.1f;
+    if (rp_out.y < _rp_out.y) _rp_out.y -=f_ydiff;//*response_y; //0.1f;
 
     //printf("rp_out.x: %2.2f, rp_out.y: %2.2f rp_speed_out.x:%f rp_speed_out.y:%f\n", rp_out.x, rp_out.y, rp_speed_out.x, rp_speed_out.y);
     //printf("rp_out.x: %2.2f, rp_out.y: %2.2f _rp_out.x:%2.2f _rp_out.y:%2.2f\n", rp_out.x, rp_out.y, _rp_out.x, _rp_out.y);
@@ -1617,7 +1617,7 @@ void AC_Avoid::get_proximity_roll_pitch_pct(float &roll_positive, float &roll_ne
                 const float roll_speed_pct = sin_angle * speed_pct;
                 const float pitch_speed_pct = cos_angle * speed_pct;
                 /*
-                * speed_cms: (-ve) when vehicle is moving tiward the obstacle.
+                * speed_cms: (-ve) when vehicle is moving toward the obstacle.
                 * speed_pct: (-ve) when vehicle is moving forward or left.
                 * lean_pct:  (+ve) when obstacle is in front or left.
                 */
