@@ -192,7 +192,7 @@ Memory_table::Memory_table(uint32_t page_count, int version)
     // Map physical addresses to virtual memory
     for (i = 0; i < _page_count; i++) {
         munmap(_virt_pages[i], PAGE_SIZE);
-        _virt_pages[i] = mmap(_virt_pages[i], PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED | MAP_NORESERVE | MAP_LOCKED, fdMem, ((uintptr_t)_phys_pages[i] & (version == 1 ? 0xFFFFFFFF : ~bus)));
+        _virt_pages[i] = mmap(_virt_pages[i], PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED | MAP_NORESERVE | MAP_LOCKED, fdMem, ((uintptr_t)_phys_pages[i] & (version == 1 ? 0xFFFFFFFFFFFFFFFF : ~bus)));
         memset(_virt_pages[i], 0xee, PAGE_SIZE);
     }
     close(file);
@@ -232,11 +232,11 @@ void *Memory_table::get_virt_addr(const uint32_t phys_addr) const
 
 // This function returns offset from the beginning of the buffer using virtual
 // address and memory_table.
-uint32_t Memory_table::get_offset(void ** const pages, const uint32_t addr) const
+uint32_t Memory_table::get_offset(void ** const pages, const uint64_t addr) const
 {
     uint32_t i = 0;
     for (; i < _page_count; i++) {
-        if ((uintptr_t) pages[i] == (addr & 0xFFFFF000) ) {
+        if ((uintptr_t) pages[i] == (addr & 0xFFFFFFFFFFFFF000) ) {
             return (i*PAGE_SIZE + (addr & 0xFFF));
         }
     }
