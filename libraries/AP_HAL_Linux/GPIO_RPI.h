@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef BANANA_PI
+
 #include <stdint.h>
 #include "AP_HAL_Linux.h"
 
@@ -198,3 +200,4 @@ private:
 };
 
 }
+#endif

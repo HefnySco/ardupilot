@@ -1,4 +1,5 @@
 #include <AP_HAL/AP_HAL.h>
+#ifndef BANANA_PI
 
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBRAIN2 || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH || \
@@ -248,4 +249,5 @@ bool GPIO_RPI::usb_connected(void)
     return false;
 }
 
+#endif
 #endif
