@@ -15,6 +15,7 @@
 #include <AP_Module/AP_Module.h>
 
 #include "AnalogIn_ADS1115.h"
+#include "AnalogIn_ADS_STM32.h"
 #include "AnalogIn_IIO.h"
 #include "AnalogIn_Navio2.h"
 #include "GPIO.h"
@@ -35,6 +36,7 @@
 #include "RCOutput_Bebop.h"
 #include "RCOutput_Disco.h"
 #include "RCOutput_PCA9685.h"
+#include "RCOutput_STM32.h"
 #include "RCOutput_PRU.h"
 #include "RCOutput_Sysfs.h"
 #include "RCOutput_ZYNQ.h"
@@ -91,7 +93,8 @@ static UARTDriver uartBDriver(false);
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR|| \
     ((CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1) && (OBAL_ALLOW_ADC ==1))
-static AnalogIn_ADS1115 analogIn;
+//static AnalogIn_ADS1115 analogIn;
+static AnalogIn_ADS_STM32 analogIn;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF || \
       CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBOARD || \
       CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BBBMINI || \
@@ -218,7 +221,8 @@ static RCOutput_Sysfs rcoutDriver(0, 0, 15);
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ
 static RCOutput_Sysfs rcoutDriver(0, 0, 8);
 #elif  CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
-static RCOutput_PCA9685 rcoutDriver(i2c_mgr_instance.get_device(1, PCA9685_PRIMARY_ADDRESS), 0, 0, RPI_GPIO_<17>());
+//static RCOutput_PCA9685 rcoutDriver(i2c_mgr_instance.get_device(1, PCA9685_PRIMARY_ADDRESS), 0, 0, RPI_GPIO_<17>());
+static RCOutput_STM32 rcoutDriver(i2c_mgr_instance.get_device(1, PCA9685_STM32_PRIMARY_ADDRESS), 0, 0, RPI_GPIO_<17>());
 #else
 static Empty::RCOutput rcoutDriver;
 #endif
