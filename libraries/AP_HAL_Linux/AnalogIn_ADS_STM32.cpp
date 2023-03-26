@@ -45,7 +45,7 @@ extern const AP_HAL::HAL &hal;
 
 AnalogIn_ADS_STM32::AnalogIn_ADS_STM32()
 {
-    _adc = new AP_ADC_STM32_ADC();
+    _adc = new AP_ADC_STM32_ADC(1);
     _channels_number = _adc->get_channels_number();
 }
 

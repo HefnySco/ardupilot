@@ -4,11 +4,10 @@
 #include "AP_ADC_STM32_ADC.h"
 
 #define STM32_ADC_ADDRESS           0x48 // address pin low (GND)
-#define STM32_ADC_I2C_BUS           0x1
-#define STM32_ADC_REGID             0xff
+#define STM32_ADC_REGID             0x0f
 #define STM32_ADC_REGID_VALUE       0xfe    
 
-#define STM32_ADC_DEBUG 0
+#define STM32_ADC_DEBUG 1
 #if STM32_ADC_DEBUG
 #include <cstdio>
 #define debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); } while(0)
@@ -24,8 +23,9 @@ extern const AP_HAL::HAL &hal;
 
 const uint8_t AP_ADC_STM32_ADC::_channels_number  = STM32_ADC_CHANNELS_COUNT;
 
-AP_ADC_STM32_ADC::AP_ADC_STM32_ADC()
+AP_ADC_STM32_ADC::AP_ADC_STM32_ADC(const uint8_t bus)
     : _dev{}
+    , _bus(bus)
     , _channel_to_read(0)
 {
     _samples = new adc_report_s2[_channels_number];
@@ -38,9 +38,9 @@ AP_ADC_STM32_ADC::~AP_ADC_STM32_ADC()
 
 bool AP_ADC_STM32_ADC::init()
 {
-    _dev = hal.i2c_mgr->get_device(STM32_ADC_I2C_BUS, STM32_ADC_ADDRESS);
+    _dev = hal.i2c_mgr->get_device(_bus, STM32_ADC_ADDRESS);
     if (!_dev) {
-        printf("AP_ADC_STM32_ADC: init BAD\n");
+        debug("AP_ADC_STM32_ADC: init BAD\n");
         return false;
     }
 
@@ -49,17 +49,16 @@ bool AP_ADC_STM32_ADC::init()
     uint8_t id;
 
     if (!_dev->read_registers(STM32_ADC_REGID, &id, 1)) {
-        printf("AP_ADC_STM32_ADC: init failed - could not read id\n");
+        debug("AP_ADC_STM32_ADC: init failed - could not read id\n");
         return false;
     }
     if (id!=STM32_ADC_REGID_VALUE) {
-        printf("AP_ADC_STM32_ADC: init failed - bad id\n");
+        debug("AP_ADC_STM32_ADC: init failed - bad id\n");
         return false;    // not STM32_RCOUT
     }
 
-        
-
-    printf("AP_ADC_STM32_ADC: init SUCCEESS\n");
+    debug("\nAP_ADC_STM32_ADC: init SUCCEESS - addr: 0x%x id: 0x%x\n", STM32_ADC_ADDRESS, id);
+   
     return true;
 }
 

@@ -29,10 +29,6 @@ RCInput_STM32::RCInput_STM32(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev) :
     memset (_pwm_values, 0, sizeof(uint16_t)*LINUX_RC_INPUT_NUM_CHANNELS);
 }
 
-RCInput_STM32::~RCInput_STM32()
-{
-    
-}
 
 void RCInput_STM32::init()
 {
@@ -55,7 +51,6 @@ void RCInput_STM32::init()
     printf("STM32_RCINPUT found ... channels count %d\n", channel_number);
     
     set_num_channels(channel_number);
-    //_channel_values = new uint16_t[_num_channels];
     
     _initialized = true;
 }

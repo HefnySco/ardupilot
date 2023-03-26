@@ -13,7 +13,7 @@ struct adc_report_s2
 class AP_ADC_STM32_ADC
 {
 public:
-    AP_ADC_STM32_ADC();
+    AP_ADC_STM32_ADC(const uint8_t bus);
     ~AP_ADC_STM32_ADC();
 
     bool init();
@@ -31,7 +31,8 @@ private:
 
     int                 _channel_to_read;
     adc_report_s2       *_samples;
-
+    uint8_t _bus;
+    
     void _update();
 
 };

@@ -79,7 +79,8 @@ public:
         Notify_LED_Scripting                = (1 << 10),// Colour accessor for scripting
         Notify_LED_DShot                    = (1 << 11),// Use dshot commands to set ESC LEDs
         Notify_LED_ProfiLED_SPI             = (1 << 12), // ProfiLED
-        Notify_LED_MAX
+        Notify_LED_STM32                    = (1 << 13), // Notify_LED_STM32
+        Notify_LED_MAX                      = (1 << 14)
     };
 
     enum Notify_Buzz_Type {

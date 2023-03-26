@@ -39,6 +39,7 @@
 #include "ProfiLED.h"
 #include "ScriptingLED.h"
 #include "DShotLED.h"
+#include "AP_Led_STM32.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -261,10 +262,16 @@ void AP_Notify::add_backends(void)
     if (_num_devices != 0) {
         return;
     }
-
     for (uint32_t i = 1; i < Notify_LED_MAX; i = i << 1) {
         switch(_led_type & i) {
             case Notify_LED_None:
+                break;
+            case Notify_LED_STM32:
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
+  #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
+                ADD_BACKEND(new AP_LED_STM32(1));
+  #endif
+#endif
                 break;
             case Notify_LED_Board:
                 // select the most appropriate built in LED driver type
@@ -280,7 +287,10 @@ void AP_Notify::add_backends(void)
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR
                 ADD_BACKEND(new NavigatorLED());
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
-            ADD_BACKEND(new AP_BoardLED2());
+            //ADD_BACKEND(new AP_BoardLED2());
+            ADD_BACKEND(new AP_LED_STM32(1));
+
+            
   #endif
 #endif // CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 

@@ -319,8 +319,8 @@
         #define HAL_GPIO_A_LED_PIN        27 // You can choose between 27,22,4,12
         #define HAL_GPIO_C_LED_PIN        22 // You can choose between 27,22,4,12
         #define HAL_GPIO_B_LED_PIN        4 // You can choose between 27,22,4,12
-        #define HAL_GPIO_LED_ON           1
-        #define HAL_GPIO_LED_OFF          0
+        #define HAL_GPIO_LED_ON           0  // 1 
+        #define HAL_GPIO_LED_OFF          1  // 0
     #endif
     #define HAL_BUZZER_PIN                12 // You can choose between 27,22,4,12
     #define OBAL_ALLOW_ADC                1
