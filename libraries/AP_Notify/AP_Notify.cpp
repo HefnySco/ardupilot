@@ -266,13 +266,13 @@ void AP_Notify::add_backends(void)
         switch(_led_type & i) {
             case Notify_LED_None:
                 break;
-            case Notify_LED_STM32:
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
-  #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
-                ADD_BACKEND(new AP_LED_STM32(1));
-  #endif
-#endif
-                break;
+//             case Notify_LED_STM32:   // DONT USE LEDX NOW
+// #if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
+//   #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
+//                 ADD_BACKEND(new AP_LED_STM32(1));
+//   #endif
+// #endif
+//                 break;
             case Notify_LED_Board:
                 // select the most appropriate built in LED driver type
 #if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
@@ -287,8 +287,8 @@ void AP_Notify::add_backends(void)
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR
                 ADD_BACKEND(new NavigatorLED());
   #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
-            //ADD_BACKEND(new AP_BoardLED2());
-            ADD_BACKEND(new AP_LED_STM32(1));
+            ADD_BACKEND(new AP_BoardLED2());
+            //ADD_BACKEND(new AP_LED_STM32(1));
 
             
   #endif

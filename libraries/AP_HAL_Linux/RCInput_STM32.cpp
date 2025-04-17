@@ -29,10 +29,18 @@ RCInput_STM32::RCInput_STM32(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev) :
     memset (_pwm_values, 0, sizeof(uint16_t)*LINUX_RC_INPUT_NUM_CHANNELS);
 }
 
+RCInput_STM32::~RCInput_STM32()
+{
+    
+}
 
 void RCInput_STM32::init()
 {
     uint8_t id;
+
+    if (!_dev || !_dev->get_semaphore()->take(40)) {
+        return;
+    }
 
     if (!_dev->read_registers(STM32_RCINPUT_REGID, &id, 1)) {
         return ;
@@ -45,6 +53,7 @@ void RCInput_STM32::init()
 
     uint8_t channel_number;
     if (!_dev->read_registers(STM32_RCINPUT_CHANNEL_COUNT, &channel_number, 1)) {
+        printf("channels count failed\n");
         channel_number = PWM_CHAN_COUNT;
     }
 
@@ -53,6 +62,8 @@ void RCInput_STM32::init()
     set_num_channels(channel_number);
     
     _initialized = true;
+
+    _dev->get_semaphore()->give();
 }
 
 
