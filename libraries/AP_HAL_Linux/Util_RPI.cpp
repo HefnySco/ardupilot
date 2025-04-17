@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -28,6 +29,7 @@ using namespace Linux;
 UtilRPI::UtilRPI()
 {
     _check_rpi_version_by_rev();
+    _check_uname_info();
 }
 
 int UtilRPI::_check_rpi_version_by_rev()
@@ -65,7 +67,27 @@ int UtilRPI::_check_rpi_version_by_rev()
 }
 
 
+void UtilRPI::_check_uname_info ()  
+{
+    struct utsname buffer;
+
+    if (uname(&buffer) < 0) {
+        return ; 
+    }
+
+    printf("machine is %s\n", buffer.machine);
+    
+    _os_64bit = !strcmp (buffer.machine,"aarch64");
+
+}
+
 int UtilRPI::get_rpi_version() const
+{
+    return _rpi_version;
+}
+
+
+bool UtilRPI::is_os_64bit() const
 {
     return _rpi_version;
 }

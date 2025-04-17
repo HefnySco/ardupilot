@@ -167,6 +167,7 @@ Memory_table::Memory_table(uint32_t page_count, int version)
 
     if ((fdMem = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC)) < 0) {
         fprintf(stderr, "Failed to open /dev/mem\n");
+        printf("Make sure that CONFIG_STRICT_DEVMEM is disabled\n");
         exit(-1);
     }
 
@@ -286,6 +287,7 @@ void *RCInput_RPI::map_peripheral(uint32_t base, uint32_t len)
 
     if (fd < 0) {
         printf("Failed to open /dev/mem: %m\n");
+        printf("Make sure that CONFIG_STRICT_DEVMEM is disabled\n");
         return nullptr;
     }
     vaddr = mmap(nullptr, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, base);
