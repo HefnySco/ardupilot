@@ -973,9 +973,18 @@ def save(path, original, text, report, args):
         print('    not written: pass --yes to write without being asked')
         write = False
     if write:
-        # keep the original beside it, and never leave a half-written world
+        # keep the pristine original beside it (a later run must not
+        # replace it with an already-migrated copy), and never leave a
+        # half-written world
         backup = path + '.bak'
-        shutil.copy2(path, backup)
+        if not os.path.lexists(backup):
+            shutil.copy2(path, backup)
+        elif os.path.islink(backup) or not os.path.isfile(backup):
+            # only an earlier run's plain-file backup is trusted to hold the
+            # original; anything else and we cannot keep that promise
+            print('    not written: %s exists but is not a regular file; move it '
+                  'away and run again' % os.path.basename(backup))
+            return True
         tmp = path + '.tmp'
         with open(tmp, 'w') as f:
             f.write(text)

@@ -25,6 +25,7 @@ Needs pymavlink and numpy, and an arducopter binary:
 import argparse
 import math
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -205,10 +206,15 @@ def run(args, workdir):
             else:
                 alts.append(msg.relative_alt / 1000.0)
 
-        res['tilt_rms_deg'] = round(math.sqrt(sum(x * x for x in tilt) / len(tilt)), 3)
-        res['yawrate_rms_dps'] = round(math.sqrt(sum(x * x for x in yawrate) / len(yawrate)), 3)
-        mean = sum(alts) / len(alts)
-        res['alt_rms_err_m'] = round(math.sqrt(sum((a - mean) ** 2 for a in alts) / len(alts)), 4)
+        # a metric with no telemetry behind it is left out, which main()
+        # reports as a failure rather than dividing by zero here
+        if tilt:
+            res['tilt_rms_deg'] = round(math.sqrt(sum(x * x for x in tilt) / len(tilt)), 3)
+        if yawrate:
+            res['yawrate_rms_dps'] = round(math.sqrt(sum(x * x for x in yawrate) / len(yawrate)), 3)
+        if alts:
+            mean = sum(alts) / len(alts)
+            res['alt_rms_err_m'] = round(math.sqrt(sum((a - mean) ** 2 for a in alts) / len(alts)), 4)
         res['hover_rpm'] = round(sum(rpm[-20:]) / max(1, len(rpm[-20:])), 1) if rpm else 0.0
 
         # Webots does not necessarily keep up with wall-clock time (about 0.62x
@@ -275,7 +281,8 @@ def main():
     ap.add_argument('--keep', action='store_true', help='keep the log directory')
     ap.add_argument('--instance', type=int, default=0,
                     help='SITL instance, so the test can run beside another SITL: '
-                    'MAVLink on TCP 5760 + 10 * INSTANCE')
+                    'MAVLink on TCP 5760 + 10 * INSTANCE; pass a different --port '
+                    'too, or both copies share the simulator socket')
     ap.add_argument('--expect-no-rpm', action='store_true',
                     help='the simulator sends no "rpm" key, like an older controller '
                     '(the mock is told to leave it out): check that none is reported '
@@ -289,12 +296,21 @@ def main():
 
     workdir = tempfile.mkdtemp(prefix='webots-flight-test-')
     print('logs: %s' % workdir, flush=True)
+    rc = 2   # stays 2 if run() raises
     try:
         res = run(args, workdir)
+        rc = verdict(args, res)
     finally:
-        if args.keep:
+        # a failed or crashed run keeps its logs: that is when they are needed
+        if args.keep or rc != 0:
             print('logs in %s' % workdir)
+        else:
+            shutil.rmtree(workdir, ignore_errors=True)
+    return rc
 
+
+def verdict(args, res):
+    """Print the results and return 0 for PASS, 1 for FAIL."""
     print()
     for k, v in res.items():
         print('%-22s %s' % (k, v))
@@ -303,8 +319,9 @@ def main():
         print('\nFAIL: did not reach takeoff altitude')
         return 1
 
-    failures = ['%s = %s, limit %s' % (k, res[k], lim) for k, lim in LIMITS.items()
-                if k in res and res[k] > lim]
+    failures = ['%s missing: no telemetry for it' % k for k in LIMITS if k not in res]
+    failures += ['%s = %s, limit %s' % (k, res[k], lim) for k, lim in LIMITS.items()
+                 if k in res and res[k] > lim]
 
     # the rotor speeds the simulator reports must reach AP_RPM
     hover_rpm = res.get('hover_rpm', 0.0)
